@@ -9,6 +9,5 @@ let
        ./custom.nix
      ];
    }).config;
-in {
-  johnos = config.system.build.isoImage;
-}
+in 
+  config.system.build.isoImage
