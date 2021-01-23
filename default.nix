@@ -7,6 +7,7 @@ let
      modules = [
        <nixpkgs/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix>
        ./custom.nix
+       ./ssh.nix
      ];
    }).config;
 in {
