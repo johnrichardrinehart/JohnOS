@@ -10,5 +10,5 @@ let
      ];
    }).config;
 in {
-  JohnOS = config.system.build.isoImage;
+  johnos = config.system.build.isoImage;
 }
