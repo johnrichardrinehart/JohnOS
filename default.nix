@@ -5,7 +5,7 @@ let
    config = (import <nixpkgs/nixos/lib/eval-config.nix> {
      system = "x86_64-linux";
      modules = [
-       <nixpkgs/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix>
+       <nixpkgs/nixos/modules/installer/cd-dvd/iso-image.nix>
        ./custom.nix
        ./ssh.nix
      ];
