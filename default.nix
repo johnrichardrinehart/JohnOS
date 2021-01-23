@@ -1,6 +1,6 @@
 # build an ISO image that will auto install NixOS and reboot
 # $ nix-build make-iso.nix
-
+{...}:
 let
    config = (import <nixpkgs/nixos/lib/eval-config.nix> {
      system = "x86_64-linux";
@@ -9,5 +9,6 @@ let
        ./custom.nix
      ];
    }).config;
-in
-  config.system.build.isoImage
+in {
+  JohnOS = config.system.build.isoImage;
+}
