@@ -6,8 +6,9 @@ let
      system = "x86_64-linux";
      modules = [
        <nixpkgs/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix>
-#       ./custom.nix
+       ./custom.nix
      ];
    }).config;
-in 
-  config.system.build.isoImage
+in {
+  johnos = config.system.build.isoImage;
+}
