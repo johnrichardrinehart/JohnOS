@@ -8,6 +8,7 @@ let
        <nixpkgs/nixos/modules/installer/cd-dvd/iso-image.nix>
        ./custom.nix
        ./ssh.nix
+       ./display.nix
      ];
    }).config;
 in {
