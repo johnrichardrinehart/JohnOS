@@ -6,9 +6,12 @@ let
      system = "x86_64-linux";
      modules = [
        <nixpkgs/nixos/modules/installer/cd-dvd/iso-image.nix>
-       ./custom.nix
+       ./iso.nix
        ./ssh.nix
+       ./networking.nix
        ./display.nix
+       ./users.nix
+       ./packages.nix
      ];
    }).config;
 in {
