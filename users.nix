@@ -1,4 +1,11 @@
+{
+  users ? {
+     dummy = {
+        password = "password";
+     };
+   }
+}:
 {config, pkgs, ...}:
 {
-	users.extraUsers.root.password = "somepassword";
+  users.extraUsers = users;
 }

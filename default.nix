@@ -1,6 +1,12 @@
 # build an ISO image that will auto install NixOS and reboot
 # $ nix-build make-iso.nix
-{...}:
+{
+users ? {
+  test = {
+    password = "testy";
+    isNormalUser = true;
+  };
+}, ...}:
 let
    config = (import <nixpkgs/nixos/lib/eval-config.nix> {
      system = "x86_64-linux";
@@ -10,9 +16,11 @@ let
        ./ssh.nix
        ./networking.nix
        ./display.nix
-       ./users.nix
+       (import ./users.nix {users = users;} )
        ./packages.nix
      ];
+
+    
    }).config;
 in {
   johnos = config.system.build.isoImage;
