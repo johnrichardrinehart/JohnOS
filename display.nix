@@ -5,6 +5,8 @@
         st
     ];
     services.xserver.enable = true;
+    services.xserver.resolutions = [ { x = 1920; y = 1080; } ];
+    services.xserver.libinput.enable = true;
     #services.xserver.displayManager.startx.enable = true;
     services.xserver.layout = "us";
     services.xserver.xkbVariant = "dvorak";

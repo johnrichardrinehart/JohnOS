@@ -19,8 +19,6 @@ let
        (import ./users.nix {users = users;} )
        ./packages.nix
      ];
-
-    
    }).config;
 in {
   johnos = config.system.build.isoImage;
