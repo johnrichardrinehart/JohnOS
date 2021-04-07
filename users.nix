@@ -7,5 +7,6 @@
 }:
 {config, pkgs, ...}:
 {
-  users.extraUsers = users;
+   nixpkgs.config.allowUnfree = true;
+   users.extraUsers = users;
 }
