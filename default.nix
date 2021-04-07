@@ -15,7 +15,7 @@ let
        ./iso.nix
        ./ssh.nix
        ./networking.nix
-       ./display.nix
+       (import ./display.nix {autologinUser=(builtins.head (builtins.attrNames users));})
        (import ./users.nix {users = users;} )
        ./packages.nix
      ];
