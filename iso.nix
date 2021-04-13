@@ -1,4 +1,9 @@
 {config, pkgs, ...}:
 {
-	isoImage.makeEfiBootable=true;
+	require = [
+		./iso-image.nix
+	];
+
+	isoImage.isoBaseName = "johnos";
+	isoImage.makeEfiBootable = true;
 }

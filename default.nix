@@ -7,10 +7,10 @@ users ?{
     isNormalUser = true;
   };
 }, ...}:
-(import <nixpkgs/nixos/lib/eval-config.nix> {
+let
+config = (import <nixpkgs/nixos/lib/eval-config.nix> {
 	system = builtins.currentSystem;
 	modules = [
-		<nixpkgs/nixos/modules/installer/cd-dvd/iso-image.nix>
 		./iso.nix
 		./ssh.nix
 		./networking.nix
@@ -18,5 +18,10 @@ users ?{
 		(import ./users.nix {users = users;})
 		./sound.nix
 		./packages.nix
+		./peripherals.nix
 	];
-}).config.system.build.isoImage
+}).config;
+
+in rec {
+build = config.system.build.isoImage;
+}
