@@ -1,14 +1,14 @@
 # What?
 This is a repo that contains a set of Nix expressions used to build a custom 
 Nix operating system that can be booted from a flash drive in the spirit of
-[erasing my darlings](https://grahamc.com/blog/erase-your-darlings)
+[erasing my darlings](https://grahamc.com/blog/erase-your-darlings).
 
 # Where?
 Uhh, here.
 
 # When?
 
-Check the commit history
+Check the commit history.
 
 # Why?
 Why not?
@@ -19,7 +19,6 @@ hard disk of any machine that I own. This project allows me to recover from a
 hardware failure with "zero downtime" (TM).
 
 # How?
-
 Easy. Get `nix` installed on some machine (or install NixOS which comes with `nix`
 package manager. 
 
@@ -57,7 +56,6 @@ in
 ```
 
 # Notes
-
 1. The user defined first in this `nix` configuration will be automatically logged in
 
 # Further goals
