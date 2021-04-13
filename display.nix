@@ -18,18 +18,18 @@
 		dim = {
 			event = "video/brightnessdown";
 			action = ''
-				DISPLAY=:0 \
-				XAUTHORITY=/home/john/.Xauthority \
-				xrandr --output eDP-1 --brightness 0.2
+DISPLAY=:0 \
+XAUTHORITY=/home/john/.Xauthority \
+${pkgs.bash}/bin/sh -c "${pkgs.xorg.xrandr}/bin/xrandr --output eDP-1 --brightness 0.2" john
 				'';
 
 		};
 		brighten = {
 			event = "video/brightnessup";
 			action = ''
-				DISPLAY=:0 \
-				XAUTHORITY=/home/john/.Xauthority \
-				xrandr --output eDP-1 --brightness 0.8
+DISPLAY=:0 \
+XAUTHORITY=/home/john/.Xauthority \
+${pkgs.bash}/bin/sh -c "${pkgs.xorg.xrandr}/bin/xrandr --output eDP-1 --brightness 0.8" john
 				'';
 		};
 	};

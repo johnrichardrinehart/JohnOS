@@ -1,7 +1,7 @@
 # build an ISO image that will auto install NixOS and reboot
 # $ nix-build make-iso.nix
 {
-users ? {
+users ?{
   test = {
     password = "testy";
     isNormalUser = true;
@@ -16,6 +16,7 @@ users ? {
 		./networking.nix
 		(import ./display.nix {autologinUser=(builtins.head (builtins.attrNames users));})
 		(import ./users.nix {users = users;})
+		./sound.nix
 		./packages.nix
 	];
 }).config.system.build.isoImage
