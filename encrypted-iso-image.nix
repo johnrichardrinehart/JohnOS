@@ -57,11 +57,12 @@ let
     menuBuilderGrub2
     finalCfg
     [
-      { class = "live OS (from RAM)"; params = "copytoram"; }
-      { name = "live OS"; class = "installer"; }
-      { name = "live OS (debug)"; class = "debug"; params = "debug"; }
+      { class = "live OS (runs from RAM)"; params = "copytoram"; }
+      { name = "live OS (runs from CD/flash drive)";}
+      { name = "live OS (debug)"; params = "debug"; }
     ]
   ;
+
 
   # Timeout in syslinux is in units of 1/10 of a second.
   # 0 is used to disable timeouts.
@@ -70,8 +71,8 @@ let
     else
       max (config.boot.loader.timeout * 10) 1;
 
-
   max = x: y: if x > y then x else y;
+
 
   # The configuration file for syslinux.
 
@@ -558,6 +559,7 @@ in
     ];
 
     boot.loader.grub.version = 2;
+#    boot.loader.grub.enableCryptodisk = true;
 
     # Don't build the GRUB menu builder script, since we don't need it
     # here and it causes a cyclic dependency.
@@ -578,6 +580,8 @@ in
     boot.kernelParams =
       [ "root=LABEL=${config.isoImage.volumeID}"
         "boot.shell_on_fail"
+#	"cryptdevice=/dev/disk/by-label/nixos-20.09-x86_64:/dev/mapper/root"
+#	"cryptdevice=${config.system.nixos.label}
       ];
 
     fileSystems."/" =
@@ -595,7 +599,7 @@ in
       };
 
     # In stage 1, mount a tmpfs on top of /nix/store (the squashfs
-    # image) to make this a live CD.
+
     fileSystems."/nix/.ro-store" =
       { fsType = "squashfs";
         device = "/iso/nix-store.squashfs";
@@ -619,9 +623,13 @@ in
         ];
       };
 
+    boot.initrd.luks.devices."root" = {
+	    device = "/dev/disk/by-label/nixos-20.09-x86_64";
+    };
+
     boot.initrd.availableKernelModules = [ "squashfs" "iso9660" "uas" "overlay" ];
 
-    boot.initrd.kernelModules = [ "loop" "overlay" ];
+    boot.initrd.kernelModules = [ "dm-encrypt" "loop" "overlay" ];
 
     # Closures to be copied to the Nix store on the CD, namely the init
     # script and the top-level system configuration directory.

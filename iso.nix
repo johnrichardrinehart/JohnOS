@@ -1,7 +1,7 @@
 {config, pkgs, ...}:
 {
 	require = [
-		./iso-image.nix
+		./encrypted-iso-image.nix
 	];
 
 	isoImage.isoBaseName = "johnos";
