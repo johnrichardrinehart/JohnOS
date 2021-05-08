@@ -23,5 +23,5 @@ config = (import <nixpkgs/nixos/lib/eval-config.nix> {
 }).config;
 
 in rec {
-build = config.system.build.isoImage;
+iso = config.system.build.isoImage;
 }
