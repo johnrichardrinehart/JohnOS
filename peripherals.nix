@@ -2,7 +2,7 @@
 {
 	hardware.bluetooth = {
 		enable = true;
-		config = {
+		settings = {
 			General = {
 				Enable = "Source,Sink,Media,Socket";
 			};
