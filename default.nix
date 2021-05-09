@@ -6,10 +6,10 @@ users ?{
     password = "testy";
     isNormalUser = true;
   };
-}, ...}:
+}, system }:
 let
 config = (import <nixpkgs/nixos/lib/eval-config.nix> {
-	system = builtins.currentSystem;
+	system = system; 
 	modules = [
 		./iso.nix
 		./ssh.nix
