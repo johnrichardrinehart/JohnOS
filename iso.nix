@@ -1,7 +1,7 @@
-{config, pkgs, ...}:
+args @ {config, pkgs, ...}:
 {
 	require = [
-		./iso-image.nix
+		({config, lib, pkgs, ...}: import ./iso-image.nix args)
 	];
 
 	isoImage.isoBaseName = "johnos";

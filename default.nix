@@ -34,7 +34,7 @@ users ? {
   };
 }}:
 [
-	./iso.nix
+	./iso.nix 
 	./ssh.nix
 	./networking.nix
 	(import ./display.nix {autologinUser=(builtins.head (builtins.attrNames users));})

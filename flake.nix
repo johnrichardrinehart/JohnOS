@@ -5,10 +5,11 @@
 	nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable"; # github.com/i077/system/master/flake.nix#L6
   };
 
-  outputs = { self, nixpkgs }: {
+  outputs = inputs @ { self, nixpkgs }: {
 
      nixosConfigurations = {
               iso = nixpkgs.lib.nixosSystem {
+		specialArgs = { inherit inputs; };
                 system = "x86_64-linux";
 		modules = import ./default.nix {};
 		};
