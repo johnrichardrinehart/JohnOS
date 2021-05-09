@@ -6,10 +6,9 @@ users ?{
     password = "testy";
     isNormalUser = true;
   };
-}, system }:
+}, lib}:
 let
-config = (import <nixpkgs/nixos/lib/eval-config.nix> {
-	system = system; 
+config = (import lib.eval-config.nix {
 	modules = [
 		./iso.nix
 		./ssh.nix
