@@ -8,6 +8,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # agenix implementation borrowed from https://github.com/pimeys/system-flake
     agenix.url = "github:ryantm/agenix";
   };
 
