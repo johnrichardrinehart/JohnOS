@@ -103,17 +103,17 @@ args @ { config, pkgs, ... }:
   fonts.fonts = with pkgs; [ fira-code fira-code-symbols ];
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users = 
-  {
-	  john = {
-		  isNormalUser = true;
-		  extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
-	  };
-	  ardan = {
-		  isNormalUser = true;
-		  extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
-	  };
-  };
+  users.users =
+    {
+      john = {
+        isNormalUser = true;
+        extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
+      };
+      ardan = {
+        isNormalUser = true;
+        extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
+      };
+    };
 
 
   # List packages installed in system profile. To search, run:
