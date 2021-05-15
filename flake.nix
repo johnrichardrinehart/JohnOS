@@ -18,7 +18,8 @@
         config = {
           home-manager = {
             useUserPackages = true;
-            users.john = ./john.nix;
+            users.john = ./users/john.nix;
+            users.ardan = ./users/ardan.nix;
           };
         };
       };

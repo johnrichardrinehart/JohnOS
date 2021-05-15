@@ -3,7 +3,7 @@
   xsession.windowManager.i3 = {
     enable = true;
     config = null;
-    extraConfig = builtins.readFile ./i3config;
+    extraConfig = builtins.readFile ../wm/i3config;
   };
 
   programs = {
@@ -99,10 +99,6 @@
     vscodium
     brave
     rofi
-    gnuchess
-    stockfish
-    scid-vs-pc
-    #    zulip
     oil
     htop
     powerline-rs
@@ -110,7 +106,7 @@
 
   home.file = {
     ".config/i3status/net-speed.sh" = {
-      source = ./net-speed.sh;
+      source = ../wm/net-speed.sh;
       executable = true;
     };
   };
