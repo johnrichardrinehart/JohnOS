@@ -98,9 +98,6 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       vscodium
       brave
       rofi
-      gnuchess
-      stockfish
-      scid-vs-pc
       oil
       htop
       powerline-rs
