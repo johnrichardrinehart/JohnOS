@@ -1,24 +1,78 @@
 {
   "nodes": {
+    "agenix": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1620877075,
+        "narHash": "sha256-XvgTqtmQZHegu9UMDSR50gK5cHEM2gbnRH0qecmdN54=",
+        "owner": "ryantm",
+        "repo": "agenix",
+        "rev": "e543aa7d68f222e1e771165da9e9a64b5bf7b3e3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ryantm",
+        "repo": "agenix",
+        "type": "github"
+      }
+    },
+    "home-manager": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1620692082,
+        "narHash": "sha256-s/eBXs4OI47yPWNTKoAg4f/H7wMLyO+VEMmobXkzfI8=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "23769994e8f7b212d9a257799173b120ed87736b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "ref": "master",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1620340338,
-        "narHash": "sha256-Op/4K0+Z9Sp5jtFH0s/zMM4H7VFZxrekcAmjQ6JpQ4w=",
+        "lastModified": 1618628710,
+        "narHash": "sha256-9xIoU+BrCpjs5nfWcd/GlU7XCVdnNKJPffoNTxgGfhs=",
+        "path": "/nix/store/z1rf17q0fxj935cmplzys4gg6nxj1as0-source",
+        "rev": "7919518f0235106d050c77837df5e338fb94de5d",
+        "type": "path"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "type": "indirect"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1620804657,
+        "narHash": "sha256-4SaYvTsFgHbyEj1Y5OwKCgA8xFzUOCkwTUAKbl+Ip7A=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "63586475587d7e0e078291ad4b49b6f6a6885100",
+        "rev": "344ec021bff9b587c95dff13a5b01111a90794e1",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-unstable",
+        "ref": "master",
         "repo": "nixpkgs",
         "type": "github"
       }
     },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "agenix": "agenix",
+        "home-manager": "home-manager",
+        "nixpkgs": "nixpkgs_2"
       }
     }
   },

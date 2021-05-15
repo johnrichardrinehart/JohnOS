@@ -1,23 +1,38 @@
 {
-  description = "John Rinehart's development OS";
-
   inputs = {
-	nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable"; # github.com/i077/system/master/flake.nix#L6
+    nixpkgs.url = "github:NixOS/nixpkgs/master";
+
+    home-manager = {
+      url = "github:nix-community/home-manager/master";
+      flake = true;
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    agenix.url = "github:ryantm/agenix";
   };
 
-  outputs = inputs @ { self, nixpkgs }: {
+  outputs = inputs:
+    let
+      home-manager-config = {
+        config = {
+          home-manager = {
+            useUserPackages = true;
+            users.john = ./john.nix;
+          };
+        };
+      };
+    in
+    {
+      nixosConfigurations.nixos = with inputs.nixpkgs; lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          ./configuration.nix
+          inputs.agenix.nixosModules.age
+          inputs.home-manager.nixosModules.home-manager
+          home-manager-config
+        ];
 
-     nixosConfigurations = {
-              iso = nixpkgs.lib.nixosSystem {
-		specialArgs = { inherit inputs; };
-                system = "x86_64-linux";
-		modules = import ./default.nix {};
-		};
-     };     
-
-    packages.x86_64-linux.johnos = self.nixosConfigurations.iso.config.system.build.isoImage;
-
-    defaultPackage.x86_64-linux = self.packages.x86_64-linux.johnos;
-
-  };
+        specialArgs = { inherit (inputs) nixpkgs agenix; };
+      };
+    };
 }
