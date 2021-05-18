@@ -99,15 +99,24 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       plugins = let p = pkgs.vimPlugins; in [ p.vim-airline ];
     };
 
-    bash = {
+    zsh = {
       enable = true;
       shellAliases = {
         chess = "scid";
       };
-     initExtra = ''
+
+      initExtra = ''
         . $HOME/.profile # pick up on the home.sessionVariables in light of https://github.com/nix-community/home-manager/issues/1011
       '';
+
+      oh-my-zsh = {
+        enable = true;
+        plugins = ["git" "sudo" "docker" "kubectl"];
+        theme = "agnoster";
+      };
     };
+
+
   };
 
   nixpkgs.config.allowUnfree = true;
