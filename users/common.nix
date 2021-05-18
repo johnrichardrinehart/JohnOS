@@ -99,6 +99,15 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       plugins = let p = pkgs.vimPlugins; in [ p.vim-airline ];
     };
 
+    bash = {
+      enable = true;
+      shellAliases = {
+        chess = "scid";
+      };
+     initExtra = ''
+        . $HOME/.profile # pick up on the home.sessionVariables in light of https://github.com/nix-community/home-manager/issues/1011
+      '';
+    };
   };
 
   nixpkgs.config.allowUnfree = true;
@@ -129,7 +138,9 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
     };
   };
 
-  home.sessionVariables.EDITOR = "vim";
+  home.sessionVariables = {
+    EDITOR = "vim";
+  };
 
   home.stateVersion = "21.05";
 
