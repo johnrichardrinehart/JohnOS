@@ -102,17 +102,19 @@ args @ { config, pkgs, ... }:
   ##### John's Stuff #####
   fonts.fonts = with pkgs; [ fira-code fira-code-symbols ];
 
+  programs.zsh.enable = true;
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users =
+  users.users = let
+    defaultUserAttrs =  {
+        isNormalUser = true;
+        extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
+        shell = pkgs.zsh;
+      };
+  in
     {
-      john = {
-        isNormalUser = true;
-        extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
-      };
-      ardan = {
-        isNormalUser = true;
-        extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
-      };
+      john = defaultUserAttrs;
+      ardan = defaultUserAttrs;
     };
 
 
