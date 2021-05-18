@@ -101,13 +101,11 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 
     zsh = {
       enable = true;
+
       shellAliases = {
         chess = "scid";
+        sudo-nixos-rebuild-flake = "sudo nixos-rebuild switch --flake $HOME/repos/mine/nix"; # https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
       };
-
-      initExtra = ''
-        . $HOME/.profile # pick up on the home.sessionVariables in light of https://github.com/nix-community/home-manager/issues/1011
-      '';
 
       oh-my-zsh = {
         enable = true;
