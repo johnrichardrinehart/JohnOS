@@ -3,7 +3,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
   xsession.windowManager.i3 = {
     enable = true;
     config = null;
-    extraConfig = builtins.readFile ../wm/i3config;
+    extraConfig = builtins.readFile ../wm/i3.conf;
   };
 
   programs = {
