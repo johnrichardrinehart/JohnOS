@@ -14,6 +14,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       extraConfig = {
         init.defaultBranch = "main";
         core.editor = "vim";
+        core.excludesFile = "~/.gitignore";
       };
     };
 
@@ -79,6 +80,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
           };
         };
       };
+
     };
 
     rofi = {
@@ -88,21 +90,35 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       };
     };
 
+    vim = {
+      enable = true;
+      extraConfig = ''
+        set autochdir
+        set number
+      '';
+      plugins = let p = pkgs.vimPlugins; in [ p.vim-airline ];
+    };
+
   };
 
   nixpkgs.config.allowUnfree = true;
 
-  home.packages = with pkgs;
-    let base = [
-      slack
-      vscodium
-      brave
-      rofi
-      oil
-      htop
-      powerline-rs
-    ];
-    in if args ? extraPackages then base ++ args.extraPackages else base;
+  home.packages =
+    let
+      p = pkgs;
+      base = [
+        p.slack
+        p.vscodium
+        p.brave
+        p.rofi
+        p.oil
+        p.htop
+        p.powerline-rs
+        p.nixpkgs-fmt
+        p.tmux
+      ];
+    in
+    if args ? extraPackages then base ++ args.extraPackages else base;
 
   home.file = {
     ".config/i3status/net-speed.sh" = {
