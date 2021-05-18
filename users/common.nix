@@ -116,6 +116,8 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.powerline-rs
         p.nixpkgs-fmt
         p.tmux
+        p.ranger
+        p.feh
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;
@@ -126,6 +128,8 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       executable = true;
     };
   };
+
+  home.sessionVariables.EDITOR = "vim";
 
   home.stateVersion = "21.05";
 
