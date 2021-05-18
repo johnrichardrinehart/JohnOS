@@ -121,7 +121,6 @@ args @ { config, pkgs, ... }:
   environment.systemPackages = with pkgs; [
     args.agenix.defaultPackage.x86_64-linux
     wget
-    vim
   ];
 
   age.sshKeyPaths = [ "/home/john/.ssh/id_rsa" "/etc/ssh/ssh_host_rsa_key" "/etc/ssh/ssh_host_ed25519_key" ];
@@ -141,6 +140,7 @@ args @ { config, pkgs, ... }:
       in
       "experimental-features = nix-command flakes\n" + "flake-registry = ${empty_registry}";
     registry.nixpkgs.flake = args.nixpkgs;
+    nixPath = [ "nixpkgs=${args.nixpkgs}" ];
   };
 
 }
