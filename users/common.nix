@@ -1,9 +1,15 @@
 args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 {
-  xsession.windowManager.i3 = {
+  xsession = {
     enable = true;
-    config = null;
-    extraConfig = builtins.readFile ../wm/i3.conf;
+    # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
+    scriptPath = ".hm-xsession";
+
+    windowManager.i3 = {
+      enable = true;
+      config = null;
+      extraConfig = builtins.readFile ../wm/i3.conf;
+    };
   };
 
   programs = {

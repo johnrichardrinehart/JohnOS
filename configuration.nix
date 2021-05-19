@@ -148,4 +148,14 @@ args @ { config, pkgs, ... }:
 
   console.useXkbConfig = true;
 
+  # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
+  services.xserver.desktopManager.session = [
+    {
+      name = "home-manager";
+      start = ''
+          ${pkgs.runtimeShell} $HOME/.hm-xsession &
+          waitPID=$!
+          '';
+        }
+      ];
 }
