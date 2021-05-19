@@ -146,4 +146,6 @@ args @ { config, pkgs, ... }:
     nixPath = [ "nixpkgs=${args.nixpkgs}" ];
   };
 
+  console.useXkbConfig = true;
+
 }
