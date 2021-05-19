@@ -54,8 +54,10 @@ args @ { config, pkgs, ... }:
 
   # Enable the X11 windowing system.
   services.xserver.enable = true;
-  services.xserver.displayManager.lightdm.enable = true;
-
+  #  services.xserver.displayManager.lightdm.enable = true;
+  #services.xserver.displayManager.lightdm.enable = false;
+  services.xserver.displayManager.lightdm.greeters.tiny.enable = true;
+  services.xserver.displayManager.defaultSession = "home-manager";
   # Configure keymap in X11
   services.xserver.layout = "us";
   services.xserver.xkbVariant = "dvorak";
@@ -153,9 +155,9 @@ args @ { config, pkgs, ... }:
     {
       name = "home-manager";
       start = ''
-          ${pkgs.runtimeShell} $HOME/.hm-xsession &
-          waitPID=$!
-          '';
-        }
-      ];
+        ${pkgs.runtimeShell} $HOME/.hm-xsession &
+        waitPID=$!
+      '';
+    }
+  ];
 }
