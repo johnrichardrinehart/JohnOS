@@ -102,6 +102,8 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
     zsh = {
       enable = true;
 
+      enableAutosuggestions = true;
+
       shellAliases = {
         chess = "scid";
         sudo-nixos-rebuild-flake = "sudo nixos-rebuild switch --flake $HOME/repos/mine/nix"; # https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
@@ -112,6 +114,15 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         plugins = ["git" "sudo" "docker" "kubectl"];
         theme = "agnoster";
       };
+
+      initExtra = ''
+        export BGIMG="$HOME/Downloads/ocean.jpg"
+        if [ ! -f $BGIMG ]; then
+          curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
+        fi
+        feh --bg-fill ~/Downloads/ocean.jpg
+        '';
+
     };
 
 
