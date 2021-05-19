@@ -111,7 +111,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 
       oh-my-zsh = {
         enable = true;
-        plugins = ["git" "sudo" "docker" "kubectl"];
+        plugins = [ "git" "sudo" "docker" "kubectl" ];
         theme = "agnoster";
       };
 
@@ -121,7 +121,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
           curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
         fi
         feh --bg-fill ~/Downloads/ocean.jpg
-        '';
+      '';
 
     };
 

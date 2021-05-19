@@ -105,13 +105,14 @@ args @ { config, pkgs, ... }:
   programs.zsh.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users = let
-    defaultUserAttrs =  {
+  users.users =
+    let
+      defaultUserAttrs = {
         isNormalUser = true;
         extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
         shell = pkgs.zsh;
       };
-  in
+    in
     {
       john = defaultUserAttrs;
       ardan = defaultUserAttrs;
