@@ -5,11 +5,8 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
     # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
     scriptPath = ".hm-xsession";
 
-    windowManager.i3 = {
-      enable = true;
-      config = null;
-      extraConfig = builtins.readFile ../wm/i3.conf;
-    };
+    windowManager = import ../wm args;
+
   };
 
   programs = {
@@ -126,7 +123,6 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         if [ ! -f $BGIMG ]; then
           curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
         fi
-        feh --bg-fill ~/Downloads/ocean.jpg
       '';
 
     };
@@ -151,6 +147,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.tmux
         p.ranger
         p.feh
+        p.multilockscreen
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;
