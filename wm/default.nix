@@ -1,7 +1,2 @@
-{ pkgs, lib, ... }:
-{
-  imports = [
-    #  ./dwm.nix
-    ./i3.nix
-  ];
-}
+args @ { pkgs, lib, ... }:
+import ./xmonad.nix args
