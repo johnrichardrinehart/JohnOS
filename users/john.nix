@@ -1,6 +1,18 @@
 args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig }:
 let
-  extraPackages = with pkgs; [ gnuchess stockfish scid-vs-pc unzip ];
-  john = (import ./common.nix) (args // { inherit extraPackages; });
+  extraPackages = let p = pkgs; [
+    # games
+    p.gnuchess
+    p.stockfish
+    p.scid-vs-pc
+    # tools
+    p.unzip
+    # development
+    p.ghc
+    # instant messengers
+    p.tdesktop
+    p.signal-desktop
+  ];
 in
-john
+(import ./common.nix) (args // { inherit extraPackages; });
+
