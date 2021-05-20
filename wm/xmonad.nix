@@ -1,4 +1,4 @@
-{ pkgs, ...}:
+{ pkgs, ... }:
 
 let
   extra = ''
@@ -16,31 +16,31 @@ let
   '';
 in
 {
-#  xresources.properties = {
-#    "Xft.dpi" = 180;
-#    "Xft.autohint" = 0;
-#    "Xft.hintstyle" = "hintfull";
-#    "Xft.hinting" = 1;
-#    "Xft.antialias" = 1;
-#    "Xft.rgba" = "rgb";
-#    "Xcursor*theme" = "Vanilla-DMZ-AA";
-#    "Xcursor*size" = 24;
-#  };
+  #  xresources.properties = {
+  #    "Xft.dpi" = 180;
+  #    "Xft.autohint" = 0;
+  #    "Xft.hintstyle" = "hintfull";
+  #    "Xft.hinting" = 1;
+  #    "Xft.antialias" = 1;
+  #    "Xft.rgba" = "rgb";
+  #    "Xcursor*theme" = "Vanilla-DMZ-AA";
+  #    "Xcursor*size" = 24;
+  #  };
 
-#  xsession = {
-#    enable = true;
+  #  xsession = {
+  #    enable = true;
 
-    initExtra = extra + polybarOpts;
+  initExtra = extra + polybarOpts;
 
-    xmonad = {
-      enable = true;
-      enableContribAndExtras = true;
+  xmonad = {
+    enable = true;
+    enableContribAndExtras = true;
 
-      extraPackages = hp: [
-        hp.dbus
-        hp.monad-logger
-      ];
+    extraPackages = hp: [
+      hp.dbus
+      hp.monad-logger
+    ];
 
-      config = ./config.hs;
-    };
+    config = ./config.hs;
+  };
 }

@@ -5,7 +5,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
     # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
     scriptPath = ".hm-xsession";
 
-    windowManager.xmonad= (import ../wm args).xmonad;
+    windowManager.xmonad = (import ../wm args).xmonad;
     initExtra = (import ../wm args).initExtra;
 
   };
