@@ -1,6 +1,6 @@
 args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig }:
 let
-  extraPackages = let p = pkgs; [
+  extraPackages = let p = pkgs; in [
     # games
     p.gnuchess
     p.stockfish
@@ -14,5 +14,5 @@ let
     p.signal-desktop
   ];
 in
-(import ./common.nix) (args // { inherit extraPackages; });
+(import ./common.nix) (args // { inherit extraPackages; })
 
