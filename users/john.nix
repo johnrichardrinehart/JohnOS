@@ -8,6 +8,10 @@ let
       p.scid-vs-pc
       # tools
       p.unzip
+      p.polybar
+      # CLI
+      p.fzf
+      p.jump
       # development
       p.ghc
       # instant messengers
