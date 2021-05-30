@@ -181,7 +181,8 @@ myPolybarLogHook dbus = myLogHook <+> dynamicLogWithPP (polybarHook dbus)
 -- Key bindings. Add, modify or remove key bindings here.
 --
 
-myTerminal   = "alacritty"
+-- myTerminal   = "alacritty"
+myTerminal   = "kitty"
 appLauncher  = "rofi -modi drun,ssh,window -show drun -show-icons"
 screenLocker = "multilockscreen -l dim"
 playerctl c  = "playerctl --player=spotify,%any " <> c
@@ -383,7 +384,8 @@ data App
   deriving Show
 
 audacious = ClassApp "Audacious"            "audacious"
-btm       = TitleApp "btm"                  "alacritty -t btm -e btm --color gruvbox --default_widget_type proc"
+-- btm       = TitleApp "btm"                  "alacritty -t btm -e btm --color gruvbox --default_widget_type proc"
+btm        = TitleApp "btm"                  "kitty"
 calendar  = ClassApp "Gnome-calendar"       "gnome-calendar"
 eog       = NameApp  "eog"                  "eog"
 evince    = ClassApp "Evince"               "evince"

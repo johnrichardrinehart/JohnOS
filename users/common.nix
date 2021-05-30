@@ -22,7 +22,11 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       };
     };
 
-    alacritty = {
+    #    alacritty = {
+    #      enable = true;
+    #    };
+
+    kitty = {
       enable = true;
     };
 
@@ -148,6 +152,8 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         chpwd_functions+=__jump_chpwd
 
         compctl -U -K jump_completion j
+
+        alias ssh="kitty +kitten ssh"
       '';
 
     };
