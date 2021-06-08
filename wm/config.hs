@@ -125,7 +125,7 @@ main' dbus = xmonad . docks . ewmh . dynProjects . keybindings . urgencyHook $ d
 -- with mod-q.  Used by, e.g., XMonad.Layout.PerWorkspace to initialize
 -- per-workspace layout choices.
 --myStartupHook = startupHook def
-myStartupHook = spawn "feh --bg-fill $HOME/Downloads/ocean.jpg"
+myStartupHook = replicateM_ 2 (spawn myTerminal) >> spawn "feh --bg-fill $HOME/Downloads/ocean.jpg"
 
 -- original idea: https://pbrisbin.com/posts/using_notify_osd_for_xmonad_notifications/
 data LibNotifyUrgencyHook = LibNotifyUrgencyHook deriving (Read, Show)
@@ -473,29 +473,36 @@ projects :: [Project]
 projects =
   [ Project { projectName      = webWs
             , projectDirectory = "~/"
-            , projectStartHook = Just $ spawn "firefox -P 'default'"
+            , projectStartHook = Just $ do replicateM_ 2 (spawn myTerminal)
+  --              , projectStartHook = Just $ spawn "firefox -P 'default'"
             }
   , Project { projectName      = ossWs
             , projectDirectory = "~/"
-            , projectStartHook = Just $ do replicateM_ 2 (spawn myTerminal)
-                                           spawn $ myTerminal <> " -e home-manager edit"
+            , projectStartHook = Just $ do spawn "slack"
+                                           spawn "brave"
+  --            , projectStartHook = Just $ do replicateM_ 2 (spawn myTerminal)
+  --                                           spawn $ myTerminal <> " -e home-manager edit"
             }
   , Project { projectName      = devWs
             , projectDirectory = "~/workspace/cr/app"
-            , projectStartHook = Just . replicateM_ 2 $ spawn myTerminal
+            , projectStartHook = Nothing
+  --            , projectStartHook = Just . replicateM_ 2 $ spawn myTerminal
             }
   , Project { projectName      = comWs
             , projectDirectory = "~/"
-            , projectStartHook = Just $ do spawn "telegram-desktop"
-                                           spawn "signal-desktop --use-tray-icon"
+            , projectStartHook = Nothing
+  --            , projectStartHook = Just $ do spawn "telegram-desktop"
+  --                                           spawn "signal-desktop --use-tray-icon"
             }
   , Project { projectName      = wrkWs
             , projectDirectory = "~/"
-            , projectStartHook = Just $ spawn "firefox -P 'chatroulette'" -- -no-remote"
+            , projectStartHook = Nothing
+  --            , projectStartHook = Just $ spawn "firefox -P 'chatroulette'" -- -no-remote"
             }
   , Project { projectName      = sysWs
             , projectDirectory = "/etc/nixos/"
-            , projectStartHook = Just . spawn $ myTerminal <> " -e sudo su"
+            , projectStartHook = Nothing
+  --            , projectStartHook = Just . spawn $ myTerminal <> " -e sudo su"
             }
   , Project { projectName      = etcWs
             , projectDirectory = "~/"

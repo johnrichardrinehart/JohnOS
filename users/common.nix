@@ -114,7 +114,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 
       shellAliases = {
         chess = "scid";
-        sudo-nixos-rebuild-flake = "sudo nixos-rebuild switch --flake $HOME/repos/mine/nix"; # https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
+        sudo-nixos-rebuild-flake = "sudo nixos-rebuild switch --flake $HOME/code/repos/mine/nix"; # https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
       };
 
       oh-my-zsh = {
