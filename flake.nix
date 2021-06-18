@@ -75,8 +75,12 @@
         };
       };
 
-      packages.x86_64-linux.flash-drive-iso = nixosConfigurations.flash-drive-iso.config.system.build.isoImage;
+      packages.x86_64-linux = {
+        flash-drive-iso = nixosConfigurations.flash-drive-iso.config.system.build.isoImage;
+      };
+
       defaultPackage.x86_64-linux = packages.x86_64-linux.flash-drive-iso;
+
     };
 
 }
