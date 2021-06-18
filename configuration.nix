@@ -3,13 +3,11 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 args @ { config, pkgs, ... }:
-
 {
-  imports =
-    [
-      # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-    ];
+  virtualisation.docker.enable = true;
+
+  nixpkgs.config.allowUnsupportedSystem = true;
+  hardware.pulseaudio.enable = true;
 
   # Use the GRUB 2 boot loader.
   boot.loader.grub.enable = true;
@@ -59,33 +57,27 @@ args @ { config, pkgs, ... }:
   programs.zsh.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
+  ## consider using https://stackoverflow.com/a/54505212 for merging extraGroups
   users.users =
     let
       defaultUserAttrs = {
         isNormalUser = true;
-        extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
+        extraGroups = [ "wheel" "vboxsf" ]; # Enable ‘sudo’ for the user. And enable access to VBox shared folders
         shell = pkgs.zsh;
       };
     in
     {
       john = defaultUserAttrs;
-      ardan = defaultUserAttrs;
+      ardan = defaultUserAttrs // {
+        extraGroups = defaultUserAttrs.extraGroups ++ [ "docker" ];
+      };
     };
 
 
-  # List packages installed in system profile. To search, run:
-  environment.systemPackages = with pkgs; [
-    args.agenix.defaultPackage.x86_64-linux
+  environment.systemPackages = [
+    pkgs.openconnect
   ];
 
-  age.sshKeyPaths = [ "/home/john/.ssh/id_rsa" "/etc/ssh/ssh_host_rsa_key" "/etc/ssh/ssh_host_ed25519_key" ];
-  age.secrets.secret1 = {
-    file = ./secrets/secret1.age;
-    owner = "john";
-  };
-
-
-  virtualisation.virtualbox.guest.enable = true;
 
   nix = {
     package = pkgs.nixUnstable;
@@ -97,5 +89,22 @@ args @ { config, pkgs, ... }:
     registry.nixpkgs.flake = args.nixpkgs;
     nixPath = [ "nixpkgs=${args.nixpkgs}" ];
   };
+
+  nixpkgs.config.allowUnfree = true;
+
+  systemd.services = {
+    zenimax-vpn = {
+      script = ''
+        ${pkgs.bash}/bin/bash -c "{ printf $(systemd-ask-password 'Zenimax password') ; printf $(systemd-ask-password 'OTP'); } | ${pkgs.openconnect}/bin/openconnect --user 'john.rinehart' --authgroup 'Contractor' 'vpn.zenimax.com' --passwd-on-stdin"
+      '';
+      description = "Zenimax VPN connection";
+      serviceConfig = {
+        Type = "simple";
+        User = "root";
+      };
+      wantedBy = [ "default.target" ];
+    };
+  };
+
 
 }
