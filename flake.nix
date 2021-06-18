@@ -48,12 +48,6 @@
             inputs.home-manager.nixosModules.home-manager
             home-manager-config
           ];
-          config = {
-            # Use the GRUB 2 boot loader.
-            boot.loader.grub.version = 2;
-            boot.loader.grub.device = "/dev/sda"; # or "nodev" for efi only
-            boot.loader.grub.enable = true;
-          };
           specialArgs = { inherit (inputs) nixpkgs agenix; };
         };
 
@@ -62,6 +56,7 @@
           modules = [
             ./configuration.nix
             ./agenix.nix
+            ./iso.nix
             inputs.agenix.nixosModules.age
             inputs.home-manager.nixosModules.home-manager
             home-manager-config
