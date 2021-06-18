@@ -154,6 +154,9 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         compctl -U -K jump_completion j
 
         alias ssh="kitty +kitten ssh"
+
+        # https://blog.vghaisas.com/zsh-beep-sound/
+        unsetopt BEEP
       '';
 
     };
@@ -203,6 +206,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.ranger
         p.feh
         p.multilockscreen
+        p.flameshot
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;
@@ -219,5 +223,4 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
   };
 
   home.stateVersion = "21.05";
-
 }

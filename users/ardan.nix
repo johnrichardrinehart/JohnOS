@@ -1,5 +1,8 @@
 args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig }:
 let
-  ardan = (import ./common.nix) args;
+  extraPackages = let p = pkgs; in
+    [
+      p.teams
+    ];
 in
-ardan
+(import ./common.nix) (args // { inherit extraPackages; })
