@@ -28,6 +28,9 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 
     kitty = {
       enable = true;
+      extraConfig = ''
+        enable_audio_bell no
+      '';
     };
 
     i3status = {
