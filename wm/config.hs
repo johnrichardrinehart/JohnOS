@@ -1,3 +1,4 @@
+-- Shameless stolen by John Rinehart from https://github.com/gvolpe/nix-config/blob/8a34b4e793ccc46b0659f80b290eb33bbce640c4/home/programs/xmonad/config.hs
 import           Control.Monad                         ( replicateM_ )
 import           Data.Foldable                         ( traverse_ )
 import           Data.Monoid
@@ -103,11 +104,11 @@ main' dbus = xmonad . docks . ewmh . dynProjects . keybindings . urgencyHook $ d
   { terminal           = myTerminal
   , focusFollowsMouse  = False
   , clickJustFocuses   = False
-  , borderWidth        = 3
+  , borderWidth        = 5
   , modMask            = myModMask
   , workspaces         = myWS
   , normalBorderColor  = "#dddddd" -- light gray (default)
-  , focusedBorderColor = "#1681f2" -- blue
+  , focusedBorderColor = "#77dd77" -- pastel green
   , mouseBindings      = myMouseBindings
   , layoutHook         = myLayout
   , manageHook         = myManageHook
@@ -125,7 +126,9 @@ main' dbus = xmonad . docks . ewmh . dynProjects . keybindings . urgencyHook $ d
 -- with mod-q.  Used by, e.g., XMonad.Layout.PerWorkspace to initialize
 -- per-workspace layout choices.
 --myStartupHook = startupHook def
-myStartupHook = replicateM_ 2 (spawn myTerminal) >> spawn "feh --bg-fill $HOME/Downloads/ocean.jpg"
+myStartupHook = replicateM_ 2 (spawn myTerminal) >>
+			spawn "feh --bg-fill $HOME/Downloads/ocean.jpg" >>
+			spawn "xsetroot -cursor_name left_ptr"
 
 -- original idea: https://pbrisbin.com/posts/using_notify_osd_for_xmonad_notifications/
 data LibNotifyUrgencyHook = LibNotifyUrgencyHook deriving (Read, Show)
@@ -193,7 +196,7 @@ showKeybindings x = addName "Show Keybindings" . io $
 
 myKeys conf@XConfig {XMonad.modMask = modm} =
   keySet "Applications"
-    [ key "Slack"         (modm                , xK_F2      ) $ spawnOn comWs "slack"
+    [ key "Slack"         (modm                , xK_F2      ) $ spawnOn free1Ws "slack"
     ] ^++^
   keySet "Audio"
     [ key "Mute"          (0, xF86XK_AudioMute              ) $ spawn "amixer -q set Master toggle"
@@ -328,10 +331,10 @@ myLayout =
     . wrkLayout $ (tiled ||| Mirror tiled ||| column3 ||| full)
    where
      -- default tiling algorithm partitions the screen into two panes
-     tiled   = gapSpaced 0 $ Tall nmaster delta ratio
+     tiled   = gapSpaced 5 $ Tall nmaster delta ratio
 --     tiled   = gapSpaced 10 $ Tall nmaster delta ratio
 --      full    = gapSpaced 5 Full
-     full    = gapSpaced 0 Full
+     full    = gapSpaced 2 Full
      column3 = gapSpaced 10 $ ThreeColMid 1 (3/100) (1/2)
 
      -- The default number of windows in the master pane
@@ -348,10 +351,10 @@ myLayout =
      gapSpaced g = spacing g . myGaps g
 
      -- Per workspace layout
-     comLayout = onWorkspace comWs (full ||| tiled)
-     devLayout = onWorkspace devWs (Mirror tiled ||| full)
-     webLayout = onWorkspace webWs (tiled ||| full)
-     wrkLayout = onWorkspace wrkWs (tiled ||| full)
+     comLayout = onWorkspace free1Ws (full ||| tiled)
+     devLayout = onWorkspace commWs (tiled ||| full)
+     webLayout = onWorkspace ttyWs (tiled ||| full)
+     wrkLayout = onWorkspace free2Ws (tiled ||| full)
 
      -- Fullscreen
      fullScreenToggle = mkToggle (single NBFULL)
@@ -455,57 +458,49 @@ scratchpads = scratchpadApp <$> [ audacious, btm, nautilus, scr, spotify ]
 ------------------------------------------------------------------------
 -- Workspaces
 --
-webWs = "web"
-ossWs = "oss"
-devWs = "dev"
-comWs = "com"
-wrkWs = "wrk"
-sysWs = "sys"
-etcWs = "etc"
+ttyWs = "tty"
+ideWs = "ide"
+commWs = "comm"
+free1Ws = "free1"
+free2Ws = "free2"
+free3Ws = "free3"
+free4Ws = "free4"
 
 myWS :: [WorkspaceId]
-myWS = [webWs, ossWs, devWs, comWs, wrkWs, sysWs, etcWs]
+myWS = [ttyWs, ideWs, commWs, free1Ws, free2Ws, free3Ws, free4Ws]
 
 ------------------------------------------------------------------------
 -- Dynamic Projects
 --
 projects :: [Project]
 projects =
-  [ Project { projectName      = webWs
+  [ Project { projectName      = ttyWs
             , projectDirectory = "~/"
             , projectStartHook = Just $ do replicateM_ 2 (spawn myTerminal)
-  --              , projectStartHook = Just $ spawn "firefox -P 'default'"
             }
-  , Project { projectName      = ossWs
+  , Project { projectName      = ideWs
+            , projectDirectory = "~/"
+            , projectStartHook = Just $ spawn "codium"
+            }
+  , Project { projectName      = commWs
             , projectDirectory = "~/"
             , projectStartHook = Just $ do spawn "slack"
                                            spawn "brave"
-  --            , projectStartHook = Just $ do replicateM_ 2 (spawn myTerminal)
-  --                                           spawn $ myTerminal <> " -e home-manager edit"
             }
-  , Project { projectName      = devWs
+  , Project { projectName      = free1Ws
             , projectDirectory = "~/workspace/cr/app"
             , projectStartHook = Nothing
-  --            , projectStartHook = Just . replicateM_ 2 $ spawn myTerminal
             }
-  , Project { projectName      = comWs
+  , Project { projectName      = free2Ws
             , projectDirectory = "~/"
             , projectStartHook = Nothing
-  --            , projectStartHook = Just $ do spawn "telegram-desktop"
-  --                                           spawn "signal-desktop --use-tray-icon"
             }
-  , Project { projectName      = wrkWs
+  , Project { projectName      = free3Ws
             , projectDirectory = "~/"
             , projectStartHook = Nothing
-  --            , projectStartHook = Just $ spawn "firefox -P 'chatroulette'" -- -no-remote"
             }
-  , Project { projectName      = sysWs
+  , Project { projectName      = free4Ws
             , projectDirectory = "/etc/nixos/"
-            , projectStartHook = Nothing
-  --            , projectStartHook = Just . spawn $ myTerminal <> " -e sudo su"
-            }
-  , Project { projectName      = etcWs
-            , projectDirectory = "~/"
             , projectStartHook = Nothing
             }
   ]
