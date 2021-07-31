@@ -20,7 +20,7 @@ args @ { config, pkgs, ... }:
   ##### John's Stuff #####
 
   # Set your time zone.
-  time.timeZone = "Europe/Kyiv";
+  time.timeZone = "Europe/Kiev";
 
   console.useXkbConfig = true;
 
@@ -75,6 +75,7 @@ args @ { config, pkgs, ... }:
 
 
   nix = {
+    #    package = pkgs.nixFlakes;
     package = pkgs.nixUnstable;
     extraOptions =
       let
@@ -86,20 +87,4 @@ args @ { config, pkgs, ... }:
   };
 
   nixpkgs.config.allowUnfree = true;
-
-  systemd.services = {
-    zenimax-vpn = {
-      script = ''
-        ${pkgs.bash}/bin/bash -c "{ printf $(systemd-ask-password 'Zenimax password') ; printf $(systemd-ask-password 'OTP'); } | ${pkgs.openconnect}/bin/openconnect --user 'john.rinehart' --authgroup 'Contractor' 'vpn.zenimax.com' --passwd-on-stdin"
-      '';
-      description = "Zenimax VPN connection";
-      serviceConfig = {
-        Type = "simple";
-        User = "root";
-      };
-      wantedBy = [ "default.target" ];
-    };
-  };
-
-
 }
