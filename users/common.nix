@@ -173,29 +173,32 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 
   nixpkgs.config.allowUnfree = true;
 
-  services.polybar = {
-    enable = true;
-
-    script = "polybar bar &";
-
-    config = {
-      "bar/top" = {
-        monitor = "Virtual1";
-        width = "100%";
-        height = "3%";
-        radius = 0;
-        modules-center = "date";
+  services.polybar =
+    let
+      bars = builtins.readFile ./polybar/bars.ini;
+      colors = builtins.readFile ./polybar/colors.ini;
+      modules = builtins.readFile ./polybar/modules.ini;
+      user_modules = builtins.readFile ./polybar/user_modules.ini;
+    in
+    {
+      enable = true;
+      package = pkgs.polybar.override {
+        alsaSupport = true;
+        pulseSupport = true;
+        githubSupport = true;
       };
+      config = ./polybar/config.ini;
+      script = ''
+        polybar main &
+      '';
+      extraConfig = bars + colors + modules + user_modules + ''
+        [module/xmonad]
+        type = custom/script
+        exec = ${pkgs.xmonad-log}/bin/xmonad-log
 
-      "module/date" = {
-        type = "internal/date";
-        internal = 5;
-        date = "%d.%m.%y";
-        time = "%H:%M";
-        label = "%time%  %date%";
-      };
+        tail = true
+      '';
     };
-  };
 
   home.packages =
     let
