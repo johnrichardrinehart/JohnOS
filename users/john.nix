@@ -10,7 +10,6 @@ let
       p.unzip
       # CLI
       p.fzf
-      p.jump
       # development
       p.ghc
       # instant messengers

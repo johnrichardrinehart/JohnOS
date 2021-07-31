@@ -217,6 +217,8 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.feh
         p.multilockscreen
         p.flameshot
+        p.jump
+        p.killall
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;
