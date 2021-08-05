@@ -190,7 +190,10 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       nix-direnv.enable = true;
     };
 
+    gpg.enable = true;
   };
+
+  services.gpg-agent.enable = true;
 
   nixpkgs.config.allowUnfree = true;
 
