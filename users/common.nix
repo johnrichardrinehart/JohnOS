@@ -203,6 +203,19 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       colors = builtins.readFile ./polybar/colors.ini;
       modules = builtins.readFile ./polybar/modules.ini;
       user_modules = builtins.readFile ./polybar/user_modules.ini;
+      module_xmonad = ''
+        [module/xmonad]
+        type = custom/script
+        exec = ${pkgs.xmonad-log}/bin/xmonad-log
+
+        tail = true
+      '';
+      module_nyc_time = ''
+        [module/time-nyc]
+        type = custom/script
+        exec = TZ=America/New_York ${pkgs.coreutils}/bin/date +"(NYC: %H:%M)"
+        interval = 59
+      '';
     in
     {
       enable = true;
@@ -215,13 +228,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       script = ''
         polybar main &
       '';
-      extraConfig = bars + colors + modules + user_modules + ''
-        [module/xmonad]
-        type = custom/script
-        exec = ${pkgs.xmonad-log}/bin/xmonad-log
-
-        tail = true
-      '';
+      extraConfig = bars + colors + modules + user_modules + module_xmonad + module_nyc_time;
     };
 
   home.packages =
