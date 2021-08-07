@@ -250,6 +250,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.flameshot
         p.jump
         p.killall
+        p.xclip
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;
