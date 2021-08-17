@@ -7,7 +7,7 @@
 
 
     home-manager = {
-      url = "github:nix-community/home-manager/master";
+      url = "github:nix-community/home-manager/release-21.05";
       flake = true;
       inputs.nixpkgs.follows = "nixpkgs_release-2105";
     };
@@ -61,16 +61,30 @@
           specialArgs = { inherit (inputs) agenix; nixpkgs = nixpkgs-unstable; };
         };
 
-        flash-drive-iso = with nixpkgs; lib.nixosSystem {
+        # ova is designed to generate a VirtualBox Appliance output
+        ova = nixpkgs-unstable.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [
+            (import "${nixpkgs}/nixos/modules/virtualisation/virtualbox-image.nix")
+            ./configuration.nix
+            ./agenix.nix
+            inputs.agenix.nixosModules.age
+            inputs.home-manager.nixosModules.home-manager
+            home-manager-config
+          ];
+          specialArgs = { inherit (inputs) agenix; inherit nixpkgs; };
+        };
+
+        flash-drive-iso = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           modules = [
             ./configuration.nix
-            ./agenix.nix
+            #./agenix.nix
             ./iso.nix
             inputs.agenix.nixosModules.age
             inputs.home-manager.nixosModules.home-manager
             home-manager-config
-            "${nixpkgs}/nixos/modules/installer/cd-dvd/iso-image.nix"
+            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
           ];
           specialArgs = { inherit (inputs) agenix; inherit nixpkgs; };
         };
@@ -127,6 +141,7 @@
 
       packages.x86_64-linux = {
         flash-drive-iso = nixosConfigurations.flash-drive-iso.config.system.build.isoImage;
+        ova = nixosConfigurations.ova.config.system.build.virtualBoxOVA;
         vbox-config = nixosConfigurations.vbox-config;
       };
 
