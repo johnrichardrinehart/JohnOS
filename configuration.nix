@@ -7,6 +7,7 @@ args @ { config, pkgs, ... }:
   virtualisation.docker.enable = true;
 
   nixpkgs.config.allowUnsupportedSystem = true;
+
   hardware.pulseaudio.enable = true;
 
   # The global useDHCP flag is deprecated, therefore explicitly set to false here.
@@ -66,8 +67,11 @@ args @ { config, pkgs, ... }:
       ardan = defaultUserAttrs // {
         extraGroups = defaultUserAttrs.extraGroups ++ [ "docker" ];
       };
-    };
 
+      #      root = pkgs.lib.mkForce {
+      #        initialHashedPassword = "$6$u1EpA1iJ$5ib2.fR/wT6MJdDrgmZsk4yd.7MINoiE3vzYE0wR1kEvL3GH6cJ9sL/muVyArKx9LhCNrJpauWKLdk4RmKz0V0";
+      #      };
+    };
 
   environment.systemPackages = [
     pkgs.openconnect
@@ -85,6 +89,5 @@ args @ { config, pkgs, ... }:
     registry.nixpkgs.flake = args.nixpkgs;
     nixPath = [ "nixpkgs=${args.nixpkgs}" ];
   };
-
   nixpkgs.config.allowUnfree = true;
 }
