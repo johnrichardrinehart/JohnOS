@@ -80,11 +80,14 @@
           modules = [
             ./configuration.nix
             #./agenix.nix
-            ./iso.nix
             inputs.agenix.nixosModules.age
             inputs.home-manager.nixosModules.home-manager
             home-manager-config
             "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+            ./laptop.nix
+            ({ config, pkgs, ... }: {
+              isoImage.isoBaseName = "johnos";
+            })
           ];
           specialArgs = { inherit (inputs) agenix; inherit nixpkgs; };
         };
