@@ -10,9 +10,9 @@ disconnected after boot has completed.
 - [ ] `systemd-homed` support
 - [ ] encrypted persistent storage
 - [ ] `git push` checks before shutdown
-- [ ] networking
-- [ ] sound
+- [x] networking
+- [x] sound
 - [ ] bluetooth
 - [ ] smart screen-attachment detection (attach external monitor and extend output automagically)
-- [ ] smart keyboard-layout detection (dvorak from built-in laptop keyboard, US from attached USB-C keyboard)
+- [x] smart keyboard-layout detection (dvorak from built-in laptop keyboard, US from attached USB-C keyboard)
 - [ ] cloud back-up feature (back-up before shutdown)
