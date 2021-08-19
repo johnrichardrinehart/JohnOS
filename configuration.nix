@@ -14,7 +14,6 @@ args @ { config, pkgs, ... }:
   # Per-interface useDHCP will be mandatory in the future, so this generated config
   # replicates the default behaviour.
   networking.useDHCP = false;
-  networking.interfaces.enp0s3.useDHCP = true;
 
   system.stateVersion = "21.05"; # Did you read the comment?
 
@@ -48,7 +47,7 @@ args @ { config, pkgs, ... }:
     ];
   };
 
-  fonts.fonts = with pkgs; [ fira-code fira-code-symbols ];
+  fonts.fonts = let p = pkgs; in [ p.fira-code p.fira-code-symbols ];
 
   programs.zsh.enable = true;
 
@@ -63,14 +62,13 @@ args @ { config, pkgs, ... }:
       };
     in
     {
-      john = defaultUserAttrs;
+      john = defaultUserAttrs // {
+        hashedPassword = "$6$Ao7vxO2e5CHZ$QyJE9UHOUem41VHskn6bbuUdeLZFOFGLCVM0S.UmJWFooaXa3a3Nw.3NFZqklfqMGTfPXlJKIx.9xVcM3k6Z3/";
+      };
       ardan = defaultUserAttrs // {
         extraGroups = defaultUserAttrs.extraGroups ++ [ "docker" ];
+        hashedPassword = "$6$GjNHUPIRR981Cov$TNQYuTmnGSvUMotD.dUqJ7c9dLCJi0hWL7ztsw1icJovNNjO1eA9vNH9ZXmQR0eaBVPgGrsaXAr/c8YouFhtY.";
       };
-
-      #      root = pkgs.lib.mkForce {
-      #        initialHashedPassword = "$6$u1EpA1iJ$5ib2.fR/wT6MJdDrgmZsk4yd.7MINoiE3vzYE0wR1kEvL3GH6cJ9sL/muVyArKx9LhCNrJpauWKLdk4RmKz0V0";
-      #      };
     };
 
   environment.systemPackages = [
@@ -79,7 +77,6 @@ args @ { config, pkgs, ... }:
 
 
   nix = {
-    #    package = pkgs.nixFlakes;
     package = pkgs.nixUnstable;
     extraOptions =
       let
