@@ -2,6 +2,7 @@
 
 let
   extra = ''
+    ${pkgs.systemd}/bin/systemctl --user enable pulseaudio
     ${pkgs.systemd}/bin/systemctl --user start pulseaudio
 
     ################################################################################
