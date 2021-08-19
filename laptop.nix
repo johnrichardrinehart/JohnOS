@@ -13,7 +13,10 @@ args @ { config, pkgs, ... }:
   fonts.fontconfig.enable = pkgs.lib.mkForce true;
 
   services.xserver = {
-    synaptics.enable = true;
+    synaptics = {
+      enable = true;
+      twoFingerScroll = true;
+    };
     resolutions = [
       {
         "x" = 1920;
