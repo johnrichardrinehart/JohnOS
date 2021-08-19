@@ -127,7 +127,7 @@ main' dbus = xmonad . docks . ewmh . dynProjects . keybindings . urgencyHook $ d
 -- per-workspace layout choices.
 --myStartupHook = startupHook def
 myStartupHook = replicateM_ 2 (spawn myTerminal) >>
-			spawn "feh --bg-fill $HOME/Downloads/ocean.jpg" >>
+			spawn "feh --bg-fill /tmp/Downloads/ocean.jpg" >>
 			spawn "xsetroot -cursor_name left_ptr"
 
 -- original idea: https://pbrisbin.com/posts/using_notify_osd_for_xmonad_notifications/

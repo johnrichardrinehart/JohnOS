@@ -87,7 +87,15 @@
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
               ./laptop.nix
               ({ config, pkgs, ... }: {
-                isoImage.isoBaseName = "johnos";
+                isoImage = {
+                  isoBaseName = "johnos";
+                  contents = [
+                    {
+                      source = ./ocean.jpg;
+                      target = "/tmp/Downloads/ocean.jpg";
+                    }
+                  ];
+                };
               })
             ];
             specialArgs = { inherit (inputs) agenix; nixpkgs = nixpkgs; };
