@@ -9,18 +9,22 @@ args @ { config, pkgs, ... }:
 
   hardware = {
     bluetooth.enable = true;
-    pulseaudio.package = pkgs.pulseaudioFull;
+    pulseaudio = {
+      enable = true;
+      package = pkgs.pulseaudioFull;
+    };
   };
 
 
   # disabled by installation-cd-minimal
   fonts.fontconfig.enable = pkgs.lib.mkForce true;
 
+  # use xinput to discover the name of the laptop keyboard (not lsusb)
   services.xserver = {
     config = pkgs.lib.mkAfter ''
       Section "InputClass"
       Identifier "Laptop Keyboard"
-      MatchUSBID "0451:82ff" # maybe QUANTA 0408:5440, actually looks like this is a camera
+      MatchProduct "AT Translated Set 2"
       Option "XkbLayout" "dvorak"
       EndSection
 
@@ -41,6 +45,11 @@ args @ { config, pkgs, ... }:
       }
     ];
   };
+
+  environment.systemPackages = let p = pkgs; in
+    [
+      p.pavucontrol
+    ];
 
   #  services.xserver.layout = pkgs.lib.mkForce "dvorak"; # set in /configuration.nix
 

@@ -25,6 +25,7 @@ args @ { config, pkgs, ... }:
   # Configure keymap in X11
   services.xserver = {
     enable = true;
+    exportConfiguration = true; # https://github.com/NixOS/nixpkgs/issues/19629#issuecomment-368051434
     layout = "us";
     displayManager = {
       # https://www.reddit.com/r/unixporn/comments/a7rg63/oc_a_tiny_riceable_lightdm_greeter/eckzt15?utm_source=share&utm_medium=web2x&context=3
@@ -37,9 +38,8 @@ args @ { config, pkgs, ... }:
         manage = "window";
         name = "default";
         start = ''
-                  ${pkgs.runtimeShell} $HOME/.hm-xsession &
-                  waitPID=$!
-          #        exec $HOME/.hm-xsession
+          ${pkgs.runtimeShell} $HOME/.hm-xsession &
+          waitPID=$!
         '';
       }
     ];
@@ -71,6 +71,7 @@ args @ { config, pkgs, ... }:
 
   environment.systemPackages = [
     pkgs.openconnect
+    pkgs.alsa-tools # https://askubuntu.com/a/1293623
   ];
 
 

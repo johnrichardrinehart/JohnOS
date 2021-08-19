@@ -5,6 +5,7 @@ let
       p.teams
       p.awscli
       p.ssm-session-manager-plugin
+      p.postman
     ];
   zshInitExtra =
     ''
