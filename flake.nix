@@ -75,22 +75,23 @@
           specialArgs = { inherit (inputs) agenix; inherit nixpkgs; };
         };
 
-        flash-drive-iso = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          modules = [
-            ./configuration.nix
-            #./agenix.nix
-            inputs.agenix.nixosModules.age
-            inputs.home-manager.nixosModules.home-manager
-            home-manager-config
-            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-            ./laptop.nix
-            ({ config, pkgs, ... }: {
-              isoImage.isoBaseName = "johnos";
-            })
-          ];
-          specialArgs = { inherit (inputs) agenix; inherit nixpkgs; };
-        };
+        flash-drive-iso = let nixpkgs = nixpkgs-unstable; in
+          nixpkgs.lib.nixosSystem {
+            system = "x86_64-linux";
+            modules = [
+              ./configuration.nix
+              #./agenix.nix
+              inputs.agenix.nixosModules.age
+              inputs.home-manager.nixosModules.home-manager
+              home-manager-config
+              "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+              ./laptop.nix
+              ({ config, pkgs, ... }: {
+                isoImage.isoBaseName = "johnos";
+              })
+            ];
+            specialArgs = { inherit (inputs) agenix; nixpkgs = nixpkgs; };
+          };
 
 
         rpi-sdcard =
