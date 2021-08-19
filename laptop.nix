@@ -1,5 +1,12 @@
 args @ { config, pkgs, ... }:
 {
+################################################################################
+########## Include the below if you want to bundle nixpkgs into the installation
+################################################################################
+#  imports = [
+#    "${args.nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+#  ];
+
   hardware.bluetooth.enable = true;
 
   # disabled by installation-cd-minimal
