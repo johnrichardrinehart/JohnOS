@@ -1,13 +1,17 @@
 args @ { config, pkgs, ... }:
 {
-################################################################################
-########## Include the below if you want to bundle nixpkgs into the installation
-################################################################################
-#  imports = [
-#    "${args.nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
-#  ];
+  ################################################################################
+  ########## Include the below if you want to bundle nixpkgs into the installation
+  ################################################################################
+  #  imports = [
+  #    "${args.nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
+  #  ];
 
-hardware.bluetooth.enable = true;
+  hardware = {
+    bluetooth.enable = true;
+    pulseaudio.package = pkgs.pulseaudioFull;
+  };
+
 
   # disabled by installation-cd-minimal
   fonts.fontconfig.enable = pkgs.lib.mkForce true;
@@ -38,23 +42,31 @@ hardware.bluetooth.enable = true;
     ];
   };
 
-#  services.xserver.layout = pkgs.lib.mkForce "dvorak"; # set in /configuration.nix
+  #  services.xserver.layout = pkgs.lib.mkForce "dvorak"; # set in /configuration.nix
 
-networking = {
-  hostName = "johnos"; # Put your hostname here.
-  interfaces.wlo1.useDHCP = true;
-  wireless = {
-    interfaces = [
-      "wlo1"
-    ];
-    enable = true; # disabled by default
-    networks = {
-      EpsteinDidntKillHimself5G = {
-        pskRaw = "1ccdb453d26a04c707084d33728e26a34c78f8712f878366b4ad129800dff828";
+  networking = {
+    hostName = "johnos"; # Put your hostname here.
+    interfaces.wlo1.useDHCP = true;
+    wireless = {
+      interfaces = [
+        "wlo1"
+      ];
+      enable = true; # disabled by default
+      networks = {
+        EpsteinDidntKillHimself5G = {
+          pskRaw = "1ccdb453d26a04c707084d33728e26a34c78f8712f878366b4ad129800dff828";
+        };
       };
     };
   };
-};
+
+  # Note: c.f. https://discourse.nixos.org/t/no-sound-on-hp-spectre-14t-20-09/12613/3
+  # and https://discourse.nixos.org/t/sound-not-working/12585/11 
+  boot.extraModprobeConfig = ''
+    options snd-intel-dspcfg dsp_driver=1
+  '';
+  #    nixpkgs.overlays = [ ( self: super: { sof-firmware = unstable.sof-firmware; } ) ];
+  #    hardware.pulseaudio.package = unstable.pulseaudioFull;
 
   #  root = pkgs.lib.mkForce {
   #    initialHashedPassword = "$6$u1EpA1iJ$5ib2.fR/wT6MJdDrgmZsk4yd.7MINoiE3vzYE0wR1kEvL3GH6cJ9sL/muVyArKx9LhCNrJpauWKLdk4RmKz0V0";

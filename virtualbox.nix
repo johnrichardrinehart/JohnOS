@@ -1,5 +1,6 @@
 args @ { config, pkgs, ... }:
 {
+  hardware.pulseaudio.enable = true;
   virtualisation.virtualbox.guest.enable = true;
   networking.interfaces.enp0s3.useDHCP = true;
   # Use the GRUB 2 boot loader.
