@@ -114,21 +114,12 @@ main' dbus = xmonad . docks . ewmh . dynProjects . keybindings . urgencyHook $ d
   , manageHook         = myManageHook
   , handleEventHook    = myEventHook
   , logHook            = myPolybarLogHook dbus
-  , startupHook        = myStartupHook
   }
  where
   myModMask   = mod4Mask -- super as the mod key
   dynProjects = dynamicProjects projects
   keybindings = addDescrKeys' ((myModMask, xK_F1), showKeybindings) myKeys
   urgencyHook = withUrgencyHook LibNotifyUrgencyHook
-
--- Perform an arbitrary action each time xmonad starts or is restarted
--- with mod-q.  Used by, e.g., XMonad.Layout.PerWorkspace to initialize
--- per-workspace layout choices.
---myStartupHook = startupHook def
-myStartupHook = replicateM_ 2 (spawn myTerminal) >>
-			spawn "feh --bg-fill /tmp/Downloads/ocean.jpg" >>
-			spawn "xsetroot -cursor_name left_ptr"
 
 -- original idea: https://pbrisbin.com/posts/using_notify_osd_for_xmonad_notifications/
 data LibNotifyUrgencyHook = LibNotifyUrgencyHook deriving (Read, Show)

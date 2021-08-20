@@ -143,7 +143,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       initExtra =
         let
           base = ''
-            export BGIMG="/tmp/Downloads/ocean.jpg"
+            export BGIMG="${args.photo}/bin/ocean.jpg"
             if [ ! -f $BGIMG ]; then
               curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
             fi

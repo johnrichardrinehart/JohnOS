@@ -27,6 +27,7 @@
             useUserPackages = true;
             users.john = ./users/john.nix;
             users.ardan = ./users/ardan.nix;
+            extraSpecialArgs = { photo = photoDerivation; };
           };
         };
 
@@ -39,8 +40,12 @@
         };
       };
 
+      photoDerivation = (
+        let pkgs = (import nixpkgs {
+          system = "x86_64-linux";
+        }); in (import ./photo/photo.nix { inherit pkgs; })
+      );
     in
-
     rec {
       nixosConfigurations = {
         nixos = nixosConfigurations.vbox-config;
@@ -89,16 +94,13 @@
               ({ config, pkgs, ... }: {
                 isoImage = {
                   isoBaseName = "johnos";
-                  contents = [
-                    {
-                      source = ./ocean.jpg;
-                      target = "/tmp/Downloads/ocean.jpg";
-                    }
-                  ];
+                  #                  storeContents = [
+                  #                    ./photo
+                  #                  ];
                 };
               })
             ];
-            specialArgs = { inherit (inputs) agenix; nixpkgs = nixpkgs; };
+            specialArgs = { inherit (inputs) agenix; inherit nixpkgs; };
           };
 
 

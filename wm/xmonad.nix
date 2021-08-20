@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+args @ { pkgs, ... }:
 
 let
   extra = ''
@@ -28,10 +28,13 @@ let
 
     ## Fix linux kernel's ability to process audio 
     ## c.f. https://askubuntu.com/questions/1263178/20-04-no-speaker-audio-on-hp-spectre-x360-2020-15t-eb000
-    ${pkgs.alsa-tools}/bin/hda-verb /dev/snd/hwC0D0 0x01 SET_GPIO_DIR 0x01
-    ${pkgs.alsa-tools}/bin/hda-verb /dev/snd/hwC0D0 0x01 SET_GPIO_MASK 0x01
-    ${pkgs.alsa-tools}/bin/hda-verb /dev/snd/hwC0D0 0x01 SET_GPIO_DATA 0x01
-    ${pkgs.alsa-tools}/bin/hda-verb /dev/snd/hwC0D0 0x01 SET_GPIO_DATA 0x00
+    sudo ${pkgs.alsa-tools}/bin/hda-verb /dev/snd/hwC0D0 0x01 SET_GPIO_DIR 0x01
+    sudo ${pkgs.alsa-tools}/bin/hda-verb /dev/snd/hwC0D0 0x01 SET_GPIO_MASK 0x01
+    sudo ${pkgs.alsa-tools}/bin/hda-verb /dev/snd/hwC0D0 0x01 SET_GPIO_DATA 0x01
+    sudo ${pkgs.alsa-tools}/bin/hda-verb /dev/snd/hwC0D0 0x01 SET_GPIO_DATA 0x00
+
+    ${pkgs.feh}/bin/feh --bg-fill ${args.photo}/bin/ocean.jpg
+    ${pkgs.xorg.xsetroot}/bin/xsetroot -cursor_name left_ptr
   '';
 
   polybarOpts = ''
