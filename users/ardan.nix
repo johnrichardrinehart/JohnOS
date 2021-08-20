@@ -7,6 +7,13 @@ let
       p.ssm-session-manager-plugin
       p.postman
     ];
+
+  programs = {
+    git = {
+      userEmail = "john.rinehart@ardanlabs.com";
+    };
+  };
+
   zshInitExtra =
     ''
       function ssm-stable-instance-id {
@@ -38,4 +45,4 @@ let
       }
     '';
 in
-(import ./common.nix) (args // { inherit extraPackages zshInitExtra; })
+(import ./common.nix) (args // { inherit extraPackages zshInitExtra programs; })

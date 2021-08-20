@@ -16,6 +16,8 @@ let
       p.tdesktop
       p.signal-desktop
     ];
+
+  programs = { };
 in
-(import ./common.nix) (args // { inherit extraPackages; })
+(import ./common.nix) (args // { inherit extraPackages programs; })
 
