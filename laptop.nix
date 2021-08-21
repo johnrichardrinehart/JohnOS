@@ -44,6 +44,8 @@ args @ { config, pkgs, ... }:
         "y" = 1080;
       }
     ];
+
+    videoDrivers = [ "nvidia" ];
   };
 
   environment.systemPackages = let p = pkgs; in
@@ -68,6 +70,7 @@ args @ { config, pkgs, ... }:
       };
     };
   };
+
 
   # Note: c.f. https://discourse.nixos.org/t/no-sound-on-hp-spectre-14t-20-09/12613/3
   # and https://discourse.nixos.org/t/sound-not-working/12585/11 
