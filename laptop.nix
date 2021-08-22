@@ -45,7 +45,7 @@ args @ { config, pkgs, ... }:
       }
     ];
 
-    videoDrivers = [ "nvidia" ];
+    #    videoDrivers = [ "nvidia" ];
   };
 
   environment.systemPackages = let p = pkgs; in

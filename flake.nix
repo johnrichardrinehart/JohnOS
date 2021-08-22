@@ -93,7 +93,7 @@
               ./laptop.nix
               ({ config, pkgs, ... }: {
                 isoImage = {
-                  isoBaseName = "johnos";
+                  isoBaseName = "johnos_" + inputs.self.rev;
                   #                  storeContents = [
                   #                    ./photo
                   #                  ];
