@@ -18,7 +18,7 @@ args @ { config, pkgs, ... }:
   fileSystems."/mnt/home" =
     {
       device = "/dev/mmcblk0p1";
-      fsType = "exfat";
+      fsType = "fat";
     };
 
   # disabled by installation-cd-minimal
