@@ -15,6 +15,11 @@ args @ { config, pkgs, ... }:
     };
   };
 
+  fileSystems."/mnt/home" =
+    {
+      device = "/dev/mmcblk0p1";
+      fsType = "exfat";
+    };
 
   # disabled by installation-cd-minimal
   fonts.fontconfig.enable = pkgs.lib.mkForce true;
