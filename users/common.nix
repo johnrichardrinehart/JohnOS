@@ -253,6 +253,8 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.jump
         p.killall
         p.xclip
+        p.jq
+        p.tree
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;
