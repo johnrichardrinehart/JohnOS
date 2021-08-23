@@ -6,8 +6,6 @@ let
       p.gnuchess
       p.stockfish
       p.scid-vs-pc
-      # tools
-      p.unzip
       # CLI
       p.fzf
       # development
