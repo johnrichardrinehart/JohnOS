@@ -22,6 +22,19 @@ args @ { config, pkgs, ... }:
           device = "/dev/mmcblk0p1";
           fsType = "vfat";
         };
+      "/home" =
+        {
+          fsType = "overlay";
+          device = "overlay";
+          options = [
+            "lowerdir=/home"
+            "upperdir=/mnt/home"
+            "workdir=/mnt/home"
+          ];
+          depends = [
+            "/mnt/home"
+          ];
+        };
     });
 
   # disabled by installation-cd-minimal
