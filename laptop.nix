@@ -15,11 +15,14 @@ args @ { config, pkgs, ... }:
     };
   };
 
-  fileSystems."/mnt/home" =
+  fileSystems = pkgs.lib.mkForce (config.lib.isoFileSystems //
     {
-      device = "/dev/mmcblk0p1";
-      fsType = "fat";
-    };
+      "/mnt/home" =
+        {
+          device = "/dev/mmcblk0p1";
+          fsType = "vfat";
+        };
+    });
 
   # disabled by installation-cd-minimal
   fonts.fontconfig.enable = pkgs.lib.mkForce true;
