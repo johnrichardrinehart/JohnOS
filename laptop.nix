@@ -90,6 +90,40 @@ args @ { config, pkgs, ... }:
     };
   };
 
+  ################################################################################
+  ########## NVIDIA offload
+  ################################################################################
+  #  services.xserver.videoDrivers = [ "modesetting" "nouveau" "nvidia" ];
+  services.xserver.videoDrivers = [ "modesetting" "nvidia" ];
+  hardware.nvidia.prime = {
+    offload.enable = true;
+
+    # Bus ID of the Intel GPU. You can find it using lspci, either under 3D or VGA
+    intelBusId = "PCI:0:2:0";
+
+    # Bus ID of the NVIDIA GPU. You can find it using lspci, either under 3D or VGA
+    nvidiaBusId = "PCI:1:0:0";
+  };
+
+  ################################################################################
+  ########## NVIDIA sync
+  ################################################################################
+  #  services.xserver.videoDrivers = [ "modesetting" "nouveau" "nvidia" ];
+  #  hardware.nvidia.prime = {
+  #    sync.enable = true;
+  #
+  #    # Bus ID of the Intel GPU. You can find it using lspci, either under 3D or VGA
+  #    intelBusId = "PCI:0:2:0";
+  #
+  #    # Bus ID of the NVIDIA GPU. You can find it using lspci, either under 3D or VGA
+  #    nvidiaBusId = "PCI:1:0:0";
+  #  };
+
+  ################################################################################
+  ########## bumblebee
+  ################################################################################
+  #  hardware.bumblebee.enable = true;
+
 
   # Note: c.f. https://discourse.nixos.org/t/no-sound-on-hp-spectre-14t-20-09/12613/3
   # and https://discourse.nixos.org/t/sound-not-working/12585/11 
