@@ -20,7 +20,7 @@ args @ { config, pkgs, ... }:
       "/mnt/home" =
         {
           device = "/dev/mmcblk0p1";
-          fsType = "vfat";
+          fsType = "ext4";
         };
       "/home" =
         {
@@ -28,8 +28,8 @@ args @ { config, pkgs, ... }:
           device = "overlay";
           options = [
             "lowerdir=/home"
-            "upperdir=/mnt/home"
-            "workdir=/mnt/home"
+            "upperdir=/mnt/home/upper"
+            "workdir=/mnt/home/.work"
           ];
           depends = [
             "/mnt/home"
