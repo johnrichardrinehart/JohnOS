@@ -105,6 +105,7 @@ args @ { config, pkgs, ... }:
     nvidiaBusId = "PCI:1:0:0";
   };
   hardware.nvidia.package = config.boot.kernelPackages.nvidiaPackages.vulkan_beta;
+  hardware.nvidia.nvidiaPersistenced = true;
 
   ################################################################################
   ########## NVIDIA sync
