@@ -45,7 +45,7 @@ args @ { config, pkgs, ... }:
     ];
   };
 
-  fonts.fonts = let p = pkgs; in [ p.fira-code p.fira-code-symbols p.font-awesome ];
+  fonts.fonts = let p = pkgs; in [ p.fira-code p.fira-code-symbols p.font-awesome p.nerdfonts ];
 
   programs.zsh.enable = true;
 
