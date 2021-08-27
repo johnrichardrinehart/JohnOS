@@ -28,8 +28,8 @@ args @ { config, pkgs, ... }:
           device = "overlay";
           options = [
             "lowerdir=/etc"
-            "upperdir=/mnt/root/etc/upper"
-            "workdir=/mnt/root/etc/.work"
+            "upperdir=/mnt/root/etc_upper"
+            "workdir=/mnt/root/etc/.etc_work"
           ];
           depends = [
             "/mnt/root"
@@ -41,8 +41,8 @@ args @ { config, pkgs, ... }:
           device = "overlay";
           options = [
             "lowerdir=/home"
-            "upperdir=/mnt/root/home/upper"
-            "workdir=/mnt/root/home/.work"
+            "upperdir=/mnt/root/home_upper"
+            "workdir=/mnt/root/.home_work"
           ];
           depends = [
             "/mnt/root"
