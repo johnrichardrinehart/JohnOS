@@ -24,7 +24,7 @@ let
     #  localectl [--no-convert] set-x11-keymap layout [model [variant [options]]]
 
     ## Set laptop keyboard to dvorak after xmonad screws up my Xorg.conf
-    ${pkgs.xorg.setxkbmap}/bin/setxkbmap -device $(${pkgs.xorg.xinput}/bin/xinput | grep "AT Translated Set 2 keyboard" | cut -f 2 | cut -d = -f 2) -layout dvorak
+    # ${pkgs.xorg.setxkbmap}/bin/setxkbmap -device $(${pkgs.xorg.xinput}/bin/xinput | grep "AT Translated Set 2 keyboard" | cut -f 2 | cut -d = -f 2) -layout dvorak
 
     ## Fix linux kernel's ability to process audio 
     ## c.f. https://askubuntu.com/questions/1263178/20-04-no-speaker-audio-on-hp-spectre-x360-2020-15t-eb000

@@ -72,6 +72,7 @@ args @ { config, pkgs, ... }:
   environment.systemPackages = [
     pkgs.openconnect
     pkgs.alsa-tools # https://askubuntu.com/a/1293623
+    pkgs.glxinfo
   ];
 
 
