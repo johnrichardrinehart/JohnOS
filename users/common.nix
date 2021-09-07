@@ -109,7 +109,12 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
           set autochdir
           set number
         '';
-        plugins = let p = pkgs.vimPlugins; in [ p.vim-airline ];
+        plugins = let p = pkgs.vimPlugins; in
+          [
+            p.vim-airline
+            p.vim-plug
+            p.julia-vim
+          ];
       };
 
       zsh = {
