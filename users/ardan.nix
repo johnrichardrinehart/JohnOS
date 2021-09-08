@@ -44,6 +44,8 @@ let
       function prod-bastion-key {
           aws --profile prod-bastion secretsmanager get-secret-value --secret-id 'arn:aws:secretsmanager:us-east-1:455286985801:secret:/bethesdanet/infra/ssh/services-managed-external' --query 'SecretString' --output text > ~/.ssh/bnet-prod-bastion.pem && chmod 0600 ~/.ssh/*.pem
       }
+
+      export PATH=$PATH:$HOME/go/bin
     '';
 in
 (import ./common.nix) (args // { inherit extraPackages zshInitExtra programs; })
