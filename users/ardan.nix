@@ -6,6 +6,7 @@ let
       p.awscli
       p.ssm-session-manager-plugin
       p.postman
+      p.go
     ];
 
   programs = {
