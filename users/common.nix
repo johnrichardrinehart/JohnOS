@@ -187,7 +187,8 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
               unsetopt BEEP
 
               prompt() {
-                PS1="$(powerline-rs --shell zsh $?)"
+                pwr="$(powerline-rs --modules time,ssh,cwd,perms,git,gitstage,nix-shell,root,virtualenv --shell zsh $?)"
+                PS1=$(printf "%s\n$ " "$pwr")
               }
               precmd_functions+=(prompt)
             ''; in
