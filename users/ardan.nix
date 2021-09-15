@@ -9,6 +9,7 @@ let
       p.go
       p.python39
       p.python39Packages.pylint
+      p.gnome.gnome-keyring
     ];
 
   programs = {
