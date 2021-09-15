@@ -200,6 +200,8 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
     }
     args.programs;
 
+  services.flameshot.enable = true;
+
   services.gpg-agent.enable = true;
 
   nixpkgs.config.allowUnfree = true;
