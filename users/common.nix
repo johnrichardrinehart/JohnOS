@@ -185,6 +185,11 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 
               # https://blog.vghaisas.com/zsh-beep-sound/
               unsetopt BEEP
+
+              prompt() {
+                PS1="$(powerline-rs --shell bash $?)"
+              }
+              PROMPT_COMMAND=prompt
             ''; in
           if builtins.hasAttr "zshInitExtra" args
           then base + args.zshInitExtra
@@ -240,33 +245,36 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       extraConfig = bars + colors + modules + user_modules + module_xmonad + module_nyc_time;
     };
 
+
   home.packages =
     let
       p = pkgs;
       base = [
+        p.feh
+        p.multilockscreen
+        # gui apps
+        p.rofi
         p.slack
         p.vscodium
         p.brave
-        p.rofi
-        p.oil
-        p.htop
-        p.powerline-rs
-        p.nixpkgs-fmt
-        p.tmux
-        p.ranger
-        p.feh
-        p.multilockscreen
         p.flameshot
+        # shell tools
+        p.powerline-rs
+        p.oil
+        p.ranger
         p.jump
-        p.killall
-        p.xclip
+        p.tmux
+        # language tools
         p.jq
+        p.nixpkgs-fmt
+        # os tools
+        p.htop
         p.tree
-        # tools
+        p.killall
+        p.lsof
+        # archive tools
         p.zip
         p.unzip
-        # network
-        p.lsof
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;
