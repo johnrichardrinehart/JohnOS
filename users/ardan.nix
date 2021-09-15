@@ -10,6 +10,7 @@ let
       p.python39
       p.python39Packages.pylint
       p.gnome.gnome-keyring
+      p.gnumake
     ];
 
   programs = {
