@@ -187,9 +187,9 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
               unsetopt BEEP
 
               prompt() {
-                PS1="$(powerline-rs --shell bash $?)"
+                PS1="$(powerline-rs --shell zsh $?)"
               }
-              PROMPT_COMMAND=prompt
+              precmd_functions+=(prompt)
             ''; in
           if builtins.hasAttr "zshInitExtra" args
           then base + args.zshInitExtra
