@@ -265,6 +265,8 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         # tools
         p.zip
         p.unzip
+        # network
+        p.lsof
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;
