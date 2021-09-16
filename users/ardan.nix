@@ -3,7 +3,7 @@ let
   extraPackages = let p = pkgs; in
     [
       p.teams
-      p.awscli
+      p.awscli2
       p.ssm-session-manager-plugin
       p.postman
       p.go
