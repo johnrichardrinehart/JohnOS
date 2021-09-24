@@ -32,6 +32,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         enable = true;
         extraConfig = ''
           enable_audio_bell no
+          scrollback_lines 50000
         '';
       };
 
@@ -265,6 +266,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.ranger
         p.jump
         p.tmux
+        p.xdg-utils # `open`
         # language tools
         p.jq
         p.nixpkgs-fmt
