@@ -13,6 +13,7 @@ let
       # instant messengers
       p.tdesktop
       p.signal-desktop
+      p.terraform
     ];
 
   programs = { };
