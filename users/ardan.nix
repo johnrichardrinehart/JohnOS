@@ -6,7 +6,6 @@ let
       p.awscli2
       p.ssm-session-manager-plugin
       p.postman
-      p.go
       p.python39
       p.python39Packages.pylint
       p.gnome.gnome-keyring
