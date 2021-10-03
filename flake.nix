@@ -94,9 +94,6 @@
               ({ config, pkgs, ... }: {
                 isoImage = {
                   isoBaseName = "johnos_" + (inputs.self.rev or "dirty");
-                  #                  storeContents = [
-                  #                    ./photo
-                  #                  ];
                 };
               })
             ];
