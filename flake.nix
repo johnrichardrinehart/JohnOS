@@ -80,6 +80,22 @@
           specialArgs = { inherit (inputs) agenix; inherit nixpkgs; };
         };
 
+        vps-iso =
+          let nixpkgs = nixpkgs-unstable; in
+          nixpkgs.lib.nixosSystem {
+            system = "x86_64-linux";
+            modules = [
+              ./vps_configuration.nix
+              "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+              ({ config, pkgs, ... }: {
+                isoImage = {
+                  isoBaseName = "johnos_" + (inputs.self.rev or "dirty");
+                };
+              })
+            ];
+            specialArgs = { inherit nixpkgs; };
+          };
+
         flash-drive-iso = let nixpkgs = nixpkgs-unstable; in
           nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
@@ -151,6 +167,7 @@
       };
 
       packages.x86_64-linux = {
+        vps-iso = nixosConfigurations.vps-iso.config.system.build.isoImage;
         flash-drive-iso = nixosConfigurations.flash-drive-iso.config.system.build.isoImage;
         ova = nixosConfigurations.ova.config.system.build.virtualBoxOVA;
         vbox-config = nixosConfigurations.vbox-config;
