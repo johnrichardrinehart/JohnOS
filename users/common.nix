@@ -276,6 +276,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.killall
         p.lsof
         p.pstree
+        p.nethogs
         # archive tools
         p.zip
         p.unzip
