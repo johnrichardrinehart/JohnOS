@@ -244,10 +244,10 @@ myKeys conf@XConfig {XMonad.modMask = modm} =
     , key "Expand master"   (modm              , xK_l        ) $ sendMessage Expand
     , key "Switch to tile"  (modm              , xK_t        ) $ withFocused (windows . W.sink)
     , key "Rotate slaves"   (modm .|. shiftMask, xK_Tab      ) rotSlavesUp
-    , key "Decrease size"   (modm              , xK_d        ) $ withFocused (keysResizeWindow (-10,-10) (1,1))
-    , key "Increase size"   (modm              , xK_s        ) $ withFocused (keysResizeWindow (10,10) (1,1))
-    , key "Decr  abs size"  (modm .|. shiftMask, xK_d        ) $ withFocused (keysAbsResizeWindow (-10,-10) (1024,752))
-    , key "Incr  abs size"  (modm .|. shiftMask, xK_s        ) $ withFocused (keysAbsResizeWindow (10,10) (1024,752))
+--    , key "Decrease size"   (modm              , xK_d        ) $ withFocused (keysResizeWindow (-10,-10) (1,1))
+--    , key "Increase size"   (modm              , xK_s        ) $ withFocused (keysResizeWindow (10,10) (1,1))
+--    , key "Decr  abs size"  (modm .|. shiftMask, xK_d        ) $ withFocused (keysAbsResizeWindow (-10,-10) (1024,752))
+--    , key "Incr  abs size"  (modm .|. shiftMask, xK_s        ) $ withFocused (keysAbsResizeWindow (10,10) (1024,752))
     ] ^++^
   keySet "Workspaces"
     [ key "Next"          (modm              , xK_period    ) nextWS'
