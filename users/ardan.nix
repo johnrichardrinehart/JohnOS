@@ -1,11 +1,13 @@
 args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 let
-  extraPackages = let p = pkgs; in
+  extraPackages = let
+    p = pkgs;
+    postman = pkgs.callPackage ./postman.nix {}; # TODO: homebrew flake until upstream PR is merged
+  in
     [
       p.teams
       p.awscli2
       p.ssm-session-manager-plugin
-      p.postman
       p.python39
       p.python39Packages.pylint
       p.gnome.gnome-keyring
@@ -14,6 +16,8 @@ let
       p.mysql
       p.dbeaver # graphical DB tool
       p.docker-compose
+    ] ++ [
+      postman
     ];
 
   programs = {
