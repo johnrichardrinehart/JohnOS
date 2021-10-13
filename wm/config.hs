@@ -228,7 +228,7 @@ myKeys conf@XConfig {XMonad.modMask = modm} =
     , key "Quit Xmonad (kills session)"  (modm .|. shiftMask, xK_q ) $ io exitSuccess
     , key "Restart XMonad"        (modm              , xK_q ) $ spawn "xmonad --recompile; xmonad --restart"
     , key "Capture entire screen" (modm          , xK_Print ) $ spawn "flameshot full -p ~/Pictures/flameshot/"
-    , key "Start flameshot" (modm .|. shiftMask         , xK_p ) $ spawn "flameshot gui"
+    , key "Start flameshot" (modm .|. shiftMask         , xK_s ) $ spawn "flameshot gui"
     ] ^++^
   keySet "Windows"
     [ key "Close focused"   (modm              , xK_BackSpace) kill
