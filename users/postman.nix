@@ -1,9 +1,10 @@
 { lib, stdenv, fetchurl, makeDesktopItem, wrapGAppsHook
-, atk, at-spi2-atk, at-spi2-core, alsaLib, cairo, cups, dbus, expat, gdk-pixbuf, glib, gtk3
+, atk, at-spi2-atk, at-spi2-core, alsa-lib, cairo, cups, dbus, expat, gdk-pixbuf, glib, gtk3
 , freetype, fontconfig, nss, nspr, pango, udev, libuuid, libX11, libxcb, libXi
 , libXcursor, libXdamage, libXrandr, libXcomposite, libXext, libXfixes
-, libXrender, libXtst, libXScrnSaver, libdrm, mesa, libxkbcommon
+, libXrender, libXtst, libXScrnSaver, libxkbcommon, libdrm, mesa
 }:
+
 stdenv.mkDerivation rec {
   pname = "postman";
   version = "9.0.4";
@@ -32,7 +33,7 @@ stdenv.mkDerivation rec {
     atk
     at-spi2-atk
     at-spi2-core
-    alsaLib
+    alsa-lib
     cairo
     cups
     dbus
@@ -73,7 +74,6 @@ stdenv.mkDerivation rec {
     rm $out/share/postman/Postman
 
     mkdir -p $out/bin
-    ls -lhR $out/share/postman
     ln -s $out/share/postman/postman $out/bin/postman
 
     mkdir -p $out/share/applications
