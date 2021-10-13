@@ -224,9 +224,11 @@ myKeys conf@XConfig {XMonad.modMask = modm} =
   keySet "Screens" switchScreen ^++^
   keySet "System"
     [ key "Toggle status bar gap" (modm              , xK_b ) toggleStruts
-    , key "Logout (quit XMonad)"  (modm .|. shiftMask, xK_q ) $ io exitSuccess
+    , key "Switch users (preserves session)"  (modm .|. shiftMask, xK_l ) $ spawn "dm-tool switch-to-greeter"
+    , key "Quit Xmonad (kills session)"  (modm .|. shiftMask, xK_q ) $ io exitSuccess
     , key "Restart XMonad"        (modm              , xK_q ) $ spawn "xmonad --recompile; xmonad --restart"
     , key "Capture entire screen" (modm          , xK_Print ) $ spawn "flameshot full -p ~/Pictures/flameshot/"
+    , key "Start flameshot" (modm .|. shiftMask         , xK_p ) $ spawn "flameshot gui"
     ] ^++^
   keySet "Windows"
     [ key "Close focused"   (modm              , xK_BackSpace) kill
