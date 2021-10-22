@@ -278,6 +278,7 @@ in
         p.jump
         p.tmux
         p.xdg-utils # `open`
+        p.xclip
         # language tools
         p.jq
         p.nixpkgs-fmt
