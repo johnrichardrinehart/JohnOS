@@ -1,16 +1,5 @@
 args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
-let
-      # TODO: the below is temporary until https://github.com/flameshot-org/flameshot/pull/1958 is available in nixpkgs
-      libsForQt5 = if pkgs.stdenv.hostPlatform.isDarwin then pkgs.libsForQt512 else pkgs.libsForQt515;
-      flameshot = libsForQt5.callPackage ./flameshot.nix {};
-in
 {
-  nixpkgs.overlays = [
-    (self: super: {
-      inherit flameshot;
-    })
-  ];
-
   xsession = {
     enable = true;
     # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
@@ -270,7 +259,7 @@ in
         p.slack
         p.vscodium
         p.brave
-        #p.flameshot
+        p.flameshot
         # shell tools
         p.powerline-rs
         p.oil
@@ -294,8 +283,6 @@ in
         p.unzip
         # programming languages
         p.go
-      ] ++ [
-        flameshot
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;
