@@ -102,7 +102,7 @@
             modules = [
               ./configuration.nix
               #./agenix.nix
-              inputs.agenix.nixosModules.age
+              #inputs.agenix.nixosModules.age
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
