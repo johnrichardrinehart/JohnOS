@@ -1,9 +1,10 @@
 args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 let
-  extraPackages = let
-    p = pkgs;
-    postman = pkgs.callPackage ./postman.nix {}; # TODO: homebrew flake until upstream PR is merged
-  in
+  extraPackages =
+    let
+      p = pkgs;
+      postman = pkgs.callPackage ./postman.nix { }; # TODO: homebrew flake until upstream PR is merged
+    in
     [
       p.teams
       p.awscli2

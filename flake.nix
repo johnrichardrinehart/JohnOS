@@ -52,19 +52,23 @@
 
         # vbox_config is designed to be used within a pre-existing NixOS installation as
         # `nixos-rebuild switch --flake .#vbox-config` # default package is this flake
-        vbox-config = nixpkgs-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          modules = [
-            ./hardware-configuration.nix
-            ./virtualbox.nix
-            ./configuration.nix
-            ./agenix.nix
-            inputs.agenix.nixosModules.age
-            inputs.home-manager.nixosModules.home-manager
-            home-manager-config
-          ];
-          specialArgs = { inherit (inputs) agenix; nixpkgs = nixpkgs-unstable; };
-        };
+        vbox-config =
+          let
+            nixpkgs = nixpkgs-unstable;
+          in
+          nixpkgs.lib.nixosSystem {
+            system = "x86_64-linux";
+            modules = [
+              ./hardware-configuration.nix
+              ./virtualbox.nix
+              ./configuration.nix
+              ./agenix.nix
+              inputs.agenix.nixosModules.age
+              inputs.home-manager.nixosModules.home-manager
+              home-manager-config
+            ];
+            specialArgs = { inherit (inputs) agenix; inherit nixpkgs; };
+          };
 
         # ova is designed to generate a VirtualBox Appliance output
         ova = nixpkgs-unstable.lib.nixosSystem {
