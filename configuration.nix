@@ -45,7 +45,7 @@ args @ { config, pkgs, ... }:
     ];
   };
 
-  #fonts.fonts = let p = pkgs; in [ p.fira-code p.fira-code-symbols p.font-awesome p.nerdfonts ];
+  fonts.fonts = let p = pkgs; in [ p.fira-code p.fira-code-symbols p.font-awesome p.nerdfonts ];
 
   programs.zsh.enable = true;
 
@@ -87,6 +87,4 @@ args @ { config, pkgs, ... }:
     nixPath = [ "nixpkgs=${args.nixpkgs}" ];
   };
   nixpkgs.config.allowUnfree = true;
-
-  #boot.kernelPackages = pkgs.linuxKernel.packages.linux_zen;
 }
