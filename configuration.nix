@@ -55,7 +55,7 @@ args @ { config, pkgs, ... }:
     let
       defaultUserAttrs = {
         isNormalUser = true;
-        extraGroups = [ "wheel" "vboxsf" ]; # Enable ‘sudo’ for the user. And enable access to VBox shared folders
+        extraGroups = [ "wheel" "vboxsf" "audio" ]; # Enable ‘sudo’ for the user. And enable access to VBox shared folders
         shell = pkgs.zsh;
       };
     in
@@ -86,5 +86,6 @@ args @ { config, pkgs, ... }:
     registry.nixpkgs.flake = args.nixpkgs;
     nixPath = [ "nixpkgs=${args.nixpkgs}" ];
   };
+
   nixpkgs.config.allowUnfree = true;
 }

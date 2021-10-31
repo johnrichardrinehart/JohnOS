@@ -278,6 +278,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.lsof
         p.pstree
         p.nethogs
+        p.pavucontrol
         # archive tools
         p.zip
         p.unzip
