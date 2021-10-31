@@ -87,6 +87,14 @@ args @ { config, pkgs, ... }:
         Section "ServerFlags"
            Option "DontZap" "off"
         EndSection
+
+        Section "Screen"
+           Identifier "Placeholder-NotImportant"
+           SubSection "Display"
+             Depth 24
+             Modes "1920x1080" "2560x1440"
+           EndSubSection
+        EndSection
     '';
 
     libinput.enable = true;
