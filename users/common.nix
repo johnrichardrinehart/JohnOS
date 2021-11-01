@@ -252,8 +252,10 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
     let
       p = pkgs;
       base = [
+        # gui configuration
         p.feh
         p.multilockscreen
+        p.gnome3.dconf
         # gui apps
         p.rofi
         p.slack
@@ -292,6 +294,14 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
     ".config/i3status/net-speed.sh" = {
       source = ../wm/net-speed.sh;
       executable = true;
+    };
+  };
+
+  gtk = {
+    enable = true;
+    theme = {
+      package = pkgs.gnome3.gnome_themes_standard;
+      name = "Adawaita-dark";
     };
   };
 
