@@ -14,6 +14,8 @@ let
       p.tdesktop
       p.signal-desktop
       p.terraform
+      p.discord
+      p.element-desktop
     ];
 
   programs = { };
