@@ -172,6 +172,11 @@ args @ { config, pkgs, ... }:
     options snd-intel-dspcfg dsp_driver=1
   '';
 
+  environment.systemPackages = [
+    pkgs.blueberry
+    pkgs.hicolor-icon-theme
+  ];
+
   #boot.blacklistedKernelModules = [ "nvidia" "modesetting"];
   #    nixpkgs.overlays = [ ( self: super: { sof-firmware = unstable.sof-firmware; } ) ];
   #    hardware.pulseaudio.package = unstable.pulseaudioFull;
