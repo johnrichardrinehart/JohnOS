@@ -262,6 +262,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.vscodium
         p.brave
         p.flameshot
+        p.keepassxc
         # shell tools
         p.powerline-rs
         p.oil
