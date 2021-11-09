@@ -89,6 +89,7 @@ args @ { config, pkgs, ... }:
       in
       "experimental-features = nix-command flakes\n" + "flake-registry = ${empty_registry}";
     registry.nixpkgs.flake = args.nixpkgs;
+    registry.templates.flake = args.flake-templates;
     nixPath = [ "nixpkgs=${args.nixpkgs}" ];
   };
 

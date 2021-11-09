@@ -18,6 +18,21 @@
         "type": "github"
       }
     },
+    "flake-templates": {
+      "locked": {
+        "lastModified": 1627915799,
+        "narHash": "sha256-6mmoZOq/faRYvyDHLsJbOXix5v38MvhlqSFNoHluZcc=",
+        "owner": "NixOS",
+        "repo": "templates",
+        "rev": "79f48a7b822f35c068c5e235da2e9fbd154cecee",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "templates",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -103,6 +118,7 @@
     "root": {
       "inputs": {
         "agenix": "agenix",
+        "flake-templates": "flake-templates",
         "home-manager": "home-manager",
         "nixpkgs_release-2009": "nixpkgs_release-2009",
         "nixpkgs_release-2105": "nixpkgs_release-2105",

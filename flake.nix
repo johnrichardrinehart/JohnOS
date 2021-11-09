@@ -4,6 +4,7 @@
     nixpkgs_release-2009.url = "github:NixOS/nixpkgs/release-20.09";
     nixpkgs_release-2105.url = "github:NixOS/nixpkgs/release-21.05";
     nixpkgs_unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-templates.url = "github:NixOS/templates";
 
 
     home-manager = {
@@ -67,7 +68,7 @@
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
             ];
-            specialArgs = { inherit (inputs) agenix; inherit nixpkgs; };
+            specialArgs = { inherit (inputs) agenix flake-templates; inherit nixpkgs;};
           };
 
         # ova is designed to generate a VirtualBox Appliance output
