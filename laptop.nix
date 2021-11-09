@@ -6,17 +6,20 @@ args @ { config, pkgs, ... }:
   #  ];
 
   # https://nixos.wiki/wiki/Linux_kernel#Booting_a_kernel_from_a_custom_source
+
+  # TODO: remove allowUnbroken once ZFS in linux kernel is fixed
+  nixpkgs.config.allowBroken = true;
   boot.kernelPackages = pkgs.lib.mkForce (let
       latest_stable_pkg = { fetchurl, buildLinux, ... } @ args:
         buildLinux (args // rec {
-          version = "5.14.15";
+          version = "5.15.1";
           modDirVersion = version;
 
           kernelPatches = [];
 
           src = fetchurl {
-            url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.14.15.tar.xz";
-            sha256 = "dPOaDGnp18lNKQUVZFOWcl4842Z7hbr0s8P28wPHpAY=";
+            url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
+            sha256 = "Mv3NM8isVxuaeil/M4YPYXEyeWHyoupr1Uv4InW2FMg=";
           };
 
         } // (args.argsOverride or { }));
