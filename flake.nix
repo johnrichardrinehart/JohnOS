@@ -119,7 +119,7 @@
                 };
               })
             ];
-            specialArgs = { inherit (inputs) agenix; inherit nixpkgs; };
+            specialArgs = { inherit (inputs) agenix flake-templates; inherit nixpkgs; };
           };
 
 

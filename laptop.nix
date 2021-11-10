@@ -31,10 +31,6 @@ args @ { config, pkgs, ... }:
 
   hardware = {
     bluetooth.enable = true;
-    pulseaudio = {
-      enable = true;
-      package = pkgs.pulseaudioFull;
-    };
   };
 
 
@@ -168,13 +164,6 @@ args @ { config, pkgs, ... }:
   ################################################################################
   #  hardware.bumblebee.enable = true;
 
-
-  # Note: c.f. https://discourse.nixos.org/t/no-sound-on-hp-spectre-14t-20-09/12613/3
-  # and https://discourse.nixos.org/t/sound-not-working/12585/11 
-  boot.extraModprobeConfig = ''
-    options snd-intel-dspcfg dsp_driver=1
-  '';
-
   environment.systemPackages = [
     pkgs.blueberry
     pkgs.hicolor-icon-theme
@@ -222,7 +211,11 @@ args @ { config, pkgs, ... }:
     package = pkgs.pulseaudioFull;
     extraConfig = "load-module module-switch-on-connect";
   };
+
+  # Note: c.f. https://discourse.nixos.org/t/no-sound-on-hp-spectre-14t-20-09/12613/3
+  # and https://discourse.nixos.org/t/sound-not-working/12585/11 
   boot.extraModprobeConfig = ''
     options snd-hda-intel model=alc295-hp-x360
+    options snd-intel-dspcfg dsp_driver=1
   '';
 }
