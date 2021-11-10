@@ -19,7 +19,8 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         extraConfig = {
           init.defaultBranch = "main";
           core.editor = "vim";
-          url."git@github.com:".insteadOf = "https://github.com";
+          # TODO: commented for cargo-tarpaulin, remove line if nothing breaks
+          # url."git@github.com:".insteadOf = "https://github.com";
           core.excludesFile = "~/.gitignore";
         };
       };
