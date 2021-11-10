@@ -103,8 +103,6 @@ args @ { config, pkgs, ... }:
     libinput.enable = true;
   };
 
-  # services.xserver.layout = pkgs.lib.mkForce "dvorak"; # set in /configuration.nix
-
   networking = {
     hostName = "johnos"; # Put your hostname here.
 
