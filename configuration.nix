@@ -45,12 +45,13 @@ args @ { config, pkgs, ... }:
     ];
   };
 
-  fonts.fonts = let p = pkgs; in [
-    p.fira-code
-    p.fira-code-symbols
-    p.font-awesome
-    (p.nerdfonts.override { fonts = [ "DroidSansMono" ]; })
-  ];
+  fonts.fonts = let p = pkgs; in
+    [
+      p.fira-code
+      p.fira-code-symbols
+      p.font-awesome
+      (p.nerdfonts.override { fonts = [ "DroidSansMono" ]; })
+    ];
 
   programs.zsh.enable = true;
 

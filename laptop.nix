@@ -9,13 +9,14 @@ args @ { config, pkgs, ... }:
 
   # TODO: remove allowUnbroken once ZFS in linux kernel is fixed
   nixpkgs.config.allowBroken = true;
-  boot.kernelPackages = pkgs.lib.mkForce (let
+  boot.kernelPackages = pkgs.lib.mkForce (
+    let
       latest_stable_pkg = { fetchurl, buildLinux, ... } @ args:
         buildLinux (args // rec {
           version = "5.15.1";
           modDirVersion = version;
 
-          kernelPatches = [];
+          kernelPatches = [ ];
 
           src = fetchurl {
             url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
@@ -25,7 +26,8 @@ args @ { config, pkgs, ... }:
         } // (args.argsOverride or { }));
       latest_stable = pkgs.callPackage latest_stable_pkg { };
     in
-      pkgs.recurseIntoAttrs (pkgs.linuxPackagesFor latest_stable));
+    pkgs.recurseIntoAttrs (pkgs.linuxPackagesFor latest_stable)
+  );
 
   hardware = {
     bluetooth.enable = true;
@@ -87,17 +89,17 @@ args @ { config, pkgs, ... }:
     # manual implementation of https://github.com/NixOS/nixpkgs/blob/6c0c30146347188ce908838fd2b50c1b7db47c0c/nixos/modules/services/x11/xserver.nix#L737-L741
     # can not use xserver.config.enableCtrlAltBackspace because we want a mostly-empty xorg.conf
     config = pkgs.lib.mkForce ''
-        Section "ServerFlags"
-           Option "DontZap" "off"
-        EndSection
+      Section "ServerFlags"
+         Option "DontZap" "off"
+      EndSection
 
-        Section "Screen"
-           Identifier "Placeholder-NotImportant"
-           SubSection "Display"
-             Depth 24
-             Modes "1920x1080" "2560x1440"
-           EndSubSection
-        EndSection
+      Section "Screen"
+         Identifier "Placeholder-NotImportant"
+         SubSection "Display"
+           Depth 24
+           Modes "1920x1080" "2560x1440"
+         EndSubSection
+      EndSection
     '';
 
     libinput.enable = true;
@@ -182,26 +184,45 @@ args @ { config, pkgs, ... }:
   #    nixpkgs.overlays = [ ( self: super: { sof-firmware = unstable.sof-firmware; } ) ];
   #    hardware.pulseaudio.package = unstable.pulseaudioFull;
 
+  ################################################################################
+  ########## Brightness Settings
+  ################################################################################
   # TODO: backed up from branch main before pulling branch flake into main. Uncomment if helpful
-#           services.acpid.handlers = {
-#                 dim = {
-#                         event = "video/brightnessdown";
-#                         action = ''
-# DISPLAY=:0 \
-# XAUTHORITY=/home/john/.Xauthority \
-# ${pkgs.bash}/bin/sh -c "${pkgs.xorg.xrandr}/bin/xrandr --output eDP-1 --brightness 0.2" john
-#                                 '';
-# 
-#                 };
-#                 brighten = {
-#                         event = "video/brightnessup";
-#                         action = ''
-# DISPLAY=:0 \
-# XAUTHORITY=/home/john/.Xauthority \
-# ${pkgs.bash}/bin/sh -c "${pkgs.xorg.xrandr}/bin/xrandr --output eDP-1 --brightness 0.8" john
-#                                 '';
-#                 };
-#         };
-#         services.acpid.enable = true;
-#         services.acpid.logEvents = true;
+  #           services.acpid.handlers = {
+  #                 dim = {
+  #                         event = "video/brightnessdown";
+  #                         action = ''
+  # DISPLAY=:0 \
+  # XAUTHORITY=/home/john/.Xauthority \
+  # ${pkgs.bash}/bin/sh -c "${pkgs.xorg.xrandr}/bin/xrandr --output eDP-1 --brightness 0.2" john
+  #                                 '';
+  # 
+  #                 };
+  #                 brighten = {
+  #                         event = "video/brightnessup";
+  #                         action = ''
+  # DISPLAY=:0 \
+  # XAUTHORITY=/home/john/.Xauthority \
+  # ${pkgs.bash}/bin/sh -c "${pkgs.xorg.xrandr}/bin/xrandr --output eDP-1 --brightness 0.8" john
+  #                                 '';
+  #                 };
+  #         };
+  #         services.acpid.enable = true;
+  #         services.acpid.logEvents = true;
+
+
+  ################################################################################
+  ########## Sound Settings
+  ################################################################################
+  sound.enable = true;
+  hardware.pulseaudio = {
+    enable = true;
+    support32Bit = true;
+    extraModules = [ pkgs.pulseaudio-modules-bt ];
+    package = pkgs.pulseaudioFull;
+    extraConfig = "load-module module-switch-on-connect";
+  };
+  boot.extraModprobeConfig = ''
+    options snd-hda-intel model=alc295-hp-x360
+  '';
 }

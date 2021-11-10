@@ -68,7 +68,7 @@
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
             ];
-            specialArgs = { inherit (inputs) agenix flake-templates; inherit nixpkgs;};
+            specialArgs = { inherit (inputs) agenix flake-templates; inherit nixpkgs; };
           };
 
         # ova is designed to generate a VirtualBox Appliance output
