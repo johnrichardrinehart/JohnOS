@@ -181,4 +181,27 @@ args @ { config, pkgs, ... }:
   #boot.blacklistedKernelModules = [ "nvidia" "modesetting"];
   #    nixpkgs.overlays = [ ( self: super: { sof-firmware = unstable.sof-firmware; } ) ];
   #    hardware.pulseaudio.package = unstable.pulseaudioFull;
+
+  # TODO: backed up from branch main before pulling branch flake into main. Uncomment if helpful
+#           services.acpid.handlers = {
+#                 dim = {
+#                         event = "video/brightnessdown";
+#                         action = ''
+# DISPLAY=:0 \
+# XAUTHORITY=/home/john/.Xauthority \
+# ${pkgs.bash}/bin/sh -c "${pkgs.xorg.xrandr}/bin/xrandr --output eDP-1 --brightness 0.2" john
+#                                 '';
+# 
+#                 };
+#                 brighten = {
+#                         event = "video/brightnessup";
+#                         action = ''
+# DISPLAY=:0 \
+# XAUTHORITY=/home/john/.Xauthority \
+# ${pkgs.bash}/bin/sh -c "${pkgs.xorg.xrandr}/bin/xrandr --output eDP-1 --brightness 0.8" john
+#                                 '';
+#                 };
+#         };
+#         services.acpid.enable = true;
+#         services.acpid.logEvents = true;
 }
