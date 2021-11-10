@@ -1,0 +1,26 @@
+name: "John OS builder :)"
+# description: "Build John OS from the system flake :)"
+on:
+  schedule:
+    - cron: "0 0 1/14 * *" # At 12:00 AM, every 14 days, starting at month beginning
+  push:
+    tags:
+      - 'v*'
+jobs:
+  builds:
+    name: "nix build and release flow"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2.4.0
+      with:
+        fetch-depth: 0 # nix flakes do not work on shallow clones
+    - uses: cachix/install-nix-action@v14.1
+      with:
+        install_url: https://nixos-nix-install-tests.cachix.org/serve/grmc0pws5zskk5qshq9vnd77y0gb6whk/install
+        install_options: --tarball-url-prefix https://nixos-nix-install-tests.cachix.org/serve
+    - run: nix build .#flash-drive-iso
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          "./result/iso/*.iso"
