@@ -25,8 +25,9 @@ jobs:
     - run: sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
     - run: df -lh
     - run: nix build .#flash-drive-iso
+    - run: apt update && apt install tree && tree -L 3
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          "./result/iso/*.iso"
+          ./result/iso/*.iso
