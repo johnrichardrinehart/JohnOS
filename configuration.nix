@@ -61,7 +61,7 @@ args @ { config, pkgs, ... }:
     let
       defaultUserAttrs = {
         isNormalUser = true;
-        extraGroups = [ "wheel" "vboxsf" "audio" ]; # Enable ‘sudo’ for the user. And enable access to VBox shared folders
+        extraGroups = [ "wheel" "vboxsf" "audio" "docker" ]; # Enable ‘sudo’ for the user. And enable access to VBox shared folders
         shell = pkgs.zsh;
       };
     in
@@ -70,7 +70,6 @@ args @ { config, pkgs, ... }:
         hashedPassword = "$6$Ao7vxO2e5CHZ$QyJE9UHOUem41VHskn6bbuUdeLZFOFGLCVM0S.UmJWFooaXa3a3Nw.3NFZqklfqMGTfPXlJKIx.9xVcM3k6Z3/";
       };
       ardan = defaultUserAttrs // {
-        extraGroups = defaultUserAttrs.extraGroups ++ [ "docker" ];
         hashedPassword = "$6$GjNHUPIRR981Cov$TNQYuTmnGSvUMotD.dUqJ7c9dLCJi0hWL7ztsw1icJovNNjO1eA9vNH9ZXmQR0eaBVPgGrsaXAr/c8YouFhtY.";
       };
     };
