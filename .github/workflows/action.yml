@@ -31,7 +31,6 @@ jobs:
         sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
         df -lh # after cleaning up
         sudo apt update && sudo apt install tree && tree -l -L 3 # for checking the build directory, later
-        sudo apt install split # for chopping up the ISO at the end (2 GiB asset limit)
 
     - name: Build JohnOS 🔨🔨🔨
       run: |
