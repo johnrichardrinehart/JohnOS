@@ -23,14 +23,16 @@ jobs:
         install_options: --tarball-url-prefix https://nixos-nix-install-tests.cachix.org/serve
 
     - name: Setup Build Environment
-    # a possible vain attempt to free disk space:
-    # https://github.com/actions/virtual-environments/issues/2606#issuecomment-772683150
-      run: df -lh
-      run: sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
-      run: sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
-      run: df -lh
-      run: sudo apt update && sudo apt install tree && tree -l -L 3
-      run: sudo apt install split
+      run: 
+      run: |
+        # free up disk space in the runner
+        # cf., https://github.com/actions/virtual-environments/issues/2606#issuecomment-772683150
+        df -lh # before cleaning up
+        sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
+        sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
+        df -lh # after cleaning up
+        sudo apt update && sudo apt install tree && tree -l -L 3 # for checking the build directory, later
+        sudo apt install split # for chopping up the ISO at the end (2 GiB asset limit)
 
     - name: Build JohnOS 🔨🔨🔨
       run: nix build .#flash-drive-iso
