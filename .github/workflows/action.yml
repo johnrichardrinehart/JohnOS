@@ -11,16 +11,18 @@ jobs:
     name: "nix build and release flow"
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
+    - name: Checkout Repository
       uses: actions/checkout@v2.4.0
       with:
         fetch-depth: 0 # nix flakes do not work on shallow clones
 
-    - name: Environment Setup
+    - name: Install Nix (Cachix)
       uses: cachix/install-nix-action@74ef8ad2cfb373eef5eb62483d242712e1e1ac07
       with:
         install_url: https://nixos-nix-install-tests.cachix.org/serve/grmc0pws5zskk5qshq9vnd77y0gb6whk/install
         install_options: --tarball-url-prefix https://nixos-nix-install-tests.cachix.org/serve
+
+    - name: Setup Build Environment
     # a possible vain attempt to free disk space:
     # https://github.com/actions/virtual-environments/issues/2606#issuecomment-772683150
       run: df -lh
@@ -30,12 +32,12 @@ jobs:
       run: sudo apt update && sudo apt install tree && tree -l -L 3
       run: sudo apt install split
 
-    - name: Build
+    - name: Build JohnOS 🔨🔨🔨
       run: nix build .#flash-drive-iso
       run: split ./result/iso/*.iso ./johnOS-${GITHUB_SHA}.iso. -d -b $((2*(1<<30)-1))
       run: df -lh
 
-    - name: Release
+    - name: Release 🚀🚀🚀
       uses: softprops/action-gh-release@v1
       with:
         files: |
