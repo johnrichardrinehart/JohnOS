@@ -11,9 +11,11 @@ jobs:
     name: "nix build and release flow"
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout
     - uses: actions/checkout@v2.4.0
       with:
         fetch-depth: 0 # nix flakes do not work on shallow clones
+    - name: Environment Setup
     - uses: cachix/install-nix-action@74ef8ad2cfb373eef5eb62483d242712e1e1ac07
       with:
         install_url: https://nixos-nix-install-tests.cachix.org/serve/grmc0pws5zskk5qshq9vnd77y0gb6whk/install
@@ -24,10 +26,14 @@ jobs:
     - run: sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
     - run: sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
     - run: df -lh
+    - run: sudo apt update && sudo apt install tree && tree -l -L 3
+    - run: sudo apt install split
+    - name: Build
     - run: nix build .#flash-drive-iso
-    - run: sudo apt update && sudo apt install tree && tree -L 3
+    - run: split ./result/iso/*.iso ./johnOS-${GITHUB_SHA}.iso. -d -b $((2*(1<<30)-1))
+    - run: df -lh
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          ./result/iso/*.iso
+          ./johnOS-*.iso*
