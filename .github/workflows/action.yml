@@ -1,8 +1,6 @@
 name: "John OS builder :)"
 # description: "Build John OS from the system flake :)"
 on:
-  schedule:
-    - cron: "0 0 1/14 * *" # At 12:00 AM, every 14 days, starting at month beginning
   push:
     tags:
       - 'v*'
@@ -35,7 +33,7 @@ jobs:
     - name: Build JohnOS 🔨🔨🔨
       run: |
         nix build .#flash-drive-iso
-        split ./result/iso/*.iso ./johnOS-${GITHUB_SHA}.iso. -d -b $((2*(1<<30)-500*(1<<20)))
+        split ./result/iso/*.iso ./johnOS-${GITHUB_SHA}.iso. -d -b $((2*(1<<30)-100*(1<<20)))
         df -lh # check how much space compared to before
         tree -l -L 3 # check the build directory tree for asset files
 
