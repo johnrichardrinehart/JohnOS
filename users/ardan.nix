@@ -3,7 +3,6 @@ let
   extraPackages =
     let
       p = pkgs;
-      postman = pkgs.callPackage ./postman.nix { }; # TODO: homebrew flake until upstream PR is merged
     in
     [
       p.teams
@@ -17,8 +16,7 @@ let
       p.mysql
       p.dbeaver # graphical DB tool
       p.docker-compose
-    ] ++ [
-      postman
+      p.postman
     ];
 
   programs = {
