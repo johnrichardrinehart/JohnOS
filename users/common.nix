@@ -288,6 +288,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.unzip
         # programming languages
         p.go_1_17
+        p.gcc
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;

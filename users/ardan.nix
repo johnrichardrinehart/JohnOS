@@ -12,7 +12,6 @@ let
       p.python39Packages.pylint
       p.gnome.gnome-keyring
       p.gnumake
-      p.gcc
       p.mysql
       p.dbeaver # graphical DB tool
       p.docker-compose
