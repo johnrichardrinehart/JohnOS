@@ -9,16 +9,16 @@
 #  }, lib}:
 #  let
 #  config = (import lib.eval-config.nix {
-#  	modules = [
-#  		./iso.nix
-#  		./ssh.nix
-#  		./networking.nix
-#  		(import ./display.nix {autologinUser=(builtins.head (builtins.attrNames users));})
-#  		(import ./users.nix {users = users;})
-#  		./sound.nix
-#  		./packages.nix
-#  		./peripherals.nix
-#  	];
+#    modules = [
+#      ./iso.nix
+#      ./ssh.nix
+#      ./networking.nix
+#      (import ./display.nix {autologinUser=(builtins.head (builtins.attrNames users));})
+#      (import ./users.nix {users = users;})
+#      ./sound.nix
+#      ./packages.nix
+#      ./peripherals.nix
+#    ];
 #  }).config;
 #  
 #  in rec {
@@ -26,20 +26,20 @@
 #  }
 #
 
-{
-users ? {
-  test = {
-    password = "testy";
-    isNormalUser = true;
-  };
-}}:
+{ users ? {
+    test = {
+      password = "testy";
+      isNormalUser = true;
+    };
+  }
+}:
 [
-	./iso.nix 
-	./ssh.nix
-	./networking.nix
-	(import ./display.nix {autologinUser=(builtins.head (builtins.attrNames users));})
-	(import ./users.nix {users = users;})
-	./sound.nix
-	./packages.nix
-	./peripherals.nix
+  ./iso.nix
+  ./ssh.nix
+  ./networking.nix
+  (import ./display.nix { autologinUser = (builtins.head (builtins.attrNames users)); })
+  (import ./users.nix { users = users; })
+  ./sound.nix
+  ./packages.nix
+  ./peripherals.nix
 ]

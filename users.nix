@@ -1,12 +1,11 @@
-{
-  users ? {
-     dummy = {
-        password = "password";
-     };
-   }
+{ users ? {
+    dummy = {
+      password = "password";
+    };
+  }
 }:
-{config, pkgs, ...}:
+{ config, pkgs, ... }:
 {
-   nixpkgs.config.allowUnfree = true;
-   users.extraUsers = users;
+  nixpkgs.config.allowUnfree = true;
+  users.extraUsers = users;
 }
