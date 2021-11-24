@@ -110,6 +110,10 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         extraConfig = ''
           set autochdir
           set number
+          syntax on
+          filetype on
+
+          autocmd BufNewFile,BufRead *.svelte set filetype=html
         '';
         plugins = let p = pkgs.vimPlugins; in
           [
