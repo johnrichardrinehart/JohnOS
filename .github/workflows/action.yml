@@ -28,14 +28,12 @@ jobs:
         sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
         sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
         df -lh # after cleaning up
-        sudo apt update && sudo apt install tree
 
     - name: Build JohnOS 🔨🔨🔨
       run: |
         nix build .#flash-drive-iso
         split ./result/iso/*.iso ./johnOS-${GITHUB_SHA}.iso. -d -b $((2*(1<<30)-100*(1<<20)))
         df -lh # check how much space compared to before
-        tree -l -L 3 # check the build directory tree for asset files
 
     - name: Release 🚀🚀🚀
       uses: softprops/action-gh-release@v1
