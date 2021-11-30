@@ -197,6 +197,9 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
                 PS1=$(printf "%s\n$ " "$pwr")
               }
               precmd_functions+=(prompt)
+
+              # from https://stackoverflow.com/a/47285611
+              alias gbbd="git for-each-ref --sort=committerdate refs/heads/ --format='%(color: red)%(committerdate:short) %(color: cyan)%(refname:short)'"
             ''; in
           if builtins.hasAttr "zshInitExtra" args
           then base + args.zshInitExtra
