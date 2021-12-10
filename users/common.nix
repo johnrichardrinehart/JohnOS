@@ -33,7 +33,9 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         enable = true;
         extraConfig = ''
           enable_audio_bell no
-          scrollback_lines 50000
+          scrollback_lines 250000
+          map kitty_mod+f5 change_font_size all 12.0
+          map kitty_mod+f6 change_font_size all 18.0
         '';
       };
 
