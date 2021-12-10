@@ -32,7 +32,7 @@ jobs:
     - name: Build JohnOS 🔨🔨🔨
       run: |
         nix build .#flash-drive-iso
-        split ./result/iso/*.iso ./johnOS-${GITHUB_SHA}.iso. -d -b $((2*(1<<30)-50*(1<<20)))
+        split ./result/iso/*.iso ./johnOS-${GITHUB_SHA}.iso. -d -b $((2*(1<<30)-10*(1<<20)))
         df -lh # check how much space compared to before
 
     - name: Release 🚀🚀🚀
