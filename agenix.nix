@@ -5,7 +5,7 @@ args @ { config, pkgs, ... }:
     args.agenix.defaultPackage.x86_64-linux
   ];
 
-  age.sshKeyPaths = [ "/home/john/.ssh/id_rsa" "/etc/ssh/ssh_host_rsa_key" "/etc/ssh/ssh_host_ed25519_key" ];
+  age.identityPaths = [ "/home/john/.ssh/id_rsa" "/etc/ssh/ssh_host_rsa_key" "/etc/ssh/ssh_host_ed25519_key" ];
   age.secrets.secret1 = {
     file = ./secrets/secret1.age;
     owner = "john";
