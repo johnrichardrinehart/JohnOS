@@ -21,7 +21,7 @@
 
   outputs = inputs:
     let
-      nixpkgs = inputs.nixpkgs_release-2105;
+      nixpkgs-2105 = inputs.nixpkgs_release-2105;
       nixpkgs-unstable = inputs.nixpkgs_unstable;
 
       home-manager-config = {
@@ -43,11 +43,10 @@
         };
       };
 
-      photoDerivation = (
-        let pkgs = (import nixpkgs {
-          system = "x86_64-linux";
-        }); in (import ./photo/photo.nix { inherit pkgs; })
-      );
+      photoDerivation =
+        let
+          pkgs = import nixpkgs-unstable { system = "x86_64-linux"; };
+        in import ./photo/photo.nix { inherit pkgs; };
     in
     rec {
       nixosConfigurations = {
@@ -74,7 +73,11 @@
           };
 
         # ova is designed to generate a VirtualBox Appliance output
-        ova = nixpkgs-unstable.lib.nixosSystem {
+        ova =
+        let
+          nixpkgs = nixpkgs-unstable;
+        in
+        nixpkgs-unstable.lib.nixosSystem {
           system = "x86_64-linux";
           modules = [
             (import "${nixpkgs}/nixos/modules/virtualisation/virtualbox-image.nix")
