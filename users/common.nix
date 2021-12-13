@@ -20,7 +20,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
           init.defaultBranch = "main";
           core.editor = "vim";
           # TODO: commented for cargo-tarpaulin, remove line if nothing breaks
-          # url."git@github.com:".insteadOf = "https://github.com";
+          url."git@github.com:".insteadOf = "https://github.com";
           core.excludesFile = "~/.gitignore";
         };
       };
