@@ -103,7 +103,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       rofi = {
         enable = true;
         extraConfig = {
-          modi = "window,windowcd,run,ssh,drun,combi,keys,file-browser";
+          modi = "window,windowcd,run,ssh,drun,combi,keys,filebrowser";
         };
       };
 
