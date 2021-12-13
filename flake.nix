@@ -31,7 +31,6 @@
             users.john = ./users/john.nix;
             users.ardan = ./users/ardan.nix;
             extraSpecialArgs = { photo = photoDerivation; };
-            backupFileExtension = "hm.bkp";
           };
         };
 
