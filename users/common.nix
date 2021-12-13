@@ -273,6 +273,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.brave
         p.flameshot
         p.keepassxc
+        p.dbeaver
         # shell tools
         p.powerline-rs
         p.oil
