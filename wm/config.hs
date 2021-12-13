@@ -178,6 +178,7 @@ myPolybarLogHook dbus = myLogHook <+> dynamicLogWithPP (polybarHook dbus)
 -- myTerminal   = "alacritty"
 myTerminal   = "kitty"
 appLauncher  = "rofi -modi drun,ssh,window -show drun -show-icons"
+windowChooser  = "rofi -modi drun,ssh,window,windowcd -show window -show-icons"
 screenLocker = "multilockscreen -l dim"
 playerctl c  = "playerctl --player=spotify,%any " <> c
 
@@ -199,9 +200,10 @@ myKeys conf@XConfig {XMonad.modMask = modm} =
     , key "Next"          (0, xF86XK_AudioNext              ) $ spawn $ playerctl "next"
     ] ^++^
   keySet "Launchers"
-    [ key "Terminal"      (modm .|. shiftMask  , xK_Return  ) $ spawn (XMonad.terminal conf)
-    , key "Apps (Rofi)"   (modm                , xK_p       ) $ spawn appLauncher
-    , key "Lock screen"   (modm .|. controlMask, xK_l       ) $ spawn screenLocker
+    [ key "Terminal"       (modm .|. shiftMask  , xK_Return  ) $ spawn (XMonad.terminal conf)
+    , key "Apps (Rofi)"    (modm                , xK_p       ) $ spawn appLauncher
+    , key "Windows (Rofi)" (modm                , xK_d       ) $ spawn windowChooser
+    , key "Lock screen"    (modm .|. controlMask, xK_l       ) $ spawn screenLocker
     ] ^++^
   keySet "Layouts"
     [ key "Next"          (modm              , xK_space     ) $ sendMessage NextLayout
