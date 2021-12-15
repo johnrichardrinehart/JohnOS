@@ -12,7 +12,7 @@
     home-manager = {
       url = "github:nix-community/home-manager/release-21.05";
       flake = true;
-      inputs.nixpkgs.follows = "nixpkgs_release-2105";
+      inputs.nixpkgs.follows = "nixpkgs_unstable";
     };
 
     # agenix implementation borrowed from https://github.com/pimeys/system-flake
