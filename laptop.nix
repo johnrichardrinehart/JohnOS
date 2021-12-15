@@ -16,7 +16,12 @@ args @ { config, pkgs, ... }:
           version = "5.15.1";
           modDirVersion = version;
 
-          kernelPatches = [ ];
+          kernelPatches = [
+            {
+              name = "hp-spectre-x360-audio";
+              patch = ./laptop_audio.patch;
+            }
+          ];
 
           src = fetchurl {
             url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
