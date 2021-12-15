@@ -4,8 +4,10 @@
     nixpkgs_release-2009.url = "github:NixOS/nixpkgs/release-20.09";
     nixpkgs_release-2105.url = "github:NixOS/nixpkgs/release-21.05";
     nixpkgs_unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+
     flake-templates.url = "github:NixOS/templates";
 
+    nix-master.url = "github:NixOS/nix/master";
 
     home-manager = {
       url = "github:nix-community/home-manager/release-21.05";
@@ -19,6 +21,8 @@
 
   outputs = inputs:
     let
+      nix_pkg = inputs.nix-master.packages.x86_64-linux.nix;
+
       nixpkgs-2105 = inputs.nixpkgs_release-2105;
       nixpkgs-unstable = inputs.nixpkgs_unstable;
 
@@ -67,7 +71,7 @@
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
             ];
-            specialArgs = { inherit (inputs) agenix flake-templates; inherit nixpkgs; };
+            specialArgs = { inherit (inputs) agenix flake-templates; inherit nixpkgs nix_pkg; };
           };
 
         # ova is designed to generate a VirtualBox Appliance output
@@ -109,8 +113,6 @@
             system = "x86_64-linux";
             modules = [
               ./configuration.nix
-              #./agenix.nix
-              #inputs.agenix.nixosModules.age
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
@@ -122,7 +124,7 @@
                 };
               })
             ];
-            specialArgs = { inherit (inputs) agenix flake-templates; inherit nixpkgs; };
+            specialArgs = { inherit (inputs) agenix flake-templates; inherit nixpkgs nix_pkg; };
           };
 
 

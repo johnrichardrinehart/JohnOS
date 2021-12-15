@@ -82,7 +82,8 @@ args @ { config, pkgs, ... }:
 
 
   nix = {
-    package = pkgs.nixUnstable;
+    package = args.nix_pkg;
+
     extraOptions =
       let
         empty_registry = builtins.toFile "empty-flake-registry.json" ''{"flakes":[],"version":2}'';
