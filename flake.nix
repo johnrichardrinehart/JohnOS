@@ -3,9 +3,7 @@
     rpinixpkgs.url = "github:samueldr/nixpkgs/wip/armv7lfixes"; # from NixOS Discord
     nixpkgs_release-2009.url = "github:NixOS/nixpkgs/release-20.09";
     nixpkgs_release-2105.url = "github:NixOS/nixpkgs/release-21.05";
-    #nixpkgs_release-2105.url = "/home/john/code/repos/others/nixpkgs";
     nixpkgs_unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-    #nixpkgs_unstable.url = "/home/john/code/repos/others/nixpkgs";
     flake-templates.url = "github:NixOS/templates";
 
 
@@ -184,7 +182,6 @@
         vbox-config = nixosConfigurations.vbox-config;
       };
 
-      #        defaultPackage.x86_64-linux = packages.x86_64-linux.flash-drive-iso;
       defaultPackage.x86_64-linux = packages.x86_64-linux.vbox-config;
     };
 
