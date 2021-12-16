@@ -225,10 +225,6 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 
   services.polybar =
     let
-      bars = builtins.readFile ./polybar/bars.ini;
-      colors = builtins.readFile ./polybar/colors.ini;
-      modules = builtins.readFile ./polybar/modules.ini;
-      user_modules = builtins.readFile ./polybar/user_modules.ini;
       module_xmonad = ''
         [module/xmonad]
         type = custom/script
@@ -241,6 +237,38 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         type = custom/script
         exec = TZ=America/New_York ${pkgs.coreutils}/bin/date +"(NYC: %H:%M)"
         interval = 59
+        module-margin-right = 10
+      '';
+      module_battery = ''
+        [module/battery]
+        type = internal/battery
+        full-at = 99
+        battery = BAT0
+        adapter = ADP1
+        poll-interval = 10
+
+        format-charging = <animation-charging> <label-charging>
+        format-discharging = <ramp-capacity> <label-discharging>
+
+        format-full = <label-full>
+        format-full-prefix-foreground = #EC7875
+        label-charging = %percentage%%
+
+        label-discharging = %percentage%%
+        label-full = " Full"
+
+        ramp-capacity-0 = _
+        ramp-capacity-1 = _
+        ramp-capacity-2 = _
+        ramp-capacity-3 = _
+        ramp-capacity-4 = _
+        ramp-capacity-foreground = #EC407A
+
+        animation-charging-0 = _
+        animation-charging-1 = _
+        animation-charging-foreground = #61C766
+
+        animation-charging-framerate = 750
       '';
     in
     {
@@ -254,7 +282,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       script = ''
         polybar main &
       '';
-      extraConfig = bars + colors + modules + user_modules + module_xmonad + module_nyc_time;
+      extraConfig = module_xmonad + module_nyc_time + module_battery;
     };
 
 

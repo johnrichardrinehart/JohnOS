@@ -52,6 +52,7 @@ import           XMonad.Hooks.UrgencyHook              ( UrgencyHook(..)
                                                        , withUrgencyHook
                                                        )
 import           XMonad.Layout.Gaps                    ( gaps )
+import           XMonad.Layout.Fullscreen              ( fullscreenSupport )
 import           XMonad.Layout.MultiToggle             ( Toggle(..)
                                                        , mkToggle
                                                        , single
@@ -100,7 +101,7 @@ main :: IO ()
 main = mkDbusClient >>= main'
 
 main' :: D.Client -> IO ()
-main' dbus = xmonad . docks . ewmh . dynProjects . keybindings . urgencyHook $ def
+main' dbus = xmonad . fullscreenSupport . docks . ewmh . dynProjects . keybindings . urgencyHook $ def
   { terminal           = myTerminal
   , focusFollowsMouse  = False
   , clickJustFocuses   = False
