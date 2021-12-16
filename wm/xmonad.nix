@@ -41,20 +41,7 @@ let
       done
     }
 
-    configureAudio() {
-        ## Fix linux kernel's ability to process audio
-        ## c.f. https://askubuntu.com/questions/1263178/20-04-no-speaker-audio-on-hp-spectre-x360-2020-15t-eb000
-        sudo ${pkgs.alsa-tools}/bin/hda-verb /dev/snd/hwC0D0 0x01 SET_GPIO_DIR 0x01
-        sudo ${pkgs.alsa-tools}/bin/hda-verb /dev/snd/hwC0D0 0x01 SET_GPIO_MASK 0x01
-        sudo ${pkgs.alsa-tools}/bin/hda-verb /dev/snd/hwC0D0 0x01 SET_GPIO_DATA 0x01
-        sudo ${pkgs.alsa-tools}/bin/hda-verb /dev/snd/hwC0D0 0x01 SET_GPIO_DATA 0x00
-
-        ${pkgs.systemd}/bin/systemctl --user enable pulseaudio
-        ${pkgs.systemd}/bin/systemctl --user start pulseaudio
-    }
-
     configureKeyboards
-    configureAudio
     configureMonitors
 
     ${pkgs.feh}/bin/feh --bg-fill ${args.photo}/bin/ocean.jpg # configure background
