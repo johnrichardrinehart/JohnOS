@@ -51,6 +51,7 @@ args @ { config, pkgs, ... }:
       p.fira-code-symbols
       p.font-awesome
       (p.nerdfonts.override { fonts = [ "DroidSansMono" ]; })
+      p.inconsolata
     ];
 
   programs.zsh.enable = true;

@@ -225,6 +225,13 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 
   services.polybar =
     let
+      module_time_me = ''
+        [module/time-me]
+        type = custom/script
+        exec = /nix/store/l6f4z8mmcnnxba8w004xn28y0vr4gdkf-coreutils-9.0/bin/date +"%H:%M"
+        interval = 59
+      '';
+
       module_xmonad = ''
         [module/xmonad]
         type = custom/script
@@ -232,23 +239,28 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 
         tail = true
       '';
-      module_nyc_time = ''
+      module_time_nyc = ''
         [module/time-nyc]
         type = custom/script
         exec = TZ=America/New_York ${pkgs.coreutils}/bin/date +"(NYC: %H:%M)"
         interval = 59
-        module-margin-right = 10
       '';
       module_battery = ''
         [module/battery]
         type = internal/battery
+
+        bar-capacity-width=2
+        bar-capacity-empty=_
+        bar-capacity-fill=D
+        bar-capacity-indicator=*
+
         full-at = 99
         battery = BAT0
         adapter = ADP1
-        poll-interval = 10
+        poll-interval = 60
 
-        format-charging = <animation-charging> <label-charging>
-        format-discharging = <ramp-capacity> <label-discharging>
+        format-charging = <label-charging>
+        format-discharging =  <label-discharging>
 
         format-full = <label-full>
         format-full-prefix-foreground = #EC7875
@@ -268,7 +280,14 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         animation-charging-1 = _
         animation-charging-foreground = #61C766
 
+        animation-discharging-0 = _
+        animation-discharging-1 = _
+        animation-discharging-2 = ^
+        animation-discharging-foreground = #EC407A
+
+
         animation-charging-framerate = 750
+        animation-discharging-framerate = 500
       '';
     in
     {
@@ -282,7 +301,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       script = ''
         polybar main &
       '';
-      extraConfig = module_xmonad + module_nyc_time + module_battery;
+      extraConfig = module_xmonad + module_time_me + module_time_nyc + module_battery;
     };
 
 

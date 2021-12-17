@@ -454,13 +454,13 @@ scratchpads = scratchpadApp <$> [ audacious, btm, nautilus, scr, spotify ]
 ------------------------------------------------------------------------
 -- Workspaces
 --
-ttyWs = "tty"
-ideWs = "ide"
-commWs = "comm"
-free1Ws = "free1"
-free2Ws = "free2"
-free3Ws = "free3"
-free4Ws = "free4"
+ttyWs = "I"
+ideWs = "II"
+commWs = "III"
+free1Ws = "IV"
+free2Ws = "V"
+free3Ws = "VI"
+free4Ws = "VII"
 
 myWS :: [WorkspaceId]
 myWS = [ttyWs, ideWs, commWs, free1Ws, free2Ws, free3Ws, free4Ws]
