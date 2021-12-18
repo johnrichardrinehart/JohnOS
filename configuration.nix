@@ -50,6 +50,8 @@ args @ { config, pkgs, ... }:
       p.fira-code
       p.fira-code-symbols
       p.font-awesome
+      p.powerline-fonts
+      p.powerline-symbols
       (p.nerdfonts.override { fonts = [ "DroidSansMono" ]; })
     ];
 

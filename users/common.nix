@@ -1,5 +1,19 @@
 args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 {
+  home.file =
+    {
+      ".config/powerline-rs/themes/gruvbox.theme" = {
+        source = ./gruvbox.theme; # powerline-rs
+        target = ".config/powerline-rs/themes/gruvbox.theme";
+      };
+
+      ".config/i3status/net-speed.sh" = {
+        source = ../wm/net-speed.sh;
+        executable = true;
+      };
+    };
+
+
   xsession = {
     enable = true;
     # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
@@ -302,13 +316,6 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;
-
-  home.file = {
-    ".config/i3status/net-speed.sh" = {
-      source = ../wm/net-speed.sh;
-      executable = true;
-    };
-  };
 
   gtk = {
     enable = true;
