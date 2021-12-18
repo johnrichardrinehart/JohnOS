@@ -36,6 +36,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
           # TODO: commented for cargo-tarpaulin, remove line if nothing breaks
           url."git@github.com:".insteadOf = "https://github.com";
           core.excludesFile = "~/.gitignore";
+          pull.rebase = true;
         };
       };
 
