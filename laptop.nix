@@ -34,11 +34,6 @@ args @ { config, pkgs, ... }:
     pkgs.recurseIntoAttrs (pkgs.linuxPackagesFor latest_stable)
   );
 
-  hardware = {
-    bluetooth.enable = true;
-  };
-
-
   # add some filesystems for helping maintain state between reboots
   fileSystems = pkgs.lib.mkForce (config.lib.isoFileSystems //
     {
@@ -170,7 +165,6 @@ args @ { config, pkgs, ... }:
   #  hardware.bumblebee.enable = true;
 
   environment.systemPackages = [
-    pkgs.blueberry
     pkgs.hicolor-icon-theme
   ];
 
@@ -204,10 +198,6 @@ args @ { config, pkgs, ... }:
   #         services.acpid.enable = true;
   #         services.acpid.logEvents = true;
 
-
-  ################################################################################
-  ########## Sound Settings
-  ################################################################################
   sound.enable = true;
   hardware.pulseaudio = {
     enable = true;
@@ -215,4 +205,21 @@ args @ { config, pkgs, ... }:
     extraModules = [ pkgs.pulseaudio-modules-bt ];
     package = pkgs.pulseaudioFull;
   };
+
+  # bluetooth stuff
+  services.blueman.enable = true;
+  hardware = {
+    bluetooth.enable = true;
+  };
+
+  ## Below v4l2loopback stuff stolen from https://gist.github.com/TheSirC/93130f70cc280cdcdff89faf8d4e98ab
+  # Extra kernel modules
+  boot.extraModulePackages = [
+    config.boot.kernelPackages.v4l2loopback
+  ];
+
+  # Register a v4l2loopback device at boot
+  boot.kernelModules = [
+    "v4l2loopback"
+  ];
 }
