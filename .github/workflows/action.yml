@@ -15,10 +15,7 @@ jobs:
         fetch-depth: 0 # nix flakes do not work on shallow clones
 
     - name: Install Nix (Cachix)
-      uses: cachix/install-nix-action@74ef8ad2cfb373eef5eb62483d242712e1e1ac07
-      with:
-        install_url: https://nixos-nix-install-tests.cachix.org/serve/grmc0pws5zskk5qshq9vnd77y0gb6whk/install
-        install_options: --tarball-url-prefix https://nixos-nix-install-tests.cachix.org/serve
+      uses: cachix/install-nix-action@v16
 
     - name: Setup Build Environment
       run: |
