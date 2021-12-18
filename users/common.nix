@@ -297,6 +297,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.tmux
         p.xdg-utils # `open`
         p.xclip
+        p.fd
         # language tools
         p.jq
         p.nixpkgs-fmt
