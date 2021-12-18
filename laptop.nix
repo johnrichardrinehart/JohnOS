@@ -42,34 +42,39 @@ args @ { config, pkgs, ... }:
           device = "/dev/mmcblk0p1";
           fsType = "ext4";
           neededForBoot = false;
+          options = [
+            "x-systemd.automount" "noauto" # don't hang on boot, https://wiki.archlinux.org/title/Overlay_filesystem
+          ];
         };
       "/etc" =
         {
           fsType = "overlay";
           device = "overlay";
+          neededForBoot = false;
+          depends = [
+            "/mnt/root"
+          ];
           options = [
             "lowerdir=/etc"
             "upperdir=/mnt/root/etc_upper"
             "workdir=/mnt/root/etc/.etc_work"
+            "x-systemd.automount" "noauto" # don't hang on boot
           ];
-          depends = [
-            "/mnt/root"
-          ];
-          neededForBoot = false;
         };
       "/home" =
         {
           fsType = "overlay";
           device = "overlay";
+          neededForBoot = false;
+          depends = [
+            "/mnt/root"
+          ];
           options = [
             "lowerdir=/home"
             "upperdir=/mnt/root/home_upper"
             "workdir=/mnt/root/.home_work"
+            "x-systemd.automount" "noauto" # don't hang on boot
           ];
-          depends = [
-            "/mnt/root"
-          ];
-          neededForBoot = false;
         };
     });
 
