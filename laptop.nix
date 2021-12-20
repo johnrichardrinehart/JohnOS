@@ -43,14 +43,28 @@ args @ { config, pkgs, ... }:
           fsType = "ext4";
           neededForBoot = false;
         };
-      "/etc" =
+      "/var/lib/docker" =
         {
           fsType = "overlay";
           device = "overlay";
           options = [
-            "lowerdir=/etc"
-            "upperdir=/mnt/root/etc_upper"
-            "workdir=/mnt/root/etc/.etc_work"
+            "lowerdir=/var/lib/docker"
+            "upperdir=/mnt/root/var/lib/docker"
+            "workdir=/mnt/root/.docker_work"
+          ];
+          depends = [
+            "/mnt/root"
+          ];
+          neededForBoot = false;
+        };
+      "/var/lib/bluetooth" =
+        {
+          fsType = "overlay";
+          device = "overlay";
+          options = [
+            "lowerdir=/var/lib/bluetooth"
+            "upperdir=/mnt/root/var/lib/bluetooth"
+            "workdir=/mnt/root/.bluetooth_work"
           ];
           depends = [
             "/mnt/root"
