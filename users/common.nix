@@ -298,6 +298,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.xdg-utils # `open`
         p.xclip
         p.fd
+        p.bc
         # language tools
         p.jq
         p.nixpkgs-fmt
