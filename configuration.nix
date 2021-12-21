@@ -86,6 +86,14 @@ args @ { config, pkgs, ... }:
   nix = {
     package = args.nix_pkg;
 
+    binaryCaches = [
+      "https://johnos.cachix.org"
+    ];
+
+    binaryCachePublicKeys = [
+      "johnos.cachix.org-1:wwbcQLNTaO9dx0CIXN+uC3vFl8fvhtkJbZWzMXWLFu0="
+    ];
+
     extraOptions =
       let
         empty_registry = builtins.toFile "empty-flake-registry.json" ''{"flakes":[],"version":2}'';
