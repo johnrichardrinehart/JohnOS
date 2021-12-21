@@ -51,9 +51,9 @@ args @ { config, pkgs, ... }:
             "lowerdir=/var/lib/docker"
             "upperdir=/mnt/root/var/lib/docker"
             "workdir=/mnt/root/.docker_work"
-          ];
-          depends = [
-            "/mnt/root"
+            "x-systemd.requires=/mnt/root"
+            "x-systemd.requires=/var/lib/docker"
+            "nofail"
           ];
           neededForBoot = false;
         };
@@ -65,9 +65,9 @@ args @ { config, pkgs, ... }:
             "lowerdir=/var/lib/bluetooth"
             "upperdir=/mnt/root/var/lib/bluetooth"
             "workdir=/mnt/root/.bluetooth_work"
-          ];
-          depends = [
-            "/mnt/root"
+            "x-systemd.requires=/mnt/root"
+            "x-systemd.requires=/var/lib/bluetooth"
+            "nofail"
           ];
           neededForBoot = false;
         };
@@ -79,9 +79,9 @@ args @ { config, pkgs, ... }:
             "lowerdir=/home"
             "upperdir=/mnt/root/home_upper"
             "workdir=/mnt/root/.home_work"
-          ];
-          depends = [
-            "/mnt/root"
+            "x-systemd.requires=/mnt/root"
+            "x-systemd.requires=/home"
+            "nofail"
           ];
           neededForBoot = false;
         };
