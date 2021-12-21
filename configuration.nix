@@ -22,6 +22,10 @@ args @ { config, pkgs, ... }:
 
   console.useXkbConfig = true;
 
+  # useful for VS Code extensions that require an auth keyring
+  services.gnome.gnome-keyring.enable = true;
+  # services.dconf.enable = true; # may be necessary for gnome-keyring... not sure
+
   # Configure keymap in X11
   services.xserver = {
     enable = true;

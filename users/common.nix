@@ -22,6 +22,10 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
     windowManager.xmonad = (import ../wm args).xmonad;
     initExtra = (import ../wm args).initExtra;
 
+    profileExtra = ''
+      eval $(${pkgs.gnome3.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
+      export SSH_AUTH_SOCK
+    '';
   };
 
   programs = lib.recursiveUpdate
