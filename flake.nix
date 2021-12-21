@@ -48,7 +48,8 @@
       photoDerivation =
         let
           pkgs = import nixpkgs-unstable { system = "x86_64-linux"; };
-        in import ./photo/photo.nix { inherit pkgs; };
+        in
+        import ./photo/photo.nix { inherit pkgs; };
     in
     rec {
       nixosConfigurations = {
@@ -76,21 +77,21 @@
 
         # ova is designed to generate a VirtualBox Appliance output
         ova =
-        let
-          nixpkgs = nixpkgs-unstable;
-        in
-        nixpkgs-unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          modules = [
-            (import "${nixpkgs}/nixos/modules/virtualisation/virtualbox-image.nix")
-            ./configuration.nix
-            ./agenix.nix
-            inputs.agenix.nixosModules.age
-            inputs.home-manager.nixosModules.home-manager
-            home-manager-config
-          ];
-          specialArgs = { inherit (inputs) agenix; inherit nixpkgs; };
-        };
+          let
+            nixpkgs = nixpkgs-unstable;
+          in
+          nixpkgs-unstable.lib.nixosSystem {
+            system = "x86_64-linux";
+            modules = [
+              (import "${nixpkgs}/nixos/modules/virtualisation/virtualbox-image.nix")
+              ./configuration.nix
+              ./agenix.nix
+              inputs.agenix.nixosModules.age
+              inputs.home-manager.nixosModules.home-manager
+              home-manager-config
+            ];
+            specialArgs = { inherit (inputs) agenix; inherit nixpkgs; };
+          };
 
         vps-iso =
           let nixpkgs = nixpkgs-unstable; in
