@@ -61,7 +61,6 @@
           nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             modules = [
-              ./hardware-configuration.nix
               ./virtualbox.nix
               ./configuration.nix
               inputs.home-manager.nixosModules.home-manager
