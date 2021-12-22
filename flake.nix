@@ -61,8 +61,8 @@
           nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             modules = [
-              ./virtualbox.nix
-              ./configuration.nix
+              ./modules/machines/virtualbox.nix
+              ./modules/configuration.nix
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
             ];
@@ -90,7 +90,7 @@
           nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             modules = [
-              ./vps_configuration.nix
+              ./modules/machines/vps_configuration.nix
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
               ({ config, pkgs, ... }: {
                 isoImage = {
@@ -105,11 +105,11 @@
           nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             modules = [
-              ./configuration.nix
+              ./modules/machines/hp_spectre_x360.nix
+              ./modules/configuration.nix
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-              ./laptop.nix
               ({ config, pkgs, ... }: {
                 isoImage = {
                   isoBaseName = "johnos_" + (inputs.self.rev or "dirty");
@@ -128,7 +128,6 @@
           inputs.nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             modules = [
-              #            ./configuration.nix
               ({ config, nixpkgs, ... }: {
                 config.nixpkgs.crossSystem = nixpkgs.lib.systems.examples.raspberryPi;
               })
@@ -144,7 +143,6 @@
           nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             modules = [
-              #            ./configuration.nix
               ({ config, nixpkgs, ... }: {
                 config.nixpkgs.crossSystem = nixpkgs.lib.systems.examples.raspberryPi;
               })
@@ -160,7 +158,6 @@
           nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             modules = [
-              #            ./configuration.nix
               ({ config, nixpkgs, ... }: {
                 config.nixpkgs.crossSystem = nixpkgs.lib.systems.examples.raspberryPi;
               })
