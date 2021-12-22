@@ -14,9 +14,6 @@
       flake = true;
       inputs.nixpkgs.follows = "nixpkgs_unstable";
     };
-
-    # agenix implementation borrowed from https://github.com/pimeys/system-flake
-    agenix.url = "github:ryantm/agenix";
   };
 
   outputs = inputs:
@@ -67,12 +64,10 @@
               ./hardware-configuration.nix
               ./virtualbox.nix
               ./configuration.nix
-              ./agenix.nix
-              inputs.agenix.nixosModules.age
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
             ];
-            specialArgs = { inherit (inputs) agenix flake-templates; inherit nixpkgs nix_pkg; };
+            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
           };
 
         # ova is designed to generate a VirtualBox Appliance output
@@ -85,12 +80,10 @@
             modules = [
               (import "${nixpkgs}/nixos/modules/virtualisation/virtualbox-image.nix")
               ./configuration.nix
-              ./agenix.nix
-              inputs.agenix.nixosModules.age
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
             ];
-            specialArgs = { inherit (inputs) agenix; inherit nixpkgs; };
+            specialArgs = { inherit (inputs); inherit nixpkgs; };
           };
 
         vps-iso =
@@ -125,7 +118,7 @@
                 };
               })
             ];
-            specialArgs = { inherit (inputs) agenix flake-templates; inherit nixpkgs nix_pkg; };
+            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
           };
 
 
