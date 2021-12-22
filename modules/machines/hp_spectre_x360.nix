@@ -7,8 +7,6 @@ args @ { config, pkgs, ... }:
 
   # https://nixos.wiki/wiki/Linux_kernel#Booting_a_kernel_from_a_custom_source
 
-  # TODO: remove allowUnbroken once ZFS in linux kernel is fixed
-  nixpkgs.config.allowBroken = true;
   boot.kernelPackages = pkgs.lib.mkForce (
     let
       latest_stable_pkg = { fetchurl, buildLinux, ... } @ args:
@@ -51,62 +49,61 @@ args @ { config, pkgs, ... }:
   );
 
   # add some filesystems for helping maintain state between reboots
-  fileSystems = pkgs.lib.mkForce
-    (config.lib.isoFileSystems //
-      {
-        "/mnt/root" =
-          {
-            device = "/dev/mmcblk0p1";
-            fsType = "ext4";
-            neededForBoot = false;
-          };
-        "/var/lib/docker" =
-          {
-            fsType = "overlay";
-            device = "overlay";
-            options = [
-              "lowerdir=/var/lib/docker"
-              "upperdir=/mnt/root/var/lib/docker"
-              "workdir=/mnt/root/.docker_work"
-              "x-systemd.requires=/mnt/root"
-              "x-systemd.requires=/var/lib/docker"
-              "nofail"
-            ];
-            neededForBoot = false;
-          };
-        "/var/lib/bluetooth" =
-          {
-            fsType = "overlay";
-            device = "overlay";
-            options = [
-              "lowerdir=/var/lib/bluetooth"
-              "upperdir=/mnt/root/var/lib/bluetooth"
-              "workdir=/mnt/root/.bluetooth_work"
-              "x-systemd.requires=/mnt/root"
-              "x-systemd.requires=/var/lib/bluetooth"
-              "nofail"
-            ];
-            neededForBoot = false;
-          };
-        "/home" =
-          {
-            fsType = "overlay";
-            device = "overlay";
-            options = [
-              "lowerdir=/home"
-              "upperdir=/mnt/root/home_upper"
-              "workdir=/mnt/root/.home_work"
-              "x-systemd.requires=/mnt/root"
-              "x-systemd.requires=/home"
-              "nofail"
-            ];
-            neededForBoot = false;
-          };
-      });
+#  fileSystems = pkgs.lib.mkForce
+#    (config.lib.isoFileSystems //
+#      {
+#        "/mnt/root" =
+#          {
+#            device = "/dev/mmcblk0p1";
+#            fsType = "ext4";
+#            neededForBoot = false;
+#          };
+#        "/var/lib/docker" =
+#          {
+#            fsType = "overlay";
+#            device = "overlay";
+#            options = [
+#              "lowerdir=/var/lib/docker"
+#              "upperdir=/mnt/root/var/lib/docker"
+#              "workdir=/mnt/root/.docker_work"
+#              "x-systemd.requires=/mnt/root"
+#              "x-systemd.requires=/var/lib/docker"
+#              "nofail"
+#            ];
+#            neededForBoot = false;
+#          };
+#        "/var/lib/bluetooth" =
+#          {
+#            fsType = "overlay";
+#            device = "overlay";
+#            options = [
+#              "lowerdir=/var/lib/bluetooth"
+#              "upperdir=/mnt/root/var/lib/bluetooth"
+#              "workdir=/mnt/root/.bluetooth_work"
+#              "x-systemd.requires=/mnt/root"
+#              "x-systemd.requires=/var/lib/bluetooth"
+#              "nofail"
+#            ];
+#            neededForBoot = false;
+#          };
+#        "/home" =
+#          {
+#            fsType = "overlay";
+#            device = "overlay";
+#            options = [
+#              "lowerdir=/home"
+#              "upperdir=/mnt/root/home_upper"
+#              "workdir=/mnt/root/.home_work"
+#              "x-systemd.requires=/mnt/root"
+#              "x-systemd.requires=/home"
+#              "nofail"
+#            ];
+#            neededForBoot = false;
+#          };
+#      });
 
   # disabled by installation-cd-minimal
-  fonts.fontconfig.enable = pkgs.lib.mkForce
-    true;
+  fonts.fontconfig.enable = pkgs.lib.mkForce true;
 
   # use xinput to discover the name of the laptop keyboard (not lsusb)
   services.xserver = {
