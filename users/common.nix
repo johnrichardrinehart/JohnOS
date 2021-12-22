@@ -303,6 +303,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.xclip
         p.fd
         p.bc
+        p.ncdu # ncurses disk usage (tree+du, basically)
         # language tools
         p.jq
         p.nixpkgs-fmt
