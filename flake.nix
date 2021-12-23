@@ -61,7 +61,7 @@
           nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             modules = [
-              ./modules/machines/virtualbox.nix
+              ./modules/machines/virtualbox
               ./modules/configuration.nix
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
@@ -90,7 +90,7 @@
           nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             modules = [
-              ./modules/machines/vps_configuration.nix
+              ./modules/machines/vps_configuration
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
               ({ config, pkgs, ... }: {
                 isoImage = {
@@ -105,7 +105,7 @@
           nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             modules = [
-              ./modules/machines/hp_spectre_x360.nix
+              ./modules/machines/hp_spectre_x360
               ./modules/configuration.nix
               ./nixos_modules/installer/cd-dvd/installation-cd-base.nix
               inputs.home-manager.nixosModules.home-manager
@@ -139,34 +139,34 @@
                     isoName = "johnos_" + (inputs.self.rev or "dirty") + ".iso";
                   };
 
-     # Create the ISO image.
-     system.build.isoImage = pkgs.callPackage ./lib/make-iso9660-image.nix ({
-       inherit (config.isoImage) isoName;
-       contents = [
-         {
-           source = config.boot.kernelPackages.kernel + "/" + config.system.boot.loader.kernelFile;
-           target = "/boot/" + config.system.boot.loader.kernelFile;
-         }
-         {
-           source = config.system.build.initialRamdisk + "/" + config.system.boot.loader.initrdFile;
-           target = "/boot/" + config.system.boot.loader.initrdFile;
-         }
-       ];
-       bootable = true;
-       bootImage = "/isolinux/isolinux.bin";
-       syslinux = pkgs.syslinux;
-     } // {
-       usbBootable = true;
-       isohybridMbrImage = "${pkgs.syslinux}/share/syslinux/isohdpfx.bin";
-     } // {
-       efiBootable = true;
-       efiBootImage = "boot/efi.img";
-     });
+                  # Create the ISO image.
+                  system.build.isoImage = pkgs.callPackage ./lib/make-iso9660-image.nix ({
+                    inherit (config.isoImage) isoName;
+                    contents = [
+                      {
+                        source = config.boot.kernelPackages.kernel + "/" + config.system.boot.loader.kernelFile;
+                        target = "/boot/" + config.system.boot.loader.kernelFile;
+                      }
+                      {
+                        source = config.system.build.initialRamdisk + "/" + config.system.boot.loader.initrdFile;
+                        target = "/boot/" + config.system.boot.loader.initrdFile;
+                      }
+                    ];
+                    bootable = true;
+                    bootImage = "/isolinux/isolinux.bin";
+                    syslinux = pkgs.syslinux;
+                  } // {
+                    usbBootable = true;
+                    isohybridMbrImage = "${pkgs.syslinux}/share/syslinux/isohdpfx.bin";
+                  } // {
+                    efiBootable = true;
+                    efiBootImage = "boot/efi.img";
+                  });
 
                 };
               })
             ];
-            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg;};
+            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
           };
 
 

@@ -20,19 +20,20 @@ args @ { config, pkgs, ... }:
               patch = pkgs.writeTextFile {
                 name = "hp_spectre_x360_speakers.patch";
                 text = ''
---- a/sound/pci/hda/patch_realtek.c	2021-11-06 15:13:31.000000000 +0200
-+++ b/sound/pci/hda/patch_realtek.c	2021-12-14 13:13:04.201755942 +0200
-@@ -8604,6 +8604,7 @@
- 	SND_PCI_QUIRK(0x103c, 0x861f, "HP Elite Dragonfly G1", ALC285_FIXUP_HP_GPIO_AMP_INIT),
- 	SND_PCI_QUIRK(0x103c, 0x869d, "HP", ALC236_FIXUP_HP_MUTE_LED),
- 	SND_PCI_QUIRK(0x103c, 0x86c7, "HP Envy AiO 32", ALC274_FIXUP_HP_ENVY_GPIO),
-+	SND_PCI_QUIRK(0x103c, 0x86e8, "HP Spectre x360 15", ALC245_FIXUP_HP_X360_AMP),
- 	SND_PCI_QUIRK(0x103c, 0x8716, "HP Elite Dragonfly G2 Notebook PC", ALC285_FIXUP_HP_GPIO_AMP_INIT),
- 	SND_PCI_QUIRK(0x103c, 0x8720, "HP EliteBook x360 1040 G8 Notebook PC", ALC285_FIXUP_HP_GPIO_AMP_INIT),
- 	SND_PCI_QUIRK(0x103c, 0x8724, "HP EliteBook 850 G7", ALC285_FIXUP_HP_GPIO_LED),
-              '';
-            };
-          }];
+                  --- a/sound/pci/hda/patch_realtek.c  2021-11-06 15:13:31.000000000 +0200
+                  +++ b/sound/pci/hda/patch_realtek.c  2021-12-14 13:13:04.201755942 +0200
+                  @@ -8604,6 +8604,7 @@
+                     SND_PCI_QUIRK(0x103c, 0x861f, "HP Elite Dragonfly G1", ALC285_FIXUP_HP_GPIO_AMP_INIT),
+                     SND_PCI_QUIRK(0x103c, 0x869d, "HP", ALC236_FIXUP_HP_MUTE_LED),
+                     SND_PCI_QUIRK(0x103c, 0x86c7, "HP Envy AiO 32", ALC274_FIXUP_HP_ENVY_GPIO),
+                  +  SND_PCI_QUIRK(0x103c, 0x86e8, "HP Spectre x360 15", ALC245_FIXUP_HP_X360_AMP),
+                     SND_PCI_QUIRK(0x103c, 0x8716, "HP Elite Dragonfly G2 Notebook PC", ALC285_FIXUP_HP_GPIO_AMP_INIT),
+                     SND_PCI_QUIRK(0x103c, 0x8720, "HP EliteBook x360 1040 G8 Notebook PC", ALC285_FIXUP_HP_GPIO_AMP_INIT),
+                     SND_PCI_QUIRK(0x103c, 0x8724, "HP EliteBook 850 G7", ALC285_FIXUP_HP_GPIO_LED),
+                '';
+              };
+            }
+          ];
 
           src = fetchurl {
             url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
@@ -49,58 +50,58 @@ args @ { config, pkgs, ... }:
   );
 
   # add some filesystems for helping maintain state between reboots
-#  fileSystems = pkgs.lib.mkForce
-#    (config.lib.isoFileSystems //
-#      {
-#        "/mnt/root" =
-#          {
-#            device = "/dev/mmcblk0p1";
-#            fsType = "ext4";
-#            neededForBoot = false;
-#          };
-#        "/var/lib/docker" =
-#          {
-#            fsType = "overlay";
-#            device = "overlay";
-#            options = [
-#              "lowerdir=/var/lib/docker"
-#              "upperdir=/mnt/root/var/lib/docker"
-#              "workdir=/mnt/root/.docker_work"
-#              "x-systemd.requires=/mnt/root"
-#              "x-systemd.requires=/var/lib/docker"
-#              "nofail"
-#            ];
-#            neededForBoot = false;
-#          };
-#        "/var/lib/bluetooth" =
-#          {
-#            fsType = "overlay";
-#            device = "overlay";
-#            options = [
-#              "lowerdir=/var/lib/bluetooth"
-#              "upperdir=/mnt/root/var/lib/bluetooth"
-#              "workdir=/mnt/root/.bluetooth_work"
-#              "x-systemd.requires=/mnt/root"
-#              "x-systemd.requires=/var/lib/bluetooth"
-#              "nofail"
-#            ];
-#            neededForBoot = false;
-#          };
-#        "/home" =
-#          {
-#            fsType = "overlay";
-#            device = "overlay";
-#            options = [
-#              "lowerdir=/home"
-#              "upperdir=/mnt/root/home_upper"
-#              "workdir=/mnt/root/.home_work"
-#              "x-systemd.requires=/mnt/root"
-#              "x-systemd.requires=/home"
-#              "nofail"
-#            ];
-#            neededForBoot = false;
-#          };
-#      });
+  #  fileSystems = pkgs.lib.mkForce
+  #    (config.lib.isoFileSystems //
+  #      {
+  #        "/mnt/root" =
+  #          {
+  #            device = "/dev/mmcblk0p1";
+  #            fsType = "ext4";
+  #            neededForBoot = false;
+  #          };
+  #        "/var/lib/docker" =
+  #          {
+  #            fsType = "overlay";
+  #            device = "overlay";
+  #            options = [
+  #              "lowerdir=/var/lib/docker"
+  #              "upperdir=/mnt/root/var/lib/docker"
+  #              "workdir=/mnt/root/.docker_work"
+  #              "x-systemd.requires=/mnt/root"
+  #              "x-systemd.requires=/var/lib/docker"
+  #              "nofail"
+  #            ];
+  #            neededForBoot = false;
+  #          };
+  #        "/var/lib/bluetooth" =
+  #          {
+  #            fsType = "overlay";
+  #            device = "overlay";
+  #            options = [
+  #              "lowerdir=/var/lib/bluetooth"
+  #              "upperdir=/mnt/root/var/lib/bluetooth"
+  #              "workdir=/mnt/root/.bluetooth_work"
+  #              "x-systemd.requires=/mnt/root"
+  #              "x-systemd.requires=/var/lib/bluetooth"
+  #              "nofail"
+  #            ];
+  #            neededForBoot = false;
+  #          };
+  #        "/home" =
+  #          {
+  #            fsType = "overlay";
+  #            device = "overlay";
+  #            options = [
+  #              "lowerdir=/home"
+  #              "upperdir=/mnt/root/home_upper"
+  #              "workdir=/mnt/root/.home_work"
+  #              "x-systemd.requires=/mnt/root"
+  #              "x-systemd.requires=/home"
+  #              "nofail"
+  #            ];
+  #            neededForBoot = false;
+  #          };
+  #      });
 
   # disabled by installation-cd-minimal
   fonts.fontconfig.enable = pkgs.lib.mkForce true;

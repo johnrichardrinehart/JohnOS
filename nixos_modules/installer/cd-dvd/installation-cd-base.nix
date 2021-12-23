@@ -5,11 +5,11 @@ args @ { config, lib, options, pkgs, ... }:
 {
   imports =
     [
-#      ./iso-image.nix
-#
-#      # Profiles of this basic installation CD.
-#      ../../profiles/all-hardware.nix
-#      ../../profiles/base.nix
+      #      ./iso-image.nix
+      #
+      #      # Profiles of this basic installation CD.
+      #      ../../profiles/all-hardware.nix
+      #      ../../profiles/base.nix
     ];
 
   # Adds terminus_font for people with HiDPI displays
