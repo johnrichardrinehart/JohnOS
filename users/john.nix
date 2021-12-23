@@ -8,8 +8,6 @@ let
       p.scid-vs-pc
       # CLI
       p.fzf
-      # development
-      p.ghc
       # instant messengers
       p.tdesktop
       p.signal-desktop

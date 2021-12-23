@@ -11,19 +11,18 @@ args @ { config, pkgs, ... }:
     let
       latest_stable_pkg = { fetchurl, buildLinux, ... } @ args:
         buildLinux (args // rec {
-          version = "5.15.10";
+          version = "5.15.11";
           modDirVersion = version;
 
           kernelPatches = [
             {
               name = "hp-spectre-x360-audio";
-              patch = ./audio.patch;
-            }
-          ];
+              patch = ./hp_spectre_x360_audio.patch;
+            }];
 
           src = fetchurl {
             url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
-            sha256 = "SE/PXfjQDdxXCvRD7zM4KhELM4I5sfRwSJdLqiJFW0s=";
+            sha256 = "wReLfn4S2RKS5nAZEmjj/po1Y/r4me70PkaFd+lzoc4=";
           };
 
         } // (args.argsOverride or { }));
