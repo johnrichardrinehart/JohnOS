@@ -17,21 +17,7 @@ args @ { config, pkgs, ... }:
           kernelPatches = [
             {
               name = "hp-spectre-x360-audio";
-              patch = pkgs.writeTextFile {
-                name = "hp_spectre_x360_speakers.patch";
-                text = ''
-                  --- a/sound/pci/hda/patch_realtek.c  2021-11-06 15:13:31.000000000 +0200
-                  +++ b/sound/pci/hda/patch_realtek.c  2021-12-14 13:13:04.201755942 +0200
-                  @@ -8604,6 +8604,7 @@
-                     SND_PCI_QUIRK(0x103c, 0x861f, "HP Elite Dragonfly G1", ALC285_FIXUP_HP_GPIO_AMP_INIT),
-                     SND_PCI_QUIRK(0x103c, 0x869d, "HP", ALC236_FIXUP_HP_MUTE_LED),
-                     SND_PCI_QUIRK(0x103c, 0x86c7, "HP Envy AiO 32", ALC274_FIXUP_HP_ENVY_GPIO),
-                  +  SND_PCI_QUIRK(0x103c, 0x86e8, "HP Spectre x360 15", ALC245_FIXUP_HP_X360_AMP),
-                     SND_PCI_QUIRK(0x103c, 0x8716, "HP Elite Dragonfly G2 Notebook PC", ALC285_FIXUP_HP_GPIO_AMP_INIT),
-                     SND_PCI_QUIRK(0x103c, 0x8720, "HP EliteBook x360 1040 G8 Notebook PC", ALC285_FIXUP_HP_GPIO_AMP_INIT),
-                     SND_PCI_QUIRK(0x103c, 0x8724, "HP EliteBook 850 G7", ALC285_FIXUP_HP_GPIO_LED),
-                '';
-              };
+              patch = ./audio.patch;
             }
           ];
 
