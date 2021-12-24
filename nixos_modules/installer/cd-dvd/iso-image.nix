@@ -648,7 +648,6 @@ in
       options = [ "loop" ];
       neededForBoot = true;
       };
-    */
 
     "/nix/.rw-store" = mkImageMediaOverride
       {
@@ -672,6 +671,7 @@ in
           "/nix/.rw-store/work"
         ];
       };
+    */
   };
 
   config = {
