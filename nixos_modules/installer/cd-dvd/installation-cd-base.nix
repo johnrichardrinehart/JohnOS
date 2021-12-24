@@ -15,9 +15,6 @@ args @ { config, lib, options, pkgs, ... }:
   # Adds terminus_font for people with HiDPI displays
   console.packages = options.console.packages.default ++ [ pkgs.terminus_font ];
 
-  # ISO naming.
-  isoImage.isoName = "johnos.iso";
-
   # EFI booting
   isoImage.makeEfiBootable = true;
 
@@ -30,7 +27,7 @@ args @ { config, lib, options, pkgs, ... }:
   # An installation media cannot tolerate a host config defined file
   # system layout on a fresh machine, before it has been formatted.
   swapDevices = lib.mkImageMediaOverride [ ];
-  # fileSystems = lib.mkImageMediaOverride config.lib.isoFileSystems;
+  fileSystems = lib.mkImageMediaOverride config.lib.isoFileSystems;
 
   boot.postBootCommands = ''
     for o in $(</proc/cmdline); do

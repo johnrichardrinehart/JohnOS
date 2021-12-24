@@ -18,7 +18,8 @@ args @ { config, pkgs, ... }:
             {
               name = "hp-spectre-x360-audio";
               patch = ./hp_spectre_x360_audio.patch;
-            }];
+            }
+          ];
 
           src = fetchurl {
             url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
