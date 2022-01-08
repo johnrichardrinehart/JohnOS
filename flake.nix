@@ -112,7 +112,7 @@
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
               ({ config, pkgs, ... }: {
                 isoImage = {
-                  isoBaseName = "johnos_" + (inputs.self.rev or "dirty");
+                  isoBaseName = "JohnOS-" + (inputs.self.rev or "dirty");
                   makeEfiBootable = true;
                 };
               })
