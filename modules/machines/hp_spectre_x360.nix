@@ -48,17 +48,11 @@ args @ { config, pkgs, ... }:
           };
         "/var/lib/docker" =
           {
-            fsType = "overlay";
-            device = "overlay";
+            fsType = "ext4";
+            device = "/dev/mmcblk0p1";
             options = [
-              "lowerdir=/var/lib/docker"
-              "upperdir=/mnt/root/var/lib/docker"
-              "workdir=/mnt/root/.docker_work"
-              "x-systemd.requires=/mnt/root"
-              "x-systemd.requires=/var/lib/docker"
-              "nofail"
+              "defaults,bind"
             ];
-            neededForBoot = false;
           };
         "/var/lib/bluetooth" =
           {
