@@ -304,6 +304,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.fd
         p.bc
         p.ncdu # ncurses disk usage (tree+du, basically)
+        p.dive # docker image analyzer
         # language tools
         p.jq
         p.nixpkgs-fmt
