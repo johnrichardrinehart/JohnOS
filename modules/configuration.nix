@@ -4,7 +4,10 @@
 
 args @ { config, pkgs, ... }:
 {
-  virtualisation.docker.enable = true;
+  virtualisation.docker = {
+    enable = true;
+    storageDriver = "overlay2";
+  };
 
   nixpkgs.config.allowUnsupportedSystem = true;
 
