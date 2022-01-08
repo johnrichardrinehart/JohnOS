@@ -1,4 +1,4 @@
-name: "John OS builder :)"
+name: "John OS Builder 👷😃"
 # description: "Build John OS from the system flake :)"
 on:
   push:
