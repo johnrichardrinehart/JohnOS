@@ -49,9 +49,10 @@ args @ { config, pkgs, ... }:
         "/var/lib/docker" =
           {
             fsType = "ext4";
-            device = "/dev/mmcblk0p1";
+            device = "/mnt/root/var-lib-docker";
             options = [
               "defaults,bind"
+              "x-systemd.requires=/mnt/root"
             ];
           };
         "/var/lib/bluetooth" =
@@ -60,8 +61,8 @@ args @ { config, pkgs, ... }:
             device = "overlay";
             options = [
               "lowerdir=/var/lib/bluetooth"
-              "upperdir=/mnt/root/var/lib/bluetooth"
-              "workdir=/mnt/root/.bluetooth_work"
+              "upperdir=/mnt/root/var-lib-bluetooth"
+              "workdir=/mnt/root/.var-lib-bluetooth"
               "x-systemd.requires=/mnt/root"
               "x-systemd.requires=/var/lib/bluetooth"
               "nofail"
@@ -74,8 +75,8 @@ args @ { config, pkgs, ... }:
             device = "overlay";
             options = [
               "lowerdir=/home"
-              "upperdir=/mnt/root/home_upper"
-              "workdir=/mnt/root/.home_work"
+              "upperdir=/mnt/root/home"
+              "workdir=/mnt/root/.home"
               "x-systemd.requires=/mnt/root"
               "x-systemd.requires=/home"
               "nofail"
