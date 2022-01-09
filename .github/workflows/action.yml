@@ -28,7 +28,6 @@ jobs:
 
     - name: Build JohnOS 🔨🔨🔨
       run: |
-        sudo apt-get update && sudo apt-get -y install tree # for output debugging
         ${{ github.workspace }}/repo/.github/build_and_split.sh
         tree -l -L 8 {{ github.workspace }}
         df -lh # check how much space compared to before

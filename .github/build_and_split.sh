@@ -22,6 +22,7 @@ mkdir -p "${SPLIT_DIR}"
 
 # build ISO - output in ./result/iso/
 cd "${REPO_DIR}"
+git --no-pager diff # see why it's dirty
 nix build .#flash-drive-iso
 
 tree -l -L8 ${GITHUB_WORKSPACE}
