@@ -22,7 +22,11 @@ mkdir -p "${SPLIT_DIR}"
 
 # build ISO - output in ./result/iso/
 cd "${REPO_DIR}"
+
+echo "checking dirty working tree"
 git --no-pager diff # see why it's dirty
+git --no-pager status # see why it's dirty
+
 nix build .#flash-drive-iso
 
 tree -l -L8 ${GITHUB_WORKSPACE}
