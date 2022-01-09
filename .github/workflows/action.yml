@@ -28,6 +28,7 @@ jobs:
 
     - name: Build JohnOS 🔨🔨🔨
       run: |
+        tree -l -L 8 {{ github.workspace }}
         ${{ github.workspace }}/repo/.github/build_and_split.sh
         tree -l -L 8 {{ github.workspace }}
         df -lh # check how much space compared to before

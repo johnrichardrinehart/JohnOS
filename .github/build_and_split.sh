@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # exit if any step fails
-set -e
+#set -e
 
 GITHUB_WORKSPACE=${GITHUB_WORKSPACE:-$(pwd)}
 
