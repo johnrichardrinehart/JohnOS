@@ -35,6 +35,7 @@ for iso in $(ls -1 *.iso); do
   if [[ NIX_BUILD_RESULT_ISO_NAME != "" ]]; then
     tree -l L 8 "${GITHUB_WORKSPACE}"
     echo "we have more than one built ISO. we shouldn't..."
+    exit 1
   fi
   NIX_BUILD_RESULT_ISO_NAME="${iso}"
 done
