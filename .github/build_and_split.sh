@@ -27,17 +27,24 @@ echo "checking dirty working tree"
 git --no-pager diff # see why it's dirty
 git --no-pager status # see why it's dirty
 
+tree -l -L 8 ${GITHUB_WORKSPACE}
+
+echo "building the ISO"
 nix build .#flash-drive-iso
 
-tree -l -L8 ${GITHUB_WORKSPACE}
+tree -l -L 8 ${GITHUB_WORKSPACE}
 
+echo "splitting the ISO into pieces"
 split -d -b 128MiB \
 	"${NIX_BUILD_RESULT_ISO}" \
 	"${SPLIT_DIR}/JohnOS-${GITHUB_REF_NAME}-${SHORT_SHA}.iso."
 
+echo "generating checksum file"
 # generate SHA256 checksums of all relevant files
 cd "${SPLIT_DIR}"
 for i in $(ls *.iso.*); do sha256sum $i >> "${CHECKSUM_FILE}"; done
 
 cd "${NIX_BUILD_RESULT_ISO_DIR}"
 sha256sum "${NIX_BUILD_RESULT_ISO_NAME}"  >> "${CHECKSUM_FILE}"
+
+tree -l -L 8 ${GITHUB_WORKSPACE}
