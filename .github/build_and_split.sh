@@ -24,7 +24,7 @@ mkdir -p "${SPLIT_DIR}"
 cd "${REPO_DIR}"
 nix build .#flash-drive-iso
 
-tree -L8 ${GITHUB_WORKSPACE}
+tree -l -L8 ${GITHUB_WORKSPACE}
 
 split -d -b 128MiB \
 	"${NIX_BUILD_RESULT_ISO}" \
