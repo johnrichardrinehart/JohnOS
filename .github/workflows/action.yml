@@ -1,5 +1,4 @@
 name: "JohnOS Builder 👷"
-description: "Build JohnOS from a Nix system flake 😃"
 on:
   push:
     tags:
