@@ -12,6 +12,7 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v2.4.0
       with:
+        path: repo # checkout repo to $GITHUB_WORKSPACE/repo
         fetch-depth: 0 # nix flakes do not work on shallow clones
 
     - name: Install Nix (Cachix)
@@ -28,9 +29,9 @@ jobs:
 
     - name: Build JohnOS 🔨🔨🔨
       run: |
-        sha256sum --version # check to make sure coreutils is installed
-        split --version # check to make sure coreutils is installed
-        ./.github/build_and_split.sh ${{ github.workspace }}/split
+        apt-get update && apt-get -y install tree # for output debugging
+        ./.github/build_and_split.sh
+        tree -L4 {{ github.workspace }}
         df -lh # check how much space compared to before
 
     - name: Release 🚀🚀🚀

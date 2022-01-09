@@ -3,11 +3,14 @@
 # exit if any step fails
 set -e
 
-SPLIT_DIR=${1:-./split}
+GITHUB_WORKSPACE=${GITHUB_WORKSPACE:-$(pwd)}
 
-NIX_BUILD_RESULT_ISO_DIR="${GITHUB_WORKSPACE}/result/iso"
+REPO_DIR=${REPO_DIR:-${GITHUB_WORKSPACE}/repo}
+NIX_BUILD_RESULT_ISO_DIR="${REPO_DIR}/result/iso"
 NIX_BUILD_RESULT_ISO_NAME="JohnOS-${GITHUB_SHA}.iso"
-NIX_BUILD_RESULT_ISO="${NIX_BUILD_RESULT_ISO_DIR}/JohnOS-${GITHUB_SHA}.iso"
+NIX_BUILD_RESULT_ISO="${NIX_BUILD_RESULT_ISO_DIR}/${NIX_BUILD_RESULT_ISO_NAME}"
+
+SPLIT_DIR=${1:-${GITHUB_WORKSPACE}/split}
 
 # substring extraction: https://tldp.org/LDP/abs/html/string-manipulation.html
 # 12 characters should be more than enough - Linus recommends this for the
@@ -18,7 +21,10 @@ CHECKSUM_FILE="${SPLIT_DIR}/checksums-${SHORT_SHA}.sha256"
 mkdir -p "${SPLIT_DIR}"
 
 # build ISO - output in ./result/iso/
+cd "${REPO_DIR}"
 nix build .#flash-drive-iso
+
+tree -L8 ${GITHUB_WORKSPACE}
 
 split -d -b 128MiB \
 	"${NIX_BUILD_RESULT_ISO}" \
