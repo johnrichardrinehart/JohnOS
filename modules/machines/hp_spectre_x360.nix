@@ -13,7 +13,7 @@ args @ { config, pkgs, ... }:
     let
       latest_stable_pkg = { fetchurl, buildLinux, ... } @ args:
         buildLinux (args // rec {
-          version = "5.16";
+          version = "5.16.0";
           modDirVersion = version;
 
           kernelPatches = [
