@@ -14,6 +14,7 @@ let
       p.terraform
       p.discord
       p.element-desktop
+      p.skypeforlinux
     ];
 
   programs = { };
