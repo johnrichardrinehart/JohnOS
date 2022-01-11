@@ -16,6 +16,8 @@ let
       p.dbeaver # graphical DB tool
       p.docker-compose
       p.postman
+      p.grpcurl
+      (pkgs.callPackage ./nosql-workbench.nix {})
     ];
 
   programs = {
