@@ -18,7 +18,7 @@ let
 
   desktopItem = makeDesktopItem {
     name = "NoSQL Workbench";
-    exec = "nosql-workbench";
+    exec = "${pname}-${version}";
     comment = "NoSQL Workbench for Amazon DynamoDB is a cross-platform client-side application for modern database development and operations and is available for Windows and macOS.";
     desktopName = "NoSQL Workbench";
     genericName = "DB UI";
@@ -40,7 +40,6 @@ appimageTools.wrapType2 rec {
     mkdir -p $out/share/applications
     cp ${desktopItem}/share/applications/* $out/share/applications
     cp -r ${appimageContents}/usr/share/icons/ $out/share/
-
   '';
 
   # below information from https://repology.org/project/nosql-workbench/information
