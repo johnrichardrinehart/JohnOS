@@ -20,7 +20,8 @@ args @ { config, pkgs, ... }:
             {
               name = "hp-spectre-x360-audio";
               patch = ./hp_spectre_x360_audio.patch;
-            }];
+            }
+          ];
 
           extraMakeFlags = [
             "KBUILD_BUILD_VERSION=JohnOS"
@@ -32,9 +33,7 @@ args @ { config, pkgs, ... }:
           };
 
         } // (args.argsOverride or { }));
-      latest_stable = pkgs.callPackage
-        latest_stable_pkg
-        { };
+      latest_stable = pkgs.callPackage latest_stable_pkg { };
     in
     pkgs.recurseIntoAttrs
       (pkgs.linuxPackagesFor latest_stable)

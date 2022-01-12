@@ -17,7 +17,7 @@ let
       p.docker-compose
       p.postman
       p.grpcurl
-      (pkgs.callPackage ./nosql-workbench.nix {})
+      (pkgs.callPackage ./nosql-workbench.nix { })
     ];
 
   programs = {
