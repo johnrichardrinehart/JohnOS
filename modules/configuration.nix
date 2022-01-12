@@ -71,7 +71,7 @@ args @ { config, pkgs, ... }:
     let
       defaultUserAttrs = {
         isNormalUser = true;
-        extraGroups = [ "wheel" "vboxsf" "audio" "docker" ]; # Enable ‘sudo’ for the user. And enable access to VBox shared folders
+        extraGroups = [ "wheel" "vboxsf" "audio" "docker" "adbusers" ]; # Enable ‘sudo’ for the user. And enable access to VBox shared folders
         shell = pkgs.zsh;
       };
     in
