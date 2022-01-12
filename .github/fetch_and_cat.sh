@@ -7,7 +7,9 @@ REPO=${REPO:-JohnOS}
 VERSION=${1:-latest}
 TMPDIR=${TMPDIR:-"/tmp/JohnOS-${VERSION}"}
 
-GITHUB_API_AUTH_HEADER="Authorization: token ${GITHUB_API_TOKEN}"
+if [[ "$GITHUB_API_TOKEN" != "" ]]; then
+    GITHUB_API_AUTH_HEADER="Authorization: token ${GITHUB_API_TOKEN}"
+fi
 
 mkdir -p "${TMPDIR}"
 cd "${TMPDIR}" || exit 1
@@ -96,8 +98,6 @@ mv JohnOS-*.iso.00 "${JOHNOS_ISO_FILENAME}"
 
 n=0
 for piece in "${iso_pieces[@]}"; do
-  echo "pieces is $piece"
-  echo "n is $n and piece is $piece and len(pieces) is ${#iso_pieces[@]}"
   if [[ "$n" -gt 0 && $(("$n"+1)) -lt ${#iso_pieces[@]} ]]; then
      echo "concatenating piece ${piece}"
      cat "${piece}" >> "${JOHNOS_ISO_FILENAME}"
@@ -114,6 +114,10 @@ if [[ "$gothash" != "$expecthash" ]]; then
 fi
 
 echo "all good :)"
+
+set -e # preserve the work in case of write failure
+
+echo "moving the build from $TMPDIR to $OUTDIR"
 
 mv "$TMPDIR/$JOHNOS_ISO_FILENAME" "$OUTDIR"
 ls -lh "$OUTDIR/$JOHNOS_ISO_FILENAME"
