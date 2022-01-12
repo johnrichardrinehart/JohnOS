@@ -20,7 +20,7 @@ ISO_PIECE_BASENAME_PREFIX="JohnOS-${GITHUB_REF_NAME}-${SHORT_SHA}.iso."
 mkdir -p "${SPLIT_DIR}"
 
 # build ISO - output in ./result/iso/
-cd "${REPO_DIR}"
+cd "${REPO_DIR}" || exit 1
 
 echo "checking dirty working tree"
 git --no-pager diff # see why it's dirty
@@ -30,9 +30,10 @@ echo "building the ISO"
 nix build .#flash-drive-iso
 
 echo "splitting the ISO into pieces"
-cd "${NIX_BUILD_RESULT_ISO_DIR}"
+cd "${NIX_BUILD_RESULT_ISO_DIR}" || exit 1
+
 NIX_BUILD_RESULT_ISO_NAME="" # default empty
-for iso in $(ls -1 *.iso); do
+for iso in *.iso; do
   if [[ "${NIX_BUILD_RESULT_ISO_NAME}" != "" ]]; then
     tree -l L 8 "${GITHUB_WORKSPACE}"
     echo "we have more than one built ISO. we shouldn't..."
@@ -48,11 +49,12 @@ split -d -b 128MiB \
 
 echo "generating checksum file"
 # generate SHA256 checksums of all pieces
-cd "${SPLIT_DIR}"
-for i in $(ls -1 JohnOS-*.iso.*); do sha256sum $i >> "${CHECKSUM_FILE}"; done
+cd "${SPLIT_DIR}" || exit 1
+for i in JohnOS-*.iso.*; do sha256sum "$i" >> "${CHECKSUM_FILE}"; done
 
 # generate SHA256 checksums of original file
-cd "${NIX_BUILD_RESULT_ISO_DIR}" # keep only basename in checksum file
+cd "${NIX_BUILD_RESULT_ISO_DIR}" || exit 1 # keep only basename in checksum file
 sha256sum "${NIX_BUILD_RESULT_ISO_NAME}"  >> "${CHECKSUM_FILE}"
 
-tree -l -L 8 ${GITHUB_WORKSPACE}
+tree -l -L 8 "${GITHUB_WORKSPACE}"
+
