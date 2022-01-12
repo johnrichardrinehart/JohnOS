@@ -30,6 +30,8 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 
   programs = lib.recursiveUpdate
     {
+      adb.enable = true; # droidcam
+
       git = {
         enable = true;
         userName = "John Rinehart";
@@ -322,6 +324,8 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         # programming languages
         p.go_1_17
         p.gcc
+        # communication tools
+        p.droidcam
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;
