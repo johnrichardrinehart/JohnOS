@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-OGDIR=$(pwd)
+OUTDIR=${OUTDIR:-$(pwd)}
 GITHUB_API_BASE="https://api.github.com"
 OWNER=${OWNER:-johnrichardrinehart}
 REPO=${REPO:-JohnOS}
 VERSION=${1:-latest}
-TMPDIR=${OUTDIR:-"/tmp/JohnOS/${VERSION}"}
+TMPDIR=${TMPDIR:-"/tmp/JohnOS-${VERSION}"}
 
 GITHUB_API_AUTH_HEADER="Authorization: token ${GITHUB_API_TOKEN}"
 
@@ -13,7 +13,7 @@ mkdir -p "${TMPDIR}"
 cd "${TMPDIR}" || exit 1
 
 fetch_url() {
-   if [[ "$3" -lt 0 ]]; then
+   if [[ "$3" -gt 2 ]]; then
 	   echo "failed to download $1"
 	   return
    fi
@@ -26,10 +26,12 @@ fetch_url() {
 
    curl -H "${GITHUB_API_AUTH_HEADER}" -s -L -O "$1" 
 
-   if [[ $2 != "" ]]; then
-       if [[ $(sha256sum "$(basename "$1")") != "$2" ]]; then
-           echo "checksum failed for $1... trying again"
-	   fetch_url "$1" "$2" $(("$3"-1))
+   if [[ "$2" != "" ]]; then
+       sumgot=$(sha256sum "$(basename "$1")" | tr -s ' ' | cut -d' ' -f1)
+       sumexp="$2"
+       if [[ "$sumgot" != "$sumexp" ]]; then
+           printf "checksum failed for $1...\ngot: %s\nexp: %s\nattempt $n\n" "$sumgot" "$sumexp" "$3"
+	   fetch_url "$1" "$2" $(("$3"+1))
        fi
    fi
 }
@@ -58,7 +60,7 @@ while read -r asset; do
    url=$(jq -r '.browser_download_url' <<< "${asset}")
    if [[ "${url}" == *"sha256"* ]]; then
 	   SHA256_FILE=$(basename "${url}")
-	   fetch_url "$url" "" 2 # retry 3 times
+	   fetch_url "$url" "" 0 # retry 3 times
    elif [[ "${url}" == *"iso"* ]]; then
        urls+=("$url")
    else
@@ -86,7 +88,7 @@ fi
 
 echo "downloading ISO pieces in parallel"
 
-i=0 j=5; for url in "${urls[@]}"; do (( i++ < j )) || wait -n; fetch_url "$url" "${hashes[$(basename "$url")]}" & done; wait
+i=0 j=3; for url in "${urls[@]}"; do (( i++ < j )) || wait -n; fetch_url "$url" "${hashes[$(basename "$url")]}" 0 & done; wait
 
 echo "concatenating the pieces together"
 JOHNOS_ISO_FILENAME="JohnOS-${TAG_NAME}-${SHORT_REV}.iso"
@@ -113,5 +115,6 @@ fi
 
 echo "all good :)"
 
-mv "$TMPDIR/$JOHNOS_ISO_FILENAME" "$OGDIR"
-ls -lh "$OGDIR/$JOHNOS_ISO_FILENAME"
+mv "$TMPDIR/$JOHNOS_ISO_FILENAME" "$OUTDIR"
+ls -lh "$OUTDIR/$JOHNOS_ISO_FILENAME"
+rm -rf "$TMPDIR"
