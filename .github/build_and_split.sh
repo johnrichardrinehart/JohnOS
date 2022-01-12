@@ -55,7 +55,7 @@ for i in JohnOS-*.iso.*; do sha256sum "$i" >> "${CHECKSUM_FILE}"; done
 # generate SHA256 checksum of pre-split ISO
 cd "${NIX_BUILD_RESULT_ISO_DIR}" || exit 1 # keep only basename in checksum file
 JOHNOS_ISO_FILENAME="JohnOS-${GITHUB_REF_NAME}-${SHORT_SHA}.iso"
-ln -s "${NIX_BUILD_RESULT_ISO}" "${JOHNOS_ISO_FILENAME}"
+sudo ln -s "${NIX_BUILD_RESULT_ISO}" "${JOHNOS_ISO_FILENAME}"
 sha256sum "${JOHNOS_ISO_FILENAME}"  >> "${CHECKSUM_FILE}"
 
 tree -l -L 8 "${GITHUB_WORKSPACE}"
