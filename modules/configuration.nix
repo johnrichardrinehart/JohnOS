@@ -63,6 +63,7 @@ args @ { config, pkgs, ... }:
     ];
 
   programs.zsh.enable = true;
+  programs.adb.enable = true; # droidcam
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   ## consider using https://stackoverflow.com/a/54505212 for merging extraGroups

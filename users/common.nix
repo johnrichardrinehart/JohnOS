@@ -30,8 +30,6 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 
   programs = lib.recursiveUpdate
     {
-      adb.enable = true; # droidcam
-
       git = {
         enable = true;
         userName = "John Rinehart";
