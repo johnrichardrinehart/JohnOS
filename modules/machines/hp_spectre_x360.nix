@@ -22,6 +22,10 @@ args @ { config, pkgs, ... }:
               patch = ./hp_spectre_x360_audio.patch;
             }];
 
+          extraMakeFlags = [
+            "KBUILD_BUILD_VERSION=JohnOS"
+          ];
+
           src = fetchurl {
             url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
             sha256 = "An1+iYi7aawS7pJAbDvh/hP5kLHKIkniJiJc0VczCLs=";
