@@ -23,9 +23,9 @@ args @ { config, pkgs, ... }:
             }
           ];
 
-          extraMakeFlags = [
-            "KBUILD_BUILD_VERSION=JohnOS"
-          ];
+          #          extraMakeFlags = [
+          #            "KBUILD_BUILD_VERSION=JohnOS"
+          #          ];
 
           src = fetchurl {
             url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
@@ -214,12 +214,27 @@ args @ { config, pkgs, ... }:
   #         services.acpid.enable = true;
   #         services.acpid.logEvents = true;
 
-  sound.enable = true;
-  hardware.pulseaudio = {
+  # sound.enable = true;
+  # hardware.pulseaudio = {
+  #   enable = true;
+  #   support32Bit = true;
+  #   extraModules = [ pkgs.pulseaudio-modules-bt ];
+  #   package = pkgs.pulseaudioFull;
+  # };
+
+  # rtkit is optional but recommended
+  security.rtkit.enable = true;
+  services.pipewire = {
     enable = true;
-    support32Bit = true;
-    extraModules = [ pkgs.pulseaudio-modules-bt ];
-    package = pkgs.pulseaudioFull;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+    # If you want to use JACK applications, uncomment this
+    #jack.enable = true;
+
+    # use the example session manager (no others are packaged yet so this is enabled by default,
+    # no need to redefine it in your config for now)
+    #media-session.enable = true;
   };
 
   # bluetooth stuff
