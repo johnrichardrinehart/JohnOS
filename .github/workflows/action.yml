@@ -23,16 +23,12 @@ jobs:
         path: repo # checkout repo to $GITHUB_WORKSPACE/repo
         fetch-depth: 0 # nix flakes do not work on shallow clones
 
-    - name: Install Cachix
-      uses: cachix/cachix-action@v10
-      with:
-        name: johnos
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-
     - name: Install Nix
       uses: cachix/install-nix-action@v16
 
     - name: Build JohnOS 🔨🔨🔨
+      env:
+        CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
       run: |
         tree -l -L 8 ${{ github.workspace }}
         ${{ github.workspace }}/repo/.github/build_and_split.sh

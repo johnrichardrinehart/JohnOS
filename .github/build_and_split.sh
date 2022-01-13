@@ -27,7 +27,7 @@ git --no-pager diff # see why it's dirty
 git --no-pager status # see why it's dirty
 
 echo "building the ISO"
-cachix watch-exec johnos nix build .#flash-drive-iso
+nix run --impure nixpkgs#cachix watch-exec johnos nix build .#flash-drive-iso
 
 echo "splitting the ISO into pieces"
 cd "${NIX_BUILD_RESULT_ISO_DIR}" || exit 1
