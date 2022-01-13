@@ -4,20 +4,11 @@ on:
     tags:
       - 'v*'
 jobs:
-  builds:
+  build-JohnOS:
     name: "nix build and release flow"
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2.4.0
-      with:
-        path: repo # checkout repo to $GITHUB_WORKSPACE/repo
-        fetch-depth: 0 # nix flakes do not work on shallow clones
-
-    - name: Install Nix (Cachix)
-      uses: cachix/install-nix-action@v16
-
-    - name: Setup Build Environment
+    - name: Clean-up GitHub Runner
       run: |
         # free up disk space in the runner
         # cf., https://github.com/actions/virtual-environments/issues/2606#issuecomment-772683150
@@ -25,6 +16,21 @@ jobs:
         sudo rm -rf /usr/local/lib/android # will release about 10 GB if you don't need Android
         sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
         df -lh # after cleaning up
+
+    - name: Checkout Repository
+      uses: actions/checkout@v2.4.0
+      with:
+        path: repo # checkout repo to $GITHUB_WORKSPACE/repo
+        fetch-depth: 0 # nix flakes do not work on shallow clones
+
+    - uses: cachix/cachix-action@v10
+      with:
+        name: johnos
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+        run: cachix watch-exec johnos nix build .#flash-drive-iso
+
+    - name: Install Nix (Cachix)
+      uses: cachix/install-nix-action@v16
 
     - name: Build JohnOS 🔨🔨🔨
       run: |
