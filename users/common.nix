@@ -316,6 +316,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.pstree
         p.nethogs
         p.pavucontrol
+        p.autorandr
         # archive tools
         p.zip
         p.unzip
