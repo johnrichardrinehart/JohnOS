@@ -19,16 +19,6 @@ ISO_PIECE_BASENAME_PREFIX="JohnOS-${GITHUB_REF_NAME}-${SHORT_SHA}.iso."
 
 mkdir -p "${SPLIT_DIR}"
 
-# build ISO - output in ./result/iso/
-cd "${REPO_DIR}" || exit 1
-
-echo "checking dirty working tree"
-git --no-pager diff # see why it's dirty
-git --no-pager status # see why it's dirty
-
-echo "building the ISO"
-nix run --impure nixpkgs#cachix watch-exec johnos nix build .#flash-drive-iso
-
 echo "splitting the ISO into pieces"
 cd "${NIX_BUILD_RESULT_ISO_DIR}" || exit 1
 
