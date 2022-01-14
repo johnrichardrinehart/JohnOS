@@ -31,7 +31,7 @@ jobs:
       with:
         name: johnos
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-        pushFilter: '.*\.(?:iso|img)$'
+        pushFilter: '(iso|squashfs\.img)'
 
     - name: Build JohnOS (Cachix) 🔨🔨🔨
       run: |
