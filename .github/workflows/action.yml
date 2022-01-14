@@ -31,12 +31,12 @@ jobs:
       with:
         name: johnos
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-        pushFilter: ".*\.(?:iso|img)$"
+        pushFilter: '.*\.(?:iso|img)$'
         run: |
           cd ${{ github.workspace}}/repo
           cachix watch-exec johnos nix build .#flash-drive-iso
 
-      name: Split JohnOS 🔪🔪🔪
+    - name: Split JohnOS 🔪🔪🔪
       run: |
         tree -l -L 8 ${{ github.workspace }}
         ${{ github.workspace }}/repo/.github/build_and_split.sh
