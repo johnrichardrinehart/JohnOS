@@ -8,7 +8,7 @@ jobs:
     name: "nix build and release flow"
     runs-on: ubuntu-latest
     steps:
-    - name: Clean-up GitHub Runner
+    - name: Clean-up GitHub Runner 🧹🧹🧹
       run: |
         # free up disk space in the runner
         # cf., https://github.com/actions/virtual-environments/issues/2606#issuecomment-772683150
@@ -17,29 +17,31 @@ jobs:
         sudo rm -rf /usr/share/dotnet # will release about 20GB if you don't need .NET
         df -lh # after cleaning up
 
-    - name: Checkout Repository
+    - name: Checkout Repository 🔭🔭🔭
       uses: actions/checkout@v2.4.0
       with:
         path: repo # checkout repo to $GITHUB_WORKSPACE/repo
         fetch-depth: 0 # nix flakes do not work on shallow clones
 
-    - name: Install Nix
+    - name: Install Nix 
       uses: cachix/install-nix-action@v16
 
-    - uses: cachix/cachix-action@v10
-      name: Build JohnOS (Cachix) 🔨🔨🔨
+    - name: Install Cachix 💾💾💾
+      uses: cachix/cachix-action@v10
       with:
         name: johnos
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
         pushFilter: '.*\.(?:iso|img)$'
-        run: |
+
+    - name: Build JohnOS (Cachix) 🔨🔨🔨
+      run: |
           cd ${{ github.workspace}}/repo
           cachix watch-exec johnos nix build .#flash-drive-iso
 
     - name: Split JohnOS 🔪🔪🔪
       run: |
         tree -l -L 8 ${{ github.workspace }}
-        ${{ github.workspace }}/repo/.github/build_and_split.sh
+        ${{ github.workspace }}/repo/.github/split.sh
         tree -l -L 8 ${{ github.workspace }}
         df -lh # check how much space compared to before
 
