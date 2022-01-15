@@ -325,6 +325,9 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.gcc
         # communication tools
         p.droidcam
+        # multimedia tools
+        p.alsa-utils
+        p.playerctl
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;

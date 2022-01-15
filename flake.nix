@@ -1,8 +1,5 @@
 {
   inputs = {
-    rpinixpkgs.url = "github:samueldr/nixpkgs/wip/armv7lfixes"; # from NixOS Discord
-    nixpkgs_release-2009.url = "github:NixOS/nixpkgs/release-20.09";
-    nixpkgs_release-2105.url = "github:NixOS/nixpkgs/release-21.05";
     nixpkgs_unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     flake-templates.url = "github:NixOS/templates";
@@ -10,7 +7,7 @@
     nix-master.url = "github:NixOS/nix/master";
 
     home-manager = {
-      url = "github:nix-community/home-manager/release-21.05";
+      url = "github:nix-community/home-manager/release-21.11";
       flake = true;
       inputs.nixpkgs.follows = "nixpkgs_unstable";
     };
@@ -20,7 +17,6 @@
     let
       nix_pkg = inputs.nix-master.packages.x86_64-linux.nix;
 
-      nixpkgs-2105 = inputs.nixpkgs_release-2105;
       nixpkgs-unstable = inputs.nixpkgs_unstable;
 
       home-manager-config = {
@@ -33,13 +29,6 @@
           };
         };
 
-      };
-
-      rpiPackages = (import inputs.nixpkgs) {
-        localSystem = "x86_64-linux";
-        crossSystem = {
-          config = "aarch64-unknown-linux-gnu";
-        };
       };
 
       photoDerivation =
@@ -118,52 +107,6 @@
               })
             ];
             specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
-          };
-
-
-        rpi-sdcard =
-          let
-            nixpkgs = inputs.rpinixpkgs;
-          in
-          inputs.nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-            modules = [
-              ({ config, nixpkgs, ... }: {
-                config.nixpkgs.crossSystem = nixpkgs.lib.systems.examples.raspberryPi;
-              })
-              "${inputs.nixpkgs}/nixos/modules/installer/cd-dvd/sd-image-raspberrypi.nix"
-            ];
-            specialArgs = { inherit (inputs) nixpkgs; };
-          };
-
-        rpi-sdcard_release-2009 =
-          let
-            nixpkgs = inputs.nixpkgs_release-2009;
-          in
-          nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-            modules = [
-              ({ config, nixpkgs, ... }: {
-                config.nixpkgs.crossSystem = nixpkgs.lib.systems.examples.raspberryPi;
-              })
-              "${nixpkgs}/nixos/modules/installer/cd-dvd/sd-image-raspberrypi.nix"
-            ];
-            specialArgs = { inherit nixpkgs; };
-          };
-
-        rpi-sdcard_release-2105 =
-          let
-            nixpkgs = inputs.nixpkgs_release-2105;
-          in
-          nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-            modules = [
-              ({ config, nixpkgs, ... }: {
-                config.nixpkgs.crossSystem = nixpkgs.lib.systems.examples.raspberryPi;
-              })
-              "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-raspberrypi.nix"
-            ];
-            specialArgs = { inherit nixpkgs; };
           };
       };
 
