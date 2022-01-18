@@ -285,6 +285,9 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.feh
         p.multilockscreen
         p.gnome3.dconf
+        p.dunst
+        p.libnotify
+        p.gnome-icon-theme
         # gui apps
         p.rofi
         p.slack
@@ -317,6 +320,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
         p.nethogs
         p.pavucontrol
         p.autorandr
+        p.file
         # archive tools
         p.zip
         p.unzip
