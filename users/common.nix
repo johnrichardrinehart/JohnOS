@@ -1,4 +1,24 @@
 args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
+let
+  overlays = [
+    (final: prev:
+      {
+        flameshot = prev.flameshot.overrideAttrs (old: rec {
+          version = "11.0.0";
+
+          src = final.fetchFromGitHub {
+            owner = "flameshot-org";
+            repo = "flameshot";
+            rev = "v${version}";
+            sha256 = "SlnEXW3Uhdgl0icwYyYsKQOcYkAtHpAvL6LMXBF2gWM=";
+          };
+
+          patches = [];
+        });
+      }
+    )
+  ];
+in
 {
   home.file =
     {
@@ -241,6 +261,7 @@ args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
   services.gpg-agent.enable = true;
 
   nixpkgs.config.allowUnfree = true;
+  nixpkgs.overlays = overlays;
 
   services.polybar =
     let
