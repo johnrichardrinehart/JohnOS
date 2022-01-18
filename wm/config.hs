@@ -198,6 +198,10 @@ myKeys conf@XConfig {XMonad.modMask = modm} =
     , key "Stop"          (0, xF86XK_AudioStop              ) $ spawn $ playerctl "stop"
     , key "Previous"      (0, xF86XK_AudioPrev              ) $ spawn $ playerctl "previous"
     , key "Next"          (0, xF86XK_AudioNext              ) $ spawn $ playerctl "next"
+    , key "Dim"           (0, xF86XK_MonBrightnessDown      ) $ spawn $ "xrandr --output eDP-1 --brightness $(bc -l <<< $(xrandr --verbose | awk '/Brightness/ { print $2; exit }')-.1)"
+    , key "Brighten"      (0, xF86XK_MonBrightnessUp        ) $ spawn $ "xrandr --output eDP-1 --brightness $(bc -l <<< $(xrandr --verbose | awk '/Brightness/ { print $2; exit }')+.1)"
+--    , key "Dim"           (0, xF86XK_MonBrightnessDown      ) $ spawn $ "xrandr --output eDP-1 --brightness $(( $(bc -l <<< $(xrandr --verbose | awk '/Brightness/ { print $2; exit }')-.1) <= 0 ? 0 : $(bc -l <<< $(xrandr --verbose | awk '/Brightness/ { print $2; exit }')-.1) ))"
+ --   , key "Brighten"      (0, xF86XK_MonBrightnessUp        ) $ spawn $ "xrandr --output eDP-1 --brightness $(( $(bc -l <<< $(xrandr --verbose | awk '/Brightness/ { print $2; exit }')+.1) >= 1 ? 1 : $(bc -l <<< $(xrandr --verbose | awk '/Brightness/ { print $2; exit }')+.1) ))"
     ] ^++^
   keySet "Launchers"
     [ key "Terminal"       (modm .|. shiftMask  , xK_Return  ) $ spawn (XMonad.terminal conf)
