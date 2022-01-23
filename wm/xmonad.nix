@@ -51,7 +51,7 @@ let
   polybarOpts = ''
     ${pkgs.nitrogen}/bin/nitrogen --restore &
     ${pkgs.pasystray}/bin/pasystray &
-    ${pkgs.gnome3.networkmanagerapplet}/bin/nm-applet --sm-disable --indicator &
+    ${pkgs.networkmanagerapplet}/bin/nm-applet --sm-disable --indicator &
   '';
 in
 {

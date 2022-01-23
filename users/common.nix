@@ -305,7 +305,7 @@ in
         # gui configuration
         p.feh
         p.multilockscreen
-        p.gnome3.dconf
+        p.dconf
         p.dunst
         p.libnotify
         p.gnome-icon-theme
@@ -360,7 +360,7 @@ in
   gtk = {
     enable = true;
     theme = {
-      package = pkgs.gnome3.gnome_themes_standard;
+      package = pkgs.gnome-themes-standard;
       name = "Adawaita-dark";
     };
   };
