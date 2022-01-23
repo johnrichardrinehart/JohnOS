@@ -13,8 +13,8 @@ args @ { config, pkgs, ... }:
     let
       latest_stable_pkg = { fetchurl, buildLinux, ... } @ args:
         buildLinux (args // rec {
-          version = "5.16.1";
-          modDirVersion = "5.16.1";
+          version = "5.16.2";
+          modDirVersion = "5.16.2";
 
           kernelPatches = [
             {
@@ -23,13 +23,12 @@ args @ { config, pkgs, ... }:
             }
           ];
 
-          #          extraMakeFlags = [
-          #            "KBUILD_BUILD_VERSION=JohnOS"
-          #          ];
+          buildFlags = [ "KBUILD_BUILD_VERSION=JohnOS" ];
+          #++ (args.nixpkgs.lib.drop 2 args.buildFlags);
 
           src = fetchurl {
             url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
-            sha256 = "x782IxxuoeZyg4AqAFQw0U/j+KNJjAckujQ5r69yNUU=";
+            sha256 = "Cf6DOk1jBDJ7vgDnWteiWHGI0fQGsyZf7RGg+MVmO0Q=";
           };
 
         } // (args.argsOverride or { }));
