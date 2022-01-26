@@ -326,7 +326,7 @@ in
         p.xdg-utils # `open`
         p.xclip
         p.fd
-        p.bc
+        p.libqalculate
         p.ncdu # ncurses disk usage (tree+du, basically)
         p.dive # docker image analyzer
         # language tools
