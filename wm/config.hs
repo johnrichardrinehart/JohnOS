@@ -326,7 +326,6 @@ myLayout =
     . fullScreenToggle
     . comLayout
     . devLayout
-    . webLayout
     . wrkLayout $ (tiled ||| Mirror tiled ||| column3 ||| full)
    where
      -- default tiling algorithm partitions the screen into two panes
@@ -350,9 +349,8 @@ myLayout =
      gapSpaced g = spacing g . myGaps g
 
      -- Per workspace layout
-     comLayout = onWorkspace free1Ws (full ||| tiled)
      devLayout = onWorkspace commWs (tiled ||| full)
-     webLayout = onWorkspace ttyWs (tiled ||| full)
+     comLayout = onWorkspace free1Ws (full ||| tiled)
      wrkLayout = onWorkspace free2Ws (tiled ||| full)
 
      -- Fullscreen
