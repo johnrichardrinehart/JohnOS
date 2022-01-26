@@ -23,7 +23,7 @@ args @ { config, pkgs, ... }:
             }
           ];
 
-          buildFlags = [ "KBUILD_BUILD_VERSION=JohnOS" ];
+          # buildFlags = [ "KBUILD_BUILD_VERSION=JohnOS" ];
           #++ (args.nixpkgs.lib.drop 2 args.buildFlags);
 
           src = fetchurl {
