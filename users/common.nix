@@ -313,7 +313,9 @@ in
       };
       config = ./polybar/config.ini;
       script = ''
-        polybar main &
+        ${pkgs.polybar}/bin/polybar main &
+        ${pkgs.coreutils}/bin/sleep 1
+        ${pkgs.stalonetray}/bin/stalonetray &
       '';
       extraConfig = bars + colors + modules + user_modules + module_xmonad + module_nyc_time;
     };
@@ -338,6 +340,7 @@ in
         p.flameshot
         p.keepassxc
         p.dbeaver
+        p.stalonetray
         # shell tools
         p.powerline-rs
         p.oil
