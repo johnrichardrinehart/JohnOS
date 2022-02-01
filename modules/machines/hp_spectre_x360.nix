@@ -1,4 +1,8 @@
 args @ { config, pkgs, ... }:
+let
+  # https://discourse.nixos.org/t/load-automatically-kernel-module-and-deal-with-parameters/9200
+  v4l2loopback-dc = config.boot.kernelPackages.callPackage ./v4l2loopback-dc.nix { };
+in
 {
   # uncomment `imports` if you want to bundle nixpkgs into the installation
   #  imports = [
@@ -232,11 +236,13 @@ args @ { config, pkgs, ... }:
   ## Below v4l2loopback stuff stolen from https://gist.github.com/TheSirC/93130f70cc280cdcdff89faf8d4e98ab
   # Extra kernel modules
   boot.extraModulePackages = [
-    config.boot.kernelPackages.v4l2loopback
+    #config.boot.kernelPackages.v4l2loopback
+    v4l2loopback-dc
   ];
 
   # Register a v4l2loopback device at boot
   boot.kernelModules = [
-    "v4l2loopback"
+    #"v4l2loopback"
+    "v4l2loopback-dc"
   ];
 }
