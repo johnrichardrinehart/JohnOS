@@ -97,13 +97,15 @@ args @ { config, pkgs, ... }:
   nix = {
     package = args.nix_pkg;
 
-    binaryCaches = [
-      "https://johnos.cachix.org"
-    ];
+    settings = {
+      substituters = [
+        "https://johnos.cachix.org"
+      ];
 
-    binaryCachePublicKeys = [
-      "johnos.cachix.org-1:wwbcQLNTaO9dx0CIXN+uC3vFl8fvhtkJbZWzMXWLFu0="
-    ];
+      trusted-public-keys = [
+        "johnos.cachix.org-1:wwbcQLNTaO9dx0CIXN+uC3vFl8fvhtkJbZWzMXWLFu0="
+      ];
+    };
 
     extraOptions =
       let
