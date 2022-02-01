@@ -32,7 +32,7 @@ fetch_url() {
        sumgot=$(sha256sum "$(basename "$1")" | tr -s ' ' | cut -d' ' -f1)
        sumexp="$2"
        if [[ "$sumgot" != "$sumexp" ]]; then
-           printf "checksum failed for $1...\ngot: %s\nexp: %s\nattempt $n\n" "$sumgot" "$sumexp" "$3"
+           printf "checksum failed for $1...\ngot: %s\nexp: %s\nattempt $3\n" "$sumgot" "$sumexp"
 	   fetch_url "$1" "$2" $(("$3"+1))
        fi
    fi
