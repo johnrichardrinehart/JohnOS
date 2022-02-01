@@ -121,20 +121,7 @@ args @ { config, pkgs, ... }:
 
     interfaces.wlo1.useDHCP = true;
 
-    wireless = {
-      interfaces = [
-        "wlo1"
-      ];
-      enable = true; # disabled by default
-      networks = {
-        EpsteinDidntKillHimself5G = {
-          pskRaw = "1ccdb453d26a04c707084d33728e26a34c78f8712f878366b4ad129800dff828";
-        };
-        Kyivstar4G_30 = {
-          pskRaw = "42be31bf6a525112a3474c42777c141837669cbb24fc6ff8151f6a88a3944298";
-        };
-      };
-    };
+    wireless.enable = pkgs.lib.mkForce false; # use networking.networkmanager
   };
 
   ################################################################################

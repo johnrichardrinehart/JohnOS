@@ -20,6 +20,9 @@ let
   ];
 in
 {
+
+  services.network-manager-applet.enable = true;
+
   home.file =
     {
       ".config/powerline-rs/themes/gruvbox.theme" = {
