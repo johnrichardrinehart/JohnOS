@@ -18,28 +18,26 @@ let
 #      }
 #    )
   ];
+
+  stalonetrayrc = pkgs.writeText "stalonetrayrc" ''
+    background "#3B4252"
+    decorations "none"
+    dockapp_mode "none"
+    geometry "5x1-150+0"
+    grow_gravity "NE"
+    icon_gravity "NE"
+    icon_size "48"
+    kludges "force_icons_size"
+    skip_taskbar "true"
+    sticky true
+    transparent "false"
+    window_strut "none"
+    window_type "dock"
+  '';
 in
 {
 
   services.network-manager-applet.enable = true;
-  services.stalonetray = {
-    enable = true;
-    config = {
-      decorations = "none";
-      "transparent" = "false";
-      "dockapp_mode" = "none";
-      "icon_size" = 48;
-      "geometry" = "5x1-150+0";
-      "background" = "#3B4252";
-      "kludges" = "force_icons_size";
-      "grow_gravity" = "NE";
-      "icon_gravity" = "NE";
-      "sticky" = true;
-      "window_strut" = "none";
-      "window_type" = "dock";
-      "skip_taskbar" = "true";
-    };
-  };
 
   home.file =
     {
@@ -315,7 +313,7 @@ in
       script = ''
         ${pkgs.polybar}/bin/polybar main &
         ${pkgs.coreutils}/bin/sleep 1
-        ${pkgs.stalonetray}/bin/stalonetray &
+        ${pkgs.stalonetray}/bin/stalonetray --config ${stalonetrayrc} &
       '';
       extraConfig = bars + colors + modules + user_modules + module_xmonad + module_nyc_time;
     };
