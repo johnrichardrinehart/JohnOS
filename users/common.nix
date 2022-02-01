@@ -22,6 +22,24 @@ in
 {
 
   services.network-manager-applet.enable = true;
+  services.stalonetray = {
+    enable = true;
+    config = {
+      decorations = "none";
+      "transparent" = "false";
+      "dockapp_mode" = "none";
+      "icon_size" = 48;
+      "geometry" = "5x1-150+0";
+      "background" = "#3B4252";
+      "kludges" = "force_icons_size";
+      "grow_gravity" = "NE";
+      "icon_gravity" = "NE";
+      "sticky" = true;
+      "window_strut" = "none";
+      "window_type" = "dock";
+      "skip_taskbar" = "true";
+    };
+  };
 
   home.file =
     {
