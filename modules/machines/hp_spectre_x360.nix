@@ -222,8 +222,8 @@ in
   security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
+    alsa.enable = false; # https://github.com/NixOS/nixpkgs/issues/157442
+    alsa.support32Bit = false; # https://github.com/NixOS/nixpkgs/issues/157442
     pulse.enable = true;
     # If you want to use JACK applications, uncomment this
     #jack.enable = true;
