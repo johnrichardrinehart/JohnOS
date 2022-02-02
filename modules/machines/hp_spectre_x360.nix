@@ -17,13 +17,19 @@ in
     let
       latest_stable_pkg = { fetchurl, buildLinux, ... } @ args:
         buildLinux (args // rec {
-          version = "5.16.4";
-          modDirVersion = "5.16.4";
+          version = "5.16.5";
+          modDirVersion = "5.16.5";
 
           kernelPatches = [
             {
               name = "hp-spectre-x360-audio";
               patch = ./hp_spectre_x360_audio.patch;
+            }
+            # an issues with display sleeping cropped up in 5.16.4
+            # https://gitlab.freedesktop.org/drm/nouveau/-/issues/149
+            {
+              name = "fix-nouveau-driver-on-display-sleep-revert-9b98913f3d035f639eda2e213e308fd5567c00d2";
+              patch = ./0001-Revert-drm-nouveau-pmu-gm200-avoid-touching-PMU-outs.patch;
             }
           ];
 
@@ -32,7 +38,7 @@ in
 
           src = fetchurl {
             url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
-            sha256 = "K+MqQLm+NakUFmqx3glv/bUIcjZiGeF0cXiaWeQ7UL8=";
+            sha256 = "7K7t2dKJk0+XxXKqlltpWdTUf5eJIg5Pw/u1Jdjxx6s=";
           };
 
         } // (args.argsOverride or { }));
