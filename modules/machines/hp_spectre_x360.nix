@@ -222,15 +222,18 @@ in
   security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
+
     alsa.enable = false; # https://github.com/NixOS/nixpkgs/issues/157442
     alsa.support32Bit = false; # https://github.com/NixOS/nixpkgs/issues/157442
-    pulse.enable = true;
-    # If you want to use JACK applications, uncomment this
-    #jack.enable = true;
 
-    # use the example session manager (no others are packaged yet so this is enabled by default,
-    # no need to redefine it in your config for now)
-    #media-session.enable = true;
+    pulse.enable = true;
+
+    # If you want to use JACK applications, uncomment this
+    jack.enable = true;
+
+    media-session.enable = false;
+
+    wireplumber.enable = true;
   };
 
   # bluetooth stuff
