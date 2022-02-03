@@ -191,9 +191,9 @@ myKeys conf@XConfig {XMonad.modMask = modm} =
     [ key "Slack"         (modm                , xK_F2      ) $ spawnOn free1Ws "slack"
     ] ^++^
   keySet "Audio"
-    [ key "Mute"          (0, xF86XK_AudioMute              ) $ spawn "amixer -q set Master toggle"
-    , key "Lower volume"  (0, xF86XK_AudioLowerVolume       ) $ spawn "amixer -q set Master 5%-"
-    , key "Raise volume"  (0, xF86XK_AudioRaiseVolume       ) $ spawn "amixer -q set Master 5%+"
+    [ key "Mute"          (0, xF86XK_AudioMute              ) $ spawn "pactl -- set-sink-volume 0 0"
+    , key "Lower volume"  (0, xF86XK_AudioLowerVolume       ) $ spawn "pactl -- set-sink-volume 0 -10%"
+    , key "Raise volume"  (0, xF86XK_AudioRaiseVolume       ) $ spawn "pactl -- set-sink-volume 0 +10%"
     , key "Play / Pause"  (0, xF86XK_AudioPlay              ) $ spawn $ playerctl "play-pause"
     , key "Stop"          (0, xF86XK_AudioStop              ) $ spawn $ playerctl "stop"
     , key "Previous"      (0, xF86XK_AudioPrev              ) $ spawn $ playerctl "previous"

@@ -374,8 +374,8 @@ in
         # communication tools
         p.droidcam
         # multimedia tools
-        p.alsa-utils
         p.playerctl
+        p.pulseaudio # needed for pactl for volume buttons
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;
