@@ -340,6 +340,8 @@ in
         p.dbeaver
         p.stalonetray
         p.peek # GIF/webp screen recording
+        p.mpv # mplayer replacement
+        p.simplescreenrecorder
         # shell tools
         p.powerline-rs
         p.oil
