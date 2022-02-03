@@ -322,6 +322,11 @@ in
   home.packages =
     let
       p = pkgs;
+
+      pulseaudio = pkgs.pulseaudio.override {
+        useSystemd = false;
+      };
+
       base = [
         # gui configuration
         p.feh
@@ -378,7 +383,7 @@ in
         p.droidcam
         # multimedia tools
         p.playerctl
-        p.pulseaudio # needed for pactl for volume buttons
+        pulseaudio # needed for pactl for volume buttons
       ];
     in
     if args ? extraPackages then base ++ args.extraPackages else base;
