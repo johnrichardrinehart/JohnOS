@@ -348,6 +348,7 @@ in
         p.xdg-utils # `open`
         p.xclip
         p.fd
+        p.bc # needed for adjusting screen brightness
         p.libqalculate
         p.ncdu # ncurses disk usage (tree+du, basically)
         p.dive # docker image analyzer
