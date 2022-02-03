@@ -90,7 +90,7 @@ fi
 
 echo "downloading ISO pieces in parallel"
 
-i=0 j=3; for url in "${urls[@]}"; do (( i++ < j )) || wait -n; fetch_url "$url" "${hashes[$(basename "$url")]}" 0 & done; wait
+i=0 j=5; for url in "${urls[@]}"; do (( i++ < j )) || wait -n; fetch_url "$url" "${hashes[$(basename "$url")]}" 0 & done; wait
 
 echo "concatenating the pieces together"
 JOHNOS_ISO_FILENAME="JohnOS-${TAG_NAME}-${SHORT_REV}.iso"
