@@ -373,6 +373,7 @@ in
         p.pavucontrol
         p.autorandr
         p.file
+        p.pv # useful for dd operations (e.g. `dd if=infile | pv | sudo dd of=outfile bs=512`)
         # archive tools
         p.zip
         p.unzip
