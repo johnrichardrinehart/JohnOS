@@ -1,4 +1,14 @@
 {
+  nixConfig = {
+    substituters = [
+      "https://johnos.cachix.org"
+    ];
+
+    extra-trusted-public-keys = [
+      "johnos.cachix.org-1:wwbcQLNTaO9dx0CIXN+uC3vFl8fvhtkJbZWzMXWLFu0="
+    ];
+  };
+
   inputs = {
     nixpkgs_unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
