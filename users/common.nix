@@ -339,6 +339,7 @@ in
         p.keepassxc
         p.dbeaver
         p.stalonetray
+        p.peek # GIF/webp screen recording
         # shell tools
         p.powerline-rs
         p.oil
