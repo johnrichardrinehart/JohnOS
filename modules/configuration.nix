@@ -88,15 +88,17 @@ args @ { config, pkgs, ... }:
       };
     };
 
-  nixpkgs.overlays = [
-    (self: super: {
-      super.systemd =
-        (pkgs.systemd.override (old: { withHomed = true; }));
-    })
-  ];
+  # https://github.com/VTimofeenko/home-manager/blob/3d9ea6d74ee511cd8664f4a486ce65bd39e03ea8/experiments/homed.nix
+  systemd.package = pkgs.systemd.override (old: { withHomed = true; });
+
+  #   nixpkgs.overlays = [
+  #     (self: super: {
+  #       super.systemd =
+  #         (pkgs.systemd.override (old: { withHomed = true; }));
+  #     })
+  #   ];
 
   environment.systemPackages =
-    # https://github.com/VTimofeenko/home-manager/blob/3d9ea6d74ee511cd8664f4a486ce65bd39e03ea8/experiments/homed.nix
     [
       pkgs.openconnect
       pkgs.alsa-tools # https://askubuntu.com/a/1293623
