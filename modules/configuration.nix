@@ -1,4 +1,5 @@
 # Edit this configuration file to define what should be installed on
+
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
@@ -87,11 +88,17 @@ args @ { config, pkgs, ... }:
       };
     };
 
-  environment.systemPackages = [
-    pkgs.openconnect
-    pkgs.alsa-tools # https://askubuntu.com/a/1293623
-    pkgs.glxinfo
-  ];
+  environment.systemPackages =
+    [
+      pkgs.openconnect
+      pkgs.alsa-tools # https://askubuntu.com/a/1293623
+      pkgs.glxinfo
+
+      # https://github.com/VTimofeenko/home-manager/blob/3d9ea6d74ee511cd8664f4a486ce65bd39e03ea8/experiments/homed.nix
+      (pkgs.systemd.override (old: {
+        withHomed = true;
+      }))
+    ];
 
 
   nix = {
