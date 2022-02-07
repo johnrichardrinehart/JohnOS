@@ -22,7 +22,7 @@ stdenv.mkDerivation rec {
   makeFlags = [
     "KERNELRELEASE=${kernel.modDirVersion}"
     "KERNEL_DIR=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
-  ] ;
+  ];
 
   installPhase = ''
     mkdir -p $out/lib/modules/${KVER}/kernels/media/video
