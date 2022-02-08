@@ -345,7 +345,11 @@ in
   home.packages =
     let
       p = pkgs;
-
+      # TODO: remove once https://github.com/NixOS/nixpkgs/pull/158654 lands
+      # in nixos-unstable
+      dbeaver = p.dbeaver.overrideAttrs (old: {
+        outputHash = "sha256-fJs/XM8PZqm/CrhShtcy4R/4s8dCc1WdXIvYSCYZ4dw=";
+      });
       base = [
         # gui configuration
         p.feh

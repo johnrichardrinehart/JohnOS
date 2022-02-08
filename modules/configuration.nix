@@ -89,8 +89,15 @@ args @ { config, pkgs, ... }:
     };
 
   # https://github.com/VTimofeenko/home-manager/blob/3d9ea6d74ee511cd8664f4a486ce65bd39e03ea8/experiments/homed.nix
+  # systemd.package = pkgs.systemd.override (old: { withHomed = true; });
+
+  # cidkid from #nixos
+  # systemd.package = (pkgs.systemd.override { withHomed = true; });
+
   systemd.package = pkgs.systemd.overrideAttrs (old: { withHomed = true; });
 
+  # overlay: NobbZ says don't do this because
+  # https://zimbatm.com/notes/1000-instances-of-nixpkgs
   #   nixpkgs.overlays = [
   #     (self: super: {
   #       super.systemd =
