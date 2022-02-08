@@ -13,7 +13,6 @@ let
       p.gnome.gnome-keyring
       p.gnumake
       p.mysql
-      p.dbeaver # graphical DB tool
       p.docker-compose
       p.postman
       p.grpcurl
