@@ -94,7 +94,7 @@ args @ { config, pkgs, ... }:
   # cidkid from #nixos
   # systemd.package = (pkgs.systemd.override { withHomed = true; });
 
-  systemd.package = pkgs.systemd.overrideAttrs (old: { withHomed = true; });
+  systemd.package = (pkgs.systemd.override { withHomed = true; });
 
   # overlay: NobbZ says don't do this because
   # https://zimbatm.com/notes/1000-instances-of-nixpkgs
