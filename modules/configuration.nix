@@ -98,12 +98,21 @@ args @ { config, pkgs, ... }:
 
   # overlay: NobbZ says don't do this because
   # https://zimbatm.com/notes/1000-instances-of-nixpkgs
-  #   nixpkgs.overlays = [
-  #     (self: super: {
-  #       super.systemd =
-  #         (pkgs.systemd.override (old: { withHomed = true; }));
-  #     })
-  #   ];
+  nixpkgs.overlays = [
+    (self: super: {
+      # TODO: remove once https://github.com/NixOS/nixpkgs/pull/158654 lands
+      # in nixos-unstable
+      dbeaver = super.dbeaver.overrideAttrs (old: {
+        fetchedMavenDeps = old.fetchedMavenDeps.overrideAttrs (_: {
+          outputHash = "sha256-fJs/XM8PZqm/CrhShtcy4R/4s8dCc1WdXIvYSCYZ4dw=";
+        });
+      });
+    })
+    #  (self: super: {
+    #    super.systemd =
+    #      (pkgs.systemd.override (old: { withHomed = true; }));
+    #  })
+  ];
 
   environment.systemPackages =
     [

@@ -360,13 +360,7 @@ in
         p.brave
         p.flameshot
         p.keepassxc
-        # TODO: remove once https://github.com/NixOS/nixpkgs/pull/158654 lands
-        # in nixos-unstable
-        (p.dbeaver.overrideAttrs (old: {
-          fetchedMavenDeps = old.fetchedMavenDeps.overrideAttrs (_: {
-            outputHash = "sha256-fJs/XM8PZqm/CrhShtcy4R/4s8dCc1WdXIvYSCYZ4dw=";
-          });
-        }))
+        p.dbeaver
         p.stalonetray
         p.peek # GIF/webp screen recording
         p.mpv # mplayer replacement

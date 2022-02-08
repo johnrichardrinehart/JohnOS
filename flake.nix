@@ -100,9 +100,13 @@
             specialArgs = { inherit nixpkgs; };
           };
 
-        flash-drive-iso = let nixpkgs = nixpkgs-unstable; in
+        flash-drive-iso =
+          let
+            nixpkgs = nixpkgs-unstable;
+          in
           nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
+
             modules = [
               ./modules/machines/hp_spectre_x360.nix
               ./modules/configuration.nix
