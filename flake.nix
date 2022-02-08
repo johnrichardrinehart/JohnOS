@@ -10,9 +10,7 @@
   };
 
   inputs = {
-    # TODO: undo once https://github.com/NixOS/nixpkgs/pull/158596 is merged
-    # nixpkgs_unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs_unstable.url = "github:johnrichardrinehart/nixpkgs/fix/linux-slack-4.23.0";
+    nixpkgs_unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     flake-templates.url = "github:NixOS/templates";
 
