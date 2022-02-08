@@ -365,7 +365,7 @@ in
         p.brave
         p.flameshot
         p.keepassxc
-        p.dbeaver
+        dbeaver
         p.stalonetray
         p.peek # GIF/webp screen recording
         p.mpv # mplayer replacement
