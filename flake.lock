@@ -105,16 +105,16 @@
     },
     "nixpkgs_unstable": {
       "locked": {
-        "lastModified": 1644193945,
-        "narHash": "sha256-FqPyne57rnbvFfgL5OacS1w85/2NAZo59jqhhhcobek=",
-        "owner": "NixOS",
+        "lastModified": 1644320148,
+        "narHash": "sha256-tBUDo2ksH8eA51+fnrQ7ITndB7KkzUKcw+2qnxH56Mw=",
+        "owner": "johnrichardrinehart",
         "repo": "nixpkgs",
-        "rev": "fbd030fb2d8dc9fedcb45e57cbce5e9e064bfb6c",
+        "rev": "cf5cccc798005545ee99ca4507a8887dca3e5d31",
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable",
+        "owner": "johnrichardrinehart",
+        "ref": "fix/linux-slack-4.23.0",
         "repo": "nixpkgs",
         "type": "github"
       }
