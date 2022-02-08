@@ -311,9 +311,32 @@ in
       };
       config = ./polybar/config.ini;
       script = ''
-        ${pkgs.polybar}/bin/polybar main &
-        ${pkgs.coreutils}/bin/sleep 1
-        ${pkgs.stalonetray}/bin/stalonetray --config ${stalonetrayrc} &
+        # The below script has a weird structure, mostly owing to the long
+        # delay introduced by `xrandr` detecting and setting the display
+        # settings (when the window manager starts up). We basically need
+        # to wait a few seconds until the window manager has established 
+        # which screens are on and what their resolutions are before we
+        # start polybar, otherwise it starts on the first detected screen
+        # and then may jump to a later-activated screen (which may have a
+        # different resolution). The end result being a poylbar that is either
+        # either too short or too long. 3 seconds seems to be a kind of sweet
+        # spot for my hardware. However, stalonetray starts up faster than
+        # polybar so we need to add an additional delay to its startup so that
+        # we don't hide stalonetray behind polybar when polybar finishes
+        # loading.
+
+        startPolybar() {
+           ${pkgs.coreutils}/bin/sleep 3
+           ${pkgs.polybar}/bin/polybar $1
+        }
+
+        startStalonetray() {
+           ${pkgs.coreutils}/bin/sleep 4
+           ${pkgs.stalonetray}/bin/stalonetray --config ${stalonetrayrc}
+        }
+
+        startPolybar main &
+        startStalonetray &
       '';
       extraConfig = bars + colors + modules + user_modules + module_xmonad + module_nyc_time;
     };
