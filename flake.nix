@@ -1,137 +1,116 @@
 {
-  nixConfig = {
-    substituters = [
-      "https://johnos.cachix.org"
-    ];
-
-    extra-trusted-public-keys = [
-      "johnos.cachix.org-1:wwbcQLNTaO9dx0CIXN+uC3vFl8fvhtkJbZWzMXWLFu0="
-    ];
-  };
-
   inputs = {
-    nixpkgs_unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-
-    flake-templates.url = "github:NixOS/templates";
-
-    nix-master.url = "github:NixOS/nix/master";
+    # the commit right before it was fixed in nixos-unstable (a1efaf3eb8ae0f730428fbd503008d65ee8829e1)
+    nixpkgs.url = "github:NixOS/nixpkgs/bdfe187ba675c680deb89d8d7f1a0f583626f08d";
 
     home-manager = {
       url = "github:nix-community/home-manager/release-21.11";
       flake = true;
-      inputs.nixpkgs.follows = "nixpkgs_unstable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
   outputs = inputs:
     let
-      nix_pkg = inputs.nix-master.packages.x86_64-linux.nix;
+      user = "john";
 
-      nixpkgs-unstable = inputs.nixpkgs_unstable;
+      lib = inputs.nixpkgs.lib;
 
-      home-manager-config = {
-        config = {
-          home-manager = {
-            useUserPackages = true;
-            users.john = ./users/john.nix;
-            users.ardan = ./users/ardan.nix;
-            extraSpecialArgs = { photo = photoDerivation; };
-          };
+      nixosConfigurationConstructor = { flavor, sha }:
+        inputs.nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [
+            ./configuration.nix
+            inputs.home-manager.nixosModules.home-manager
+            {
+              config = {
+                home-manager = {
+                  useUserPackages = true;
+                  users.${user} = ./${user}.nix;
+                  extraSpecialArgs = { inherit flavor sha; };
+                };
+              };
+            }
+          ];
+
+          specialArgs = { inherit flavor sha; };
         };
 
+      longSha = "a9660fcf5c3f9b7ce132d78652b80abf9d557342c7b3f81fdce1192648d88b5c";
+      suggestedSha = "sha256-fJs/XM8PZqm/CrhShtcy4R/4s8dCc1WdXIvYSCYZ4dw=";
+
+      tackOn = x: map (l: l // x);
+
+      globalFlavors = [ "globalOverride" "globalOverlay" ];
+      hmFlavors = [ "hmOverride" "hmOverlay" ];
+
+      flavors =
+        tackOn { attrPath = "pkgs.dbeaver"; } (map (el: { name = el; }) globalFlavors) ++
+        tackOn { attrPath = "home-manager.users.${user}.home.activationPackage"; } (map (el: { name = el; }) hmFlavors)
+
+      hashes = [
+        { name = "fakeSha"; value = inputs.nixpkgs.lib.fakeSha256; }
+        { name = "longSha"; value = longSha; }
+        { name = "suggestedSha"; value = suggestedSha; }
+      ];
+
+      cases = inputs.nixpkgs.lib.cartesianProductOfSets {
+        flavor = map (fl: fl.name) flavors;
+        sha = map (h: h.value) hashes;
       };
 
-      photoDerivation =
-        let
-          pkgs = import nixpkgs-unstable { system = "x86_64-linux"; };
-        in
-        import ./photo/photo.nix { inherit pkgs; };
+
+      generateConfigs = listOf
     in
     rec {
       nixosConfigurations = {
-        nixos = nixosConfigurations.vbox-config;
+        # use an override inside of the home manager module configuration
+        hmOverrideWithFakeSha = nixosConfigurationConstructor {
+          flavor = "hmOverride";
+          sha = lib.fakeSha256;
+        };
+        hmOverrideWithLongSha = nixosConfigurationConstructor { flavor = "hmOverride"; sha = longSha; };
+        hmOverrideWithSuggestedSha = nixosConfigurationConstructor { flavor = "hmOverrde"; sha = suggestedSha; };
 
-        # vbox_config is designed to be used within a pre-existing NixOS installation as
-        # `nixos-rebuild switch --flake .#vbox-config` # default package is this flake
-        vbox-config =
-          let
-            nixpkgs = nixpkgs-unstable;
-          in
-          nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-            modules = [
-              ./modules/machines/virtualbox.nix
-              ./modules/configuration.nix
-              inputs.home-manager.nixosModules.home-manager
-              home-manager-config
-            ];
-            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
-          };
+        # use an overlay inside of the home manager module configuration
+        hmOverlayWithFakeSha = nixosConfigurationConstructor { flavor = "hmOverride"; sha = lib.fakeSha256; };
+        hmOverlayWithLongSha = nixosConfigurationConstructor { flavor = "hmOverride"; sha = longSha; };
+        hmOverlayWithSuggestedSha = nixosConfigurationConstructor { flavor = "hmOverride"; sha = suggestedSha; };
 
-        # ova is designed to generate a VirtualBox Appliance output
-        ova =
-          let
-            nixpkgs = nixpkgs-unstable;
-          in
-          nixpkgs-unstable.lib.nixosSystem {
-            system = "x86_64-linux";
-            modules = [
-              (import "${nixpkgs}/nixos/modules/virtualisation/virtualbox-image.nix")
-              ./configuration.nix
-              inputs.home-manager.nixosModules.home-manager
-              home-manager-config
-            ];
-            specialArgs = { inherit (inputs); inherit nixpkgs; };
-          };
+        # use an override inside of the system configuration
+        globalOverrideWithFakeSha = nixosConfigurationConstructor { flavor = "globalOverride"; sha = lib.fakeSha256; };
+        globalOverrideWithLongSha = nixosConfigurationConstructor { flavor = "globalOverride"; sha = longSha; };
+        globalOverrideWithSuggestedSha = nixosConfigurationConstructor { flavor = "globalOverride"; sha = suggestedSha; };
 
-        vps-iso =
-          let nixpkgs = nixpkgs-unstable; in
-          nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-            modules = [
-              ./modules/machines/vps_configuration.nix
-              "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-              ({ config, pkgs, ... }: {
-                isoImage = {
-                  isoBaseName = "johnos_" + (inputs.self.rev or "dirty");
-                };
-              })
-            ];
-            specialArgs = { inherit nixpkgs; };
-          };
+        # use an overlay inside of the system configuration
+        globalOverlayWithFakeSha = nixosConfigurationConstructor { flavor = "globalOverlay"; sha = lib.fakeSha256; };
+        globalOverlayWithLongSha = nixosConfigurationConstructor { flavor = "globalOverlay"; sha = longSha; };
+        globalOverlayWithSuggestedSha = nixosConfigurationConstructor { flavor = "globalOverlay"; sha = suggestedSha; };
 
-        flash-drive-iso =
-          let
-            nixpkgs = nixpkgs-unstable;
-          in
-          nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-
-            modules = [
-              ./modules/machines/hp_spectre_x360.nix
-              ./modules/configuration.nix
-              inputs.home-manager.nixosModules.home-manager
-              home-manager-config
-              "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-              ({ config, pkgs, ... }: {
-                isoImage = {
-                  isoBaseName = "JohnOS-" + (inputs.self.rev or "dirty");
-                  makeEfiBootable = true;
-                };
-              })
-            ];
-            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
-          };
+        # the nothing version
+        unflavored = nixosConfigurationConstructor { flavor = ""; sha = ""; };
       };
 
       packages.x86_64-linux = {
-        vps-iso = nixosConfigurations.vps-iso.config.system.build.isoImage;
-        flash-drive-iso = nixosConfigurations.flash-drive-iso.config.system.build.isoImage;
-        ova = nixosConfigurations.ova.config.system.build.virtualBoxOVA;
-        vbox-config = nixosConfigurations.vbox-config;
-      };
+        dbeaverHmOverrideWithFakeSha = nixosConfigurations.hmOverrideWithFakeSha.config.home-manager.users.john.home.activationPackage;
+        dbeaverHmOverrideWithLongSha = nixosConfigurations.hmOverrideWithLongSha.config.home-manager.users.john.home.activationPackage;
+        dbeaverHmOverrideWithSuggestedSha = nixosConfigurations.hmOverrideWithSuggestedSha.config.home-manager.users.john.home.activationPackage;
 
-      defaultPackage.x86_64-linux = packages.x86_64-linux.vbox-config;
+        dbeaverHmOverlayWithFakeSha = nixosConfigurations.hmOverlayWithFakeSha.config.home-manager.users.john.home.activationPackage;
+        dbeaverHmOverlayWithLongSha = nixosConfigurations.hmOverlayWithLongSha.config.home-manager.users.john.home.activationPackage;
+        dbeaverHmOverlayWithSuggestedSha = nixosConfigurations.hmOverlayWithSuggestedSha.config.home-manager.users.john.home.activationPackage;
+
+        dbeaverSystemOverrideWithFakeSha = nixosConfigurations.globalOverrideWithFakeSha.pkgs.dbeaver;
+        dbeaverSystemOverrideWithLongSha = nixosConfigurations.globalOverrideWithLongSha.pkgs.dbeaver;
+        dbeaverSystemOverrideWithSuggestedSha = nixosConfigurations.globalOverrideWithSuggestedSha.pkgs.dbeaver;
+
+        dbeaverSystemOverlayWithFakeSha = nixosConfigurations.globalOverlayWithFakeSha.pkgs.dbeaver;
+        dbeaverSystemOverlayWithLongSha = nixosConfigurations.globalOverlayWithLongSha.pkgs.dbeaver;
+        dbeaverSystemOverlayWithSuggestedSha = nixosConfigurations.globalOverlayWithSuggestedSha.pkgs.dbeaver;
+
+        dbeaverSystemUnflavored = nixosConfigurations.unflavored.pkgs.dbeaver;
+        dbeaverHmUnflavored = nixosConfigurations.unflavored.config.home-manager.users.john.home.activationPackage;
+      };
     };
 
 }
