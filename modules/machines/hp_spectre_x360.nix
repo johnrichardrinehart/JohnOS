@@ -17,8 +17,8 @@ in
     let
       latest_stable_pkg = { fetchurl, buildLinux, ... } @ args:
         buildLinux (args // rec {
-          version = "5.16.7";
-          modDirVersion = "5.16.7";
+          version = "5.16.9";
+          modDirVersion = "5.16.9";
 
           kernelPatches = [
             {
@@ -38,7 +38,7 @@ in
 
           src = fetchurl {
             url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
-            sha256 = "V1H1Po5UFesElKwVE3ZcveoohIljmZ39tdTn9MPYps0=";
+            sha256 = "sha256-FmDnIo7CmcGHwZc50RXe2X9rG+BaJJhsTEQ+fF6LdE8=";
           };
 
         } // (args.argsOverride or { }));
