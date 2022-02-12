@@ -337,12 +337,12 @@ in
         # loading.
 
         startPolybar() {
-           ${pkgs.coreutils}/bin/sleep 3
+           ${pkgs.coreutils}/bin/sleep 4
            ${pkgs.polybar}/bin/polybar $1
         }
 
         startStalonetray() {
-           ${pkgs.coreutils}/bin/sleep 4
+           ${pkgs.coreutils}/bin/sleep 5
            ${pkgs.stalonetray}/bin/stalonetray --config ${stalonetrayrc}
         }
 
