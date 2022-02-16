@@ -11,8 +11,7 @@
 
   inputs = {
     # TODO: remove when https://github.com/NixOS/nixpkgs/pull/159255 lands in unstable
-    nixpkgs_unstable.url = "github:NixOS/nixpkgs/master";
-    #nixpkgs_unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs_unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     flake-templates.url = "github:NixOS/templates";
 
