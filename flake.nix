@@ -82,7 +82,7 @@
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
             ];
-            specialArgs = { inherit (inputs) agenix flake-templates; inherit nixpkgs; };
+            specialArgs = { inherit (inputs) agenix flake-templates; inherit nixpkgs nix_pkg; };
           };
 
         # ova is designed to generate a VirtualBox Appliance output
@@ -98,7 +98,7 @@
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
             ];
-            specialArgs = { inherit (inputs); inherit nixpkgs; };
+            specialArgs = { inherit (inputs); inherit nixpkgs nix_pkg; };
           };
 
         vultr-iso =
