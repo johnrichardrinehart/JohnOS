@@ -70,7 +70,7 @@
             specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
           };
 
-        vps =
+        vultr =
           let
             nixpkgs = nixpkgs-unstable;
           in
@@ -78,7 +78,7 @@
             system = "x86_64-linux";
             modules = [
               ./modules/configuration.nix
-              ./modules/machines/vps_configuration.nix
+              ./modules/machines/vultr.nix
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
             ];
@@ -101,12 +101,12 @@
             specialArgs = { inherit (inputs); inherit nixpkgs; };
           };
 
-        vps-iso =
+        vultr-iso =
           let nixpkgs = nixpkgs-unstable; in
           nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
             modules = [
-              ./modules/machines/vps_configuration.nix
+              ./modules/machines/vultr.nix
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
               ({ config, pkgs, ... }: {
                 isoImage = {
@@ -142,7 +142,7 @@
       };
 
       packages.x86_64-linux = {
-        vps-iso = nixosConfigurations.vps-iso.config.system.build.isoImage;
+        vultr-iso = nixosConfigurations.vultr-iso.config.system.build.isoImage;
         flash-drive-iso = nixosConfigurations.flash-drive-iso.config.system.build.isoImage;
         ova = nixosConfigurations.ova.config.system.build.virtualBoxOVA;
         vbox-config = nixosConfigurations.vbox-config;
