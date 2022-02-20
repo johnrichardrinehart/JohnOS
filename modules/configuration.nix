@@ -113,8 +113,8 @@ args @ { config, pkgs, ... }:
       pkgs.openconnect
       pkgs.alsa-tools # https://askubuntu.com/a/1293623
       pkgs.glxinfo
+      pkgs.vim
     ];
-
 
   nix = {
     package = args.nix_pkg;
