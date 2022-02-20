@@ -70,6 +70,21 @@
             specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
           };
 
+        vps =
+          let
+            nixpkgs = nixpkgs-unstable;
+          in
+          nixpkgs.lib.nixosSystem {
+            system = "x86_64-linux";
+            modules = [
+              ./modules/configuration.nix
+              ./modules/machines/vps_configuration.nix
+              inputs.home-manager.nixosModules.home-manager
+              home-manager-config
+            ];
+            specialArgs = { inherit (inputs) agenix flake-templates; inherit nixpkgs; };
+          };
+
         # ova is designed to generate a VirtualBox Appliance output
         ova =
           let
