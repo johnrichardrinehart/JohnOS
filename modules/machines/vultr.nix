@@ -6,16 +6,39 @@ args @ { config, lib, pkgs, modulesPath, ... }:
       (modulesPath + "/profiles/qemu-guest.nix")
     ];
 
-  boot.initrd.availableKernelModules = [ "ahci" "xhci_pci" "virtio_pci" "sr_mod" "virtio_blk" ];
-  boot.initrd.kernelModules = [ ];
-  boot.kernelModules = [ ];
-  boot.extraModulePackages = [ ];
-  boot.loader.grub = {
-    enable = true;
-    version = 2;
-    # Define on which hard drive you want to install Grub.
-    device = "/dev/vda"; # or "nodev" for efi only
+  boot = {
+    initrd.availableKernelModules = [ "ahci" "xhci_pci" "virtio_pci" "sr_mod" "virtio_blk" ];
+    initrd.kernelModules = [ ];
+    kernelModules = [ ];
+    extraModulePackages = [ ];
+    loader.grub = {
+      enable = true;
+      version = 2;
+      # Define on which hard drive you want to install Grub.
+      device = "/dev/vda"; # or "nodev" for efi only
+    };
+    kernelPackages = pkgs.lib.mkForce (
+      let
+        latest_stable_pkg = { fetchurl, buildLinux, ... } @ args:
+          buildLinux (args // rec {
+            version = "5.16.10";
+            modDirVersion = "5.16.10";
+
+            kernelPatches = [ ];
+
+            src = fetchurl {
+              url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
+              sha256 = "sha256-DE1vAIGABZOFLrFVsB4Jt4tbxp16VT/Fj1rSBw+QI54=";
+            };
+
+          } // (args.argsOverride or { }));
+        latest_stable = pkgs.callPackage latest_stable_pkg { };
+      in
+      pkgs.recurseIntoAttrs
+        (pkgs.linuxPackagesFor latest_stable)
+    );
   };
+
 
   fileSystems."/" =
     {
@@ -42,6 +65,8 @@ args @ { config, lib, pkgs, modulesPath, ... }:
   programs.zsh.enable = true;
 
   environment.systemPackages = [
+    pkgs.tmux
+    pkgs.vim
     pkgs.git
   ];
 
