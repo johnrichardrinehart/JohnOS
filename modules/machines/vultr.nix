@@ -17,26 +17,7 @@ args @ { config, lib, pkgs, modulesPath, ... }:
       # Define on which hard drive you want to install Grub.
       device = "/dev/vda"; # or "nodev" for efi only
     };
-    kernelPackages = pkgs.lib.mkForce (
-      let
-        latest_stable_pkg = { fetchurl, buildLinux, ... } @ args:
-          buildLinux (args // rec {
-            version = "5.16.10";
-            modDirVersion = "5.16.10";
-
-            kernelPatches = [ ];
-
-            src = fetchurl {
-              url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
-              sha256 = "sha256-DE1vAIGABZOFLrFVsB4Jt4tbxp16VT/Fj1rSBw+QI54=";
-            };
-
-          } // (args.argsOverride or { }));
-        latest_stable = pkgs.callPackage latest_stable_pkg { };
-      in
-      pkgs.recurseIntoAttrs
-        (pkgs.linuxPackagesFor latest_stable)
-    );
+    kernelPackages = pkgs.recurseIntoAttrs (pkgs.linuxPackagesFor pkgs.linuxKernel.kernels.linux_5_16);
   };
 
 
@@ -68,9 +49,12 @@ args @ { config, lib, pkgs, modulesPath, ... }:
     pkgs.tmux
     pkgs.vim
     pkgs.git
+    pkgs.nixpkgs-fmt
   ];
 
   virtualisation.docker.enable = true;
+
+  services.sshd.enable = true;
 
   networking = {
     useDHCP = pkgs.lib.mkForce true;
