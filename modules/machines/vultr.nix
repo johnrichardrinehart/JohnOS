@@ -29,7 +29,13 @@ args @ { config, lib, pkgs, modulesPath, ... }:
 
   fileSystems."/nix" =
     {
-      device = "/dev/vdb1";
+      device = "/dev/disk/by-label/nix_store";
+      fsType = "ext4";
+    };
+
+  fileSystems."/tmp" =
+    {
+      device = "/dev/disk/by-label/tmp";
       fsType = "ext4";
     };
 
