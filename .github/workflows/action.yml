@@ -36,7 +36,7 @@ jobs:
     - name: Build JohnOS (Cachix) 🔨🔨🔨
       run: |
           cd ${{ github.workspace}}/repo
-          nix build .#flash-drive-iso
+          nix build .#spectre-live-iso
 
     - name: Split JohnOS 🔪🔪🔪
       run: |
