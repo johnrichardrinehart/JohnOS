@@ -1,12 +1,12 @@
 {
   nixConfig = {
-    substituters = [
-      "https://johnos.cachix.org"
-    ];
-
-    extra-trusted-public-keys = [
-      "johnos.cachix.org-1:wwbcQLNTaO9dx0CIXN+uC3vFl8fvhtkJbZWzMXWLFu0="
-    ];
+    #    substituters = [
+    #      "https://johnos.cachix.org"
+    #    ];
+    #
+    #    extra-trusted-public-keys = [
+    #      "johnos.cachix.org-1:wwbcQLNTaO9dx0CIXN+uC3vFl8fvhtkJbZWzMXWLFu0="
+    #    ];
   };
 
   inputs = {
@@ -40,7 +40,6 @@
             extraSpecialArgs = { photo = photoDerivation; };
           };
         };
-
       };
 
       photoDerivation =
@@ -117,7 +116,38 @@
             specialArgs = { inherit nixpkgs; };
           };
 
-        flash-drive-iso =
+        mbp-live-iso =
+          let
+            nixpkgs = nixpkgs-unstable;
+          in
+          nixpkgs.lib.nixosSystem {
+            system = "x86_64-linux";
+
+            modules = [
+              ./modules/machines/mbp.nix
+              ./modules/configuration.nix
+              inputs.home-manager.nixosModules.home-manager
+              {
+                config = {
+                  home-manager = {
+                    useUserPackages = true;
+                    users.sergey = ./users/sergey.nix;
+                    extraSpecialArgs = { photo = photoDerivation; };
+                  };
+                };
+              }
+              "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+              ({ config, pkgs, ... }: {
+                isoImage = {
+                  isoBaseName = "CergeyOS-" + (inputs.self.rev or "dirty");
+                  makeEfiBootable = true;
+                };
+              })
+            ];
+            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
+          };
+
+        spectre-live-iso =
           let
             nixpkgs = nixpkgs-unstable;
           in
@@ -143,12 +173,10 @@
 
       packages.x86_64-linux = {
         vultr-iso = nixosConfigurations.vultr-iso.config.system.build.isoImage;
-        flash-drive-iso = nixosConfigurations.flash-drive-iso.config.system.build.isoImage;
+        spectre-live-iso = nixosConfigurations.spectre-live-iso.config.system.build.isoImage;
+        mbp-live-iso = nixosConfigurations.mbp-live-iso.config.system.build.isoImage;
         ova = nixosConfigurations.ova.config.system.build.virtualBoxOVA;
         vbox-config = nixosConfigurations.vbox-config;
       };
-
-      defaultPackage.x86_64-linux = packages.x86_64-linux.vbox-config;
     };
-
 }

@@ -128,9 +128,7 @@ in
 
   networking = {
     hostName = "johnos"; # Put your hostname here.
-
     interfaces.wlo1.useDHCP = true;
-
     wireless.enable = pkgs.lib.mkForce false; # use networking.networkmanager
   };
 
