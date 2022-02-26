@@ -132,6 +132,8 @@ in
     wireless.enable = pkgs.lib.mkForce false; # use networking.networkmanager
   };
 
+  services.resolved.enable = true;
+
   ################################################################################
   ########## NVIDIA offload
   ################################################################################
