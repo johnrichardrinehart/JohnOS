@@ -85,9 +85,9 @@ args @ { config, pkgs, ... }:
       };
       ardan = defaultUserAttrs // {
         hashedPassword = "$6$GjNHUPIRR981Cov$TNQYuTmnGSvUMotD.dUqJ7c9dLCJi0hWL7ztsw1icJovNNjO1eA9vNH9ZXmQR0eaBVPgGrsaXAr/c8YouFhtY.";
-        sergey = defaultUserAttrs // {
-          hashedPassword = "$6$efw2xmzHLDCrTDTk$QPK/FTXMAJRqVACs0Fl2/gKBw5wTR6OylBQkZJ0M.t6luWuxn5AZeHXi3N58EKDD7MmVmAdtuuzG91KcSL64g0";
-        };
+      };
+      sergey = defaultUserAttrs // {
+        hashedPassword = "$6$efw2xmzHLDCrTDTk$QPK/FTXMAJRqVACs0Fl2/gKBw5wTR6OylBQkZJ0M.t6luWuxn5AZeHXi3N58EKDD7MmVmAdtuuzG91KcSL64g0";
       };
     };
 
