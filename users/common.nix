@@ -420,7 +420,7 @@ in
   gtk = {
     enable = true;
     theme = {
-      package = pkgs.gnome-themes-standard;
+      package = pkgs.gnome-themes-extra;
       name = "Adawaita-dark";
     };
   };

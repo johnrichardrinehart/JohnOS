@@ -17,12 +17,12 @@ let
   };
 
   desktopItem = makeDesktopItem {
-    name = "NoSQL Workbench";
+    name = "NoSQL-Workbench"; # spaces not allowed
     exec = "${pname}-${version}";
     comment = "NoSQL Workbench for Amazon DynamoDB is a cross-platform client-side application for modern database development and operations and is available for Windows and macOS.";
     desktopName = "NoSQL Workbench";
     genericName = "DB UI";
-    categories = "Development";
+    categories = [ "Development" ];
   };
 
 in
