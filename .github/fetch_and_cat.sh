@@ -94,11 +94,10 @@ i=0 j=5; for url in "${urls[@]}"; do (( i++ < j )) || wait -n; fetch_url "$url" 
 
 echo "concatenating the pieces together"
 JOHNOS_ISO_FILENAME="JohnOS-${TAG_NAME}-${SHORT_REV}.iso"
-mv JohnOS-*.iso.00 "${JOHNOS_ISO_FILENAME}"
 
 n=0
 for piece in "${iso_pieces[@]}"; do
-  if [[ "$n" -gt 0 && $(("$n"+1)) -lt ${#iso_pieces[@]} ]]; then
+  if [[ $(("$n"+1)) -lt ${#iso_pieces[@]} ]]; then
      echo "concatenating piece ${piece}"
      cat "${piece}" >> "${JOHNOS_ISO_FILENAME}"
      rm "${piece}"
@@ -109,7 +108,7 @@ done
 gothash=$(sha256sum "$JOHNOS_ISO_FILENAME" | tr -s ' ' | cut -d' ' -f1)
 expecthash=${hashes[${iso_pieces[-1]}]}
 if [[ "$gothash" != "$expecthash" ]]; then
-	printf "bad checksum.\ngot %s\nexpected %s" "$gothash" "$expecthash"
+	printf "bad checksum.\ngot %s\nexpected %s\n" "$gothash" "$expecthash"
 	exit 1
 fi
 
