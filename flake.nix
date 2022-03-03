@@ -148,6 +148,29 @@
             specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
           };
 
+	simple-live-iso =
+	let
+		nixpkgs = nixpkgs-unstable;
+	in
+          nixpkgs.lib.nixosSystem {
+            system = "x86_64-linux";
+
+            modules = [
+		./modules/kernel.nix
+              ./modules/configuration.nix
+              inputs.home-manager.nixosModules.home-manager
+              home-manager-config
+              "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+              ({ config, pkgs, ... }: {
+                isoImage = {
+                  isoBaseName = "JohnOS-" + (inputs.self.rev or "dirty");
+                  makeEfiBootable = true;
+                };
+              })
+            ];
+            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
+          };
+
         spectre-live-iso =
           let
             nixpkgs = nixpkgs-unstable;
@@ -178,6 +201,7 @@
         mbp-live-iso = nixosConfigurations.mbp-live-iso.config.system.build.isoImage;
         ova = nixosConfigurations.ova.config.system.build.virtualBoxOVA;
         vbox-config = nixosConfigurations.vbox-config;
+        simple-live-iso = nixosConfigurations.simple-live-iso.config.system.build.isoImage;
       };
     };
 }

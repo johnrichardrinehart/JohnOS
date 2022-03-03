@@ -3,7 +3,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-args @ { config, pkgs, ... }:
+args @ { config, pkgs, lib, ... }:
 {
   virtualisation.docker = {
     enable = true;
@@ -26,8 +26,8 @@ args @ { config, pkgs, ... }:
 
   console.useXkbConfig = true;
 
-
   networking.networkmanager.enable = true;
+  networking.wireless.enable = false;
 
   # useful for VS Code extensions that require an auth keyring
   services.gnome.gnome-keyring.enable = true;
