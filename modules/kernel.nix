@@ -1,4 +1,4 @@
-{ nixpkgs, pkgs, lib, ...}:
+{ nixpkgs, pkgs, lib, ... }:
 {
   nixpkgs.config.allowBroken = true; # zfs-kernel-$VERSION is broken
   boot.kernelPackages = pkgs.lib.mkForce (
@@ -8,7 +8,7 @@
           version = "5.16.12";
           modDirVersion = "5.16.12";
 
-	  kernelPatches = [];
+          kernelPatches = [ ];
 
           src = fetchurl {
             url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";

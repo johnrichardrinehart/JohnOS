@@ -148,23 +148,33 @@
             specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
           };
 
-	simple-live-iso =
-	let
-		nixpkgs = nixpkgs-unstable;
-	in
+        simple-live-iso =
+          let
+            nixpkgs = nixpkgs-unstable;
+          in
           nixpkgs.lib.nixosSystem {
             system = "x86_64-linux";
 
             modules = [
-		./modules/kernel.nix
+              ./modules/kernel.nix
               ./modules/configuration.nix
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
               ({ config, pkgs, ... }: {
                 isoImage = {
-                  isoBaseName = "JohnOS-" + (inputs.self.rev or "dirty");
+                  isoBaseName = "simple-live-iso-" + (inputs.self.rev or "dirty");
                   makeEfiBootable = true;
+                  services.xserver.libinput.enable = true;
+                  fonts.fontconfig.enable = pkgs.lib.mkForce true;
+                  fileSystems = pkgs.lib.mkForce
+                    (config.lib.isoFileSystems // {
+                      "/" =
+                        {
+                          fsType = "tmpfs";
+                          options = [ "mode=0755 size=80%" ];
+                        };
+                    });
                 };
               })
             ];
@@ -184,12 +194,6 @@
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-              ({ config, pkgs, ... }: {
-                isoImage = {
-                  isoBaseName = "JohnOS-" + (inputs.self.rev or "dirty");
-                  makeEfiBootable = true;
-                };
-              })
             ];
             specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
           };
