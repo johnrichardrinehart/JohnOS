@@ -162,7 +162,11 @@
               home-manager-config
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
               ({ config, pkgs, lib, ... }: {
+                boot.initrd.kernelModules = [ "i915" ];
+                boot.kernelParams = [ "acpi_backlight=vendor" ];
+
                 services.xserver = {
+
                   libinput.enable = true;
                   videoDrivers = [ "modesetting" "nouveau" ];
 
