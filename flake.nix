@@ -162,8 +162,30 @@
               home-manager-config
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
               ({ config, pkgs, lib, ... }: {
-                services.xserver.libinput.enable = true;
+                services.xserver = {
+                  libinput.enable = true;
+                  videoDrivers = [ "modesetting" "nouveau" ];
+
+                  # manual implementation of https://github.com/NixOS/nixpkgs/blob/6c0c30146347188ce908838fd2b50c1b7db47c0c/nixos/modules/services/x11/xserver.nix#L737-L741
+                  # can not use xserver.config.enableCtrlAltBackspace because we want a mostly-empty xorg.conf
+                  config = pkgs.lib.mkForce ''
+                    Section "ServerFlags"
+                       Option "DontZap" "off"
+                    EndSection
+
+                    Section "Screen"
+                       Identifier "Placeholder-NotImportant"
+                       SubSection "Display"
+                         Depth 24
+                         Modes "1920x1080" "2560x1440"
+                       EndSubSection
+                    EndSection
+                  '';
+
+                };
+
                 fonts.fontconfig.enable = pkgs.lib.mkForce true;
+
                 lib.isoFileSystems = lib.mkForce {
                   "/" = lib.mkImageMediaOverride
                     {
@@ -213,6 +235,7 @@
                       ];
                     };
                 };
+
                 isoImage = {
                   isoBaseName = "simple-live-iso-" + (inputs.self.rev or "dirty");
                   makeEfiBootable = true;
