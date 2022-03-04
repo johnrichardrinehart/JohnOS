@@ -164,11 +164,13 @@
               ({ config, pkgs, lib, ... }: {
                 boot.initrd.kernelModules = [ "i915" ];
                 boot.kernelParams = [ "acpi_backlight=vendor" ];
+                boot.blacklistedKernelModules = [ "modesetting" "nvidia" ];
 
                 services.xserver = {
 
                   libinput.enable = true;
-                  videoDrivers = [ "modesetting" "nouveau" ];
+                  #videoDrivers = [ "modesetting" "nouveau" ];
+
 
                   # manual implementation of https://github.com/NixOS/nixpkgs/blob/6c0c30146347188ce908838fd2b50c1b7db47c0c/nixos/modules/services/x11/xserver.nix#L737-L741
                   # can not use xserver.config.enableCtrlAltBackspace because we want a mostly-empty xorg.conf
