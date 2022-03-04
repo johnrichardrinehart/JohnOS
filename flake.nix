@@ -161,20 +161,61 @@
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-              ({ config, pkgs, ... }: {
+              ({ config, pkgs, lib, ... }: {
+                services.xserver.libinput.enable = true;
+                fonts.fontconfig.enable = pkgs.lib.mkForce true;
+                lib.isoFileSystems = {
+                  "/" = lib.mkImageMediaOverride
+                    {
+                      fsType = "tmpfs";
+                      options = [ "mode=0755" "size=80%" ];
+                    };
+                  # Note that /dev/root is a symlink to the actual root device
+                  # specified on the kernel command line, created in the stage 1
+                  # init script.
+                  "/iso" = lib.mkImageMediaOverride
+                    {
+                      device = "/dev/root";
+                      neededForBoot = true;
+                      noCheck = true;
+                    };
+
+                  # In stage 1, mount a tmpfs on top of /nix/store (the squashfs
+                  # image) to make this a live CD.
+                  "/nix/.ro-store" = lib.mkImageMediaOverride
+                    {
+                      fsType = "squashfs";
+                      device = "/iso/nix-store.squashfs";
+                      options = [ "loop" ];
+                      neededForBoot = true;
+                    };
+
+                  "/nix/.rw-store" = lib.mkImageMediaOverride
+                    {
+                      fsType = "tmpfs";
+                      options = [ "mode=0755" ];
+                      neededForBoot = true;
+                    };
+
+                  "/nix/store" = lib.mkImageMediaOverride
+                    {
+                      fsType = "overlay";
+                      device = "overlay";
+                      options = [
+                        "lowerdir=/nix/.ro-store"
+                        "upperdir=/nix/.rw-store/store"
+                        "workdir=/nix/.rw-store/work"
+                      ];
+                      depends = [
+                        "/nix/.ro-store"
+                        "/nix/.rw-store/store"
+                        "/nix/.rw-store/work"
+                      ];
+                    };
+                };
                 isoImage = {
                   isoBaseName = "simple-live-iso-" + (inputs.self.rev or "dirty");
                   makeEfiBootable = true;
-                  services.xserver.libinput.enable = true;
-                  fonts.fontconfig.enable = pkgs.lib.mkForce true;
-                  fileSystems = pkgs.lib.mkForce
-                    (config.lib.isoFileSystems // {
-                      "/" =
-                        {
-                          fsType = "tmpfs";
-                          options = [ "mode=0755 size=80%" ];
-                        };
-                    });
                 };
               })
             ];
