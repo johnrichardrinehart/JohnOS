@@ -196,7 +196,7 @@
                   "/" = lib.mkImageMediaOverride
                     {
                       fsType = "tmpfs";
-                      options = [ "mode=0755" ];
+                      options = [ "mode=0755" "size=80%" ];
                     };
                   # Note that /dev/root is a symlink to the actual root device
                   # specified on the kernel command line, created in the stage 1
@@ -221,7 +221,7 @@
                   "/nix/.rw-store" = lib.mkImageMediaOverride
                     {
                       fsType = "tmpfs";
-                      options = [ "mode=0755" "size=80%" ];
+                      options = [ "mode=0755" ];
                       neededForBoot = true;
                     };
 
