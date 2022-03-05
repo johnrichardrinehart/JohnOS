@@ -42,6 +42,9 @@ args @ { config, pkgs, lib, ... }:
       # https://www.reddit.com/r/unixporn/comments/a7rg63/oc_a_tiny_riceable_lightdm_greeter/eckzt15?utm_source=share&utm_medium=web2x&context=3
       defaultSession = "default"; # TODO: figure out a way to use another string besides default
       lightdm.greeters.tiny.enable = true;
+      lightdm.extraConfig = ''
+        logind-check-graphical = true
+      '';
       # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
     };
     desktopManager.session = [
