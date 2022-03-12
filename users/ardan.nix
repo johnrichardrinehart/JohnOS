@@ -19,12 +19,6 @@ let
       (pkgs.callPackage ./nosql-workbench.nix { })
     ];
 
-  programs = {
-    git = {
-      userEmail = "john.rinehart@ardanlabs.com";
-    };
-  };
-
   zshInitExtra =
     ''
       function ssm-stable-instance-id {
@@ -58,4 +52,4 @@ let
       export PATH=$PATH:$HOME/go/bin
     '';
 in
-(import ./common.nix) (args // { inherit extraPackages zshInitExtra programs; })
+(import ./common.nix) (args // { inherit extraPackages zshInitExtra; })

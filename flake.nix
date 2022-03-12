@@ -266,7 +266,7 @@
               home-manager-config
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
             ];
-            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
+            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; photo = photoDerivation; };
           };
       };
 

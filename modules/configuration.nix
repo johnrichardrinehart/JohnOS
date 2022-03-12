@@ -5,6 +5,8 @@
 
 args @ { config, pkgs, lib, ... }:
 {
+  imports = [ ./home.nix ];
+
   virtualisation.docker = {
     enable = true;
     storageDriver = "overlay2";
@@ -31,7 +33,6 @@ args @ { config, pkgs, lib, ... }:
 
   # useful for VS Code extensions that require an auth keyring
   services.gnome.gnome-keyring.enable = true;
-  # services.dconf.enable = true; # may be necessary for gnome-keyring... not sure
 
   # Configure keymap in X11
   services.xserver = {
@@ -115,11 +116,70 @@ args @ { config, pkgs, lib, ... }:
   # ];
 
   environment.systemPackages =
+    let
+      p = pkgs;
+    in
     [
-      pkgs.openconnect
-      pkgs.alsa-tools # https://askubuntu.com/a/1293623
-      pkgs.glxinfo
-      pkgs.vim
+      p.openconnect
+      p.alsa-tools # https://askubuntu.com/a/1293623
+      p.glxinfo
+      p.vim
+      # gui configuration
+      p.feh
+      p.multilockscreen
+      p.dconf
+      p.dunst
+      p.libnotify
+      p.gnome-icon-theme
+      # gui apps
+      p.rofi
+      p.slack
+      p.vscodium
+      p.brave
+      p.flameshot
+      p.keepassxc
+      p.dbeaver
+      p.stalonetray
+      p.peek # GIF/webp screen recording
+      p.mpv # mplayer replacement
+      p.simplescreenrecorder
+      # shell tools
+      p.powerline-rs
+      p.oil
+      p.ranger
+      p.jump
+      p.tmux
+      p.xdg-utils # `open`
+      p.xclip
+      p.fd
+      p.bc # needed for adjusting screen brightness
+      p.libqalculate
+      p.ncdu # ncurses disk usage (tree+du, basically)
+      p.dive # docker image analyzer
+      # language tools
+      p.jq
+      p.nixpkgs-fmt
+      # os tools
+      p.htop
+      p.tree
+      p.killall
+      p.lsof
+      p.pstree
+      p.nethogs
+      p.pavucontrol
+      p.autorandr
+      p.file
+      p.pv # useful for dd operations (e.g. `dd if=infile | pv | sudo dd of=outfile bs=512`)
+      # archive tools
+      p.zip
+      p.unzip
+      # programming languages
+      p.go_1_17
+      p.gcc
+      # communication tools
+      p.droidcam
+      # multimedia tools
+      p.playerctl
     ];
 
   nix = {
