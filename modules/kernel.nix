@@ -19,7 +19,7 @@
               };
 
               version = "${v}";
-              modDirVersion = "${v}-${os_name}";
+              modDirVersion = "${v}${os_name}";
 
               extraConfig = ''
                 LOCALVERSION ${os_name}
