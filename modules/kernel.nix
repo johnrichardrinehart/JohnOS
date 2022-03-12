@@ -6,17 +6,27 @@
   nixpkgs.overlays = [
     (
       self: super: {
-        JohnOS-kernel = super.linuxPackagesFor (super.linux_latest.override {
-          argsOverride = rec {
-            src = super.fetchurl {
-              url = "mirror://kernel/linux/kernel/v5.x/linux-${version}.tar.xz";
-              sha256 = "sha256-eoulhlnV5fD54eCk++05rFIBSdJNeuxGNvz4JV0FdPY=";
+        JohnOS-kernel =
+          let
+            v = "5.16.14";
+            os_name = "-JohnOS";
+          in
+          super.linuxPackagesFor (super.linux_latest.override {
+            argsOverride = rec {
+              src = super.fetchurl {
+                url = "mirror://kernel/linux/kernel/v5.x/linux-${version}.tar.xz";
+                sha256 = "sha256-eoulhlnV5fD54eCk++05rFIBSdJNeuxGNvz4JV0FdPY=";
+              };
+
+              version = "${v}";
+              modDirVersion = "${v}-${os_name}";
+
+              extraConfig = ''
+                LOCALVERSION ${os_name}
+                LOCALVERSION_AUTO y
+              '';
             };
-            version = "5.16.14";
-            modDirVersion = "5.16.14";
-          };
-          ignoreConfigErrors = true;
-        });
+          });
       }
     )
   ];
