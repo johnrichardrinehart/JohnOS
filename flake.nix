@@ -259,8 +259,9 @@
             system = "x86_64-linux";
 
             modules = [
-              ./modules/machines/hp_spectre_x360.nix
               ./modules/configuration.nix
+              ./modules/kernel.nix
+              ./modules/machines/hp_spectre_x360.nix
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
               "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"

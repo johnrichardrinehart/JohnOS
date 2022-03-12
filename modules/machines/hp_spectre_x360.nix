@@ -13,40 +13,19 @@ in
 
   # TODO: remove allowUnbroken once ZFS in linux kernel is fixed
   nixpkgs.config.allowBroken = true;
-  boot.kernelPackages = pkgs.lib.mkForce (
-    let
-      latest_stable_pkg = { fetchurl, buildLinux, ... } @ args:
-        buildLinux (args // rec {
-          version = "5.16.12";
-          modDirVersion = "5.16.12";
 
-          kernelPatches = [
-            {
-              name = "hp-spectre-x360-audio";
-              patch = ./hp_spectre_x360_audio.patch;
-            }
-            # an issues with display sleeping cropped up in 5.16.4
-            # https://gitlab.freedesktop.org/drm/nouveau/-/issues/149
-            {
-              name = "fix-nouveau-driver-on-display-sleep-revert-9b98913f3d035f639eda2e213e308fd5567c00d2";
-              patch = ./0001-Revert-drm-nouveau-pmu-gm200-avoid-touching-PMU-outs.patch;
-            }
-          ];
-
-          # buildFlags = [ "KBUILD_BUILD_VERSION=JohnOS" ];
-          #++ (args.nixpkgs.lib.drop 2 args.buildFlags);
-
-          src = fetchurl {
-            url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
-            sha256 = "sha256-u1od8VoQpxWAekSHL/T+d1M3quRFKFGB8dG6DHix1/I=";
-          };
-
-        } // (args.argsOverride or { }));
-      latest_stable = pkgs.callPackage latest_stable_pkg { };
-    in
-    pkgs.recurseIntoAttrs
-      (pkgs.linuxPackagesFor latest_stable)
-  );
+  boot.kernelPatches = [
+    {
+      name = "hp-spectre-x360-audio";
+      patch = ./hp_spectre_x360_audio.patch;
+    }
+    # an issues with display sleeping cropped up in 5.16.4
+    # https://gitlab.freedesktop.org/drm/nouveau/-/issues/149
+    {
+      name = "fix-nouveau-driver-on-display-sleep-revert-9b98913f3d035f639eda2e213e308fd5567c00d2";
+      patch = ./0001-Revert-drm-nouveau-pmu-gm200-avoid-touching-PMU-outs.patch;
+    }
+  ];
 
   # add some filesystems for helping maintain state between reboots
   fileSystems = pkgs.lib.mkForce
@@ -98,8 +77,7 @@ in
       });
 
   # disabled by installation-cd-minimal
-  fonts.fontconfig.enable = pkgs.lib.mkForce
-    true;
+  fonts.fontconfig.enable = pkgs.lib.mkForce true;
 
   # use xinput to discover the name of the laptop keyboard (not lsusb)
   services.xserver = {
