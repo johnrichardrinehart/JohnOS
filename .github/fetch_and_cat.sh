@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 
-OUTDIR=${OUTDIR:-$(pwd)}
+OUTDIR="${OUTDIR:-$(pwd)}" # working directory if undef
+OUTDIR="${OUTDIR/#\~/$HOME}" # replace ~ with $HOME
+
 GITHUB_API_BASE="https://api.github.com"
 OWNER=${OWNER:-johnrichardrinehart}
 REPO=${REPO:-JohnOS}
 VERSION=${1:-latest}
+
 TMPDIR=${TMPDIR:-"/tmp/JohnOS-${VERSION}"}
+TMPDIR="${TMPDIR/#\~/$HOME}"
 
 if [[ "$GITHUB_API_TOKEN" != "" ]]; then
     GITHUB_API_AUTH_HEADER="Authorization: token ${GITHUB_API_TOKEN}"
