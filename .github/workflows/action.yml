@@ -36,7 +36,9 @@ jobs:
     - name: Build JohnOS (Cachix) 🔨🔨🔨
       run: |
           cd ${{ github.workspace}}/repo
-          NIXPKGS_ALLOW_UNFREE=1 nix build --impure .#spectre-live-iso
+          NIXPKGS_ALLOW_UNFREE=1 \
+          NIX_PATH="nixpkgs=https://github.com/NixOS/nixpkgs-channels/archive/nixos-unstable.tar.gz" \
+          nix build --impure .#spectre-live-iso
 
     - name: Split JohnOS 🔪🔪🔪
       run: |
