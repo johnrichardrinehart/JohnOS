@@ -52,4 +52,4 @@ let
       export PATH=$PATH:$HOME/go/bin
     '';
 in
-(import ./common.nix) (args // { home.packages = pp; inherit zshInitExtra;})
+import ./common.nix (args // { inherit zshInitExtra; }) // { home.packages = pp; }

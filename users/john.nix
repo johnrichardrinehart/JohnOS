@@ -17,5 +17,5 @@ let
       p.skypeforlinux
     ];
 in
-(import ./common.nix) (args // { home.packages = pp; })
+(import ./common.nix args) // { home.packages = pp; }
 
