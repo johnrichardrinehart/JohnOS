@@ -113,8 +113,7 @@ in
   home.file =
     {
       ".config/powerline-rs/themes/gruvbox.theme" = {
-        source = ./gruvbox.theme; # powerline-rs
-        target = ".config/powerline-rs/themes/gruvbox.theme";
+        source = ./gruvbox.theme;
       };
 
       ".config/i3status/net-speed.sh" = {
