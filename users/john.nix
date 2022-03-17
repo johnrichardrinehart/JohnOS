@@ -1,6 +1,6 @@
 args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 let
-  extraPackages = let p = pkgs; in
+  pp = let p = pkgs; in
     [
       # games
       p.gnuchess
@@ -17,5 +17,5 @@ let
       p.skypeforlinux
     ];
 in
-(import ./common.nix) (args // { inherit extraPackages; })
+(import ./common.nix) (args // { home.packages = pp; })
 

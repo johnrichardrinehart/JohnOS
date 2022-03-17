@@ -1,6 +1,6 @@
 args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 let
-  extraPackages =
+  pp =
     let
       p = pkgs;
     in
@@ -52,4 +52,4 @@ let
       export PATH=$PATH:$HOME/go/bin
     '';
 in
-(import ./common.nix) (args // { inherit extraPackages zshInitExtra; })
+(import ./common.nix) (args // { home.packages = pp; inherit zshInitExtra;})
