@@ -95,7 +95,7 @@ in
 
         startPolybar() {
            ${pkgs.coreutils}/bin/sleep 4
-           ${pkgs.polybar}/bin/polybar $1
+           ${pkgs.polybar}/bin/polybar --config="${config.xdg.configFile."polybar/config".source}" $1
         }
 
         startStalonetray() {
