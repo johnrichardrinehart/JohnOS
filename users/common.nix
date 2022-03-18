@@ -251,8 +251,7 @@ in
       ];
   };
 
-  programs.
-  zsh = {
+  programs.zsh = {
     enable = true;
 
     plugins = [
@@ -348,6 +347,8 @@ in
       export SSH_AUTH_SOCK
     '';
   };
+
+  home.packages = if builtins.hasAttr "pp" args then args.pp else [];
 
   home.stateVersion = "21.05";
 }

@@ -51,5 +51,4 @@ let
 
       export PATH=$PATH:$HOME/go/bin
     '';
-in
-import ./common.nix (args // { inherit zshInitExtra; }) // { home.packages = pp; }
+in import ./common.nix (args // { inherit pp zshInitExtra; }) # // { home.packages = pp; home.homeDirectory = "/home/ardan"; }
