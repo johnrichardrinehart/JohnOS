@@ -8,14 +8,14 @@
       self: super: {
         JohnOS-kernel =
           let
-            v = "5.16.15";
+            v = "5.17.1";
             os_name = "-JohnOS";
           in
           super.linuxPackagesFor (super.linux_latest.override {
             argsOverride = rec {
               src = super.fetchurl {
                 url = "mirror://kernel/linux/kernel/v5.x/linux-${version}.tar.xz";
-                sha256 = "sha256-jzDECOCzYN75V3ft00C5mRb2ayfh+lEhwzaGOa8NJNY=";
+                sha256 = "sha256-fNXF1DKiX0UGCGjOaoV4iQ5VAVii93nEoggEtVHoTCQ=";
               };
 
               version = "${v}";
