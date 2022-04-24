@@ -24,7 +24,7 @@ args @ { config, pkgs, lib, ... }:
   ##### John's Stuff #####
 
   # Set your time zone.
-  time.timeZone = "Europe/Kiev";
+  time.timeZone = "Europe/Lisbon";
 
   console.useXkbConfig = true;
 
