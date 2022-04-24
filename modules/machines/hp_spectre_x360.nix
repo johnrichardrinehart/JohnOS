@@ -156,6 +156,7 @@ in
 
   environment.systemPackages = [
     pkgs.hicolor-icon-theme
+    pkgs.brightnessctl
   ];
 
   #boot.blacklistedKernelModules = [ "nvidia" "modesetting"];
