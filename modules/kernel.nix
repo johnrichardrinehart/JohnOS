@@ -8,7 +8,7 @@
       self: super: {
         JohnOS-kernel =
           let
-            v = "5.17.1";
+            v = "5.17.4";
             os_name = "-JohnOS";
           in
           super.linuxPackagesFor (super.linux_latest.override {
