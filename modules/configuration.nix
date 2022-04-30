@@ -85,13 +85,10 @@ args @ { config, pkgs, lib, ... }:
     in
     {
       john = defaultUserAttrs // {
-        hashedPassword = "$6$Ao7vxO2e5CHZ$QyJE9UHOUem41VHskn6bbuUdeLZFOFGLCVM0S.UmJWFooaXa3a3Nw.3NFZqklfqMGTfPXlJKIx.9xVcM3k6Z3/";
+        hashedPassword = "$6$IQcYRQaTKCrDfClQ$k7MAqJDodwnGdtpj7zXEHq9UsPDAeME5XweKRosRjA8QFfMc2k.eZoGTHc4pnHAWAxaNtYylWN85fkroQg7lj.";
       };
       ardan = defaultUserAttrs // {
         hashedPassword = "$6$GjNHUPIRR981Cov$TNQYuTmnGSvUMotD.dUqJ7c9dLCJi0hWL7ztsw1icJovNNjO1eA9vNH9ZXmQR0eaBVPgGrsaXAr/c8YouFhtY.";
-      };
-      sergey = defaultUserAttrs // {
-        hashedPassword = "$6$efw2xmzHLDCrTDTk$QPK/FTXMAJRqVACs0Fl2/gKBw5wTR6OylBQkZJ0M.t6luWuxn5AZeHXi3N58EKDD7MmVmAdtuuzG91KcSL64g0";
       };
     };
 
@@ -205,5 +202,20 @@ args @ { config, pkgs, lib, ... }:
     nixPath = [ "nixpkgs=${args.nixpkgs}" ];
   };
 
+  # Use the systemd-boot EFI boot loader.
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+
   nixpkgs.config.allowUnfree = true;
+
+  # networking.hostName = "JohnOS-framework"; # Define your hostname.
+  # Pick only one of the below networking options.
+  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+  # networking.wireless.userControlled.enable = true;
+  # networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
+
+  # Enable touchpad support (enabled default in most desktopManager).
+  services.xserver.libinput.enable = true;
 }
+
+

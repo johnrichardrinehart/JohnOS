@@ -12,9 +12,9 @@ let
       p.tdesktop
       p.signal-desktop
       p.terraform
-      p.discord
+      # p.discord
       p.element-desktop
-      p.skypeforlinux
+      # p.skypeforlinux
     ];
 in
 import ./common.nix (args // { inherit pp; }) # // { home.packages = pp; home.homeDirectory = "/home/john"; }

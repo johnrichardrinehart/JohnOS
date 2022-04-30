@@ -10,7 +10,7 @@
   };
 
   inputs = {
-    nixpkgs_unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs_unstable.url = "github:NixOS/nixpkgs/master";
 
     flake-templates.url = "github:NixOS/templates";
 
@@ -156,9 +156,9 @@
             modules = [
               ./modules/kernel.nix
               ./modules/configuration.nix
+              ./modules/machines/framework.nix
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
-              "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
               ({ config, pkgs, lib, ... }: {
                 boot.initrd.kernelModules = [ "i915" ];
                 boot.kernelParams = [ "acpi_backlight=vendor" ];
@@ -189,61 +189,6 @@
                 };
 
                 fonts.fontconfig.enable = pkgs.lib.mkForce true;
-
-                lib.isoFileSystems = lib.mkForce {
-                  "/" = lib.mkImageMediaOverride
-                    {
-                      fsType = "tmpfs";
-                      options = [ "mode=0755" "size=80%" ];
-                    };
-                  # Note that /dev/root is a symlink to the actual root device
-                  # specified on the kernel command line, created in the stage 1
-                  # init script.
-                  "/iso" = lib.mkImageMediaOverride
-                    {
-                      device = "/dev/root";
-                      neededForBoot = true;
-                      noCheck = true;
-                    };
-
-                  # In stage 1, mount a tmpfs on top of /nix/store (the squashfs
-                  # image) to make this a live CD.
-                  "/nix/.ro-store" = lib.mkImageMediaOverride
-                    {
-                      fsType = "squashfs";
-                      device = "/iso/nix-store.squashfs";
-                      options = [ "loop" ];
-                      neededForBoot = true;
-                    };
-
-                  "/nix/.rw-store" = lib.mkImageMediaOverride
-                    {
-                      fsType = "tmpfs";
-                      options = [ "mode=0755" ];
-                      neededForBoot = true;
-                    };
-
-                  "/nix/store" = lib.mkImageMediaOverride
-                    {
-                      fsType = "overlay";
-                      device = "overlay";
-                      options = [
-                        "lowerdir=/nix/.ro-store"
-                        "upperdir=/nix/.rw-store/store"
-                        "workdir=/nix/.rw-store/work"
-                      ];
-                      depends = [
-                        "/nix/.ro-store"
-                        "/nix/.rw-store/store"
-                        "/nix/.rw-store/work"
-                      ];
-                    };
-                };
-
-                isoImage = {
-                  isoBaseName = "simple-live-iso-" + (inputs.self.rev or "dirty");
-                  makeEfiBootable = true;
-                };
               })
             ];
             specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
@@ -274,7 +219,7 @@
         mbp-live-iso = nixosConfigurations.mbp-live-iso.config.system.build.isoImage;
         ova = nixosConfigurations.ova.config.system.build.virtualBoxOVA;
         vbox-config = nixosConfigurations.vbox-config;
-        simple-live-iso = nixosConfigurations.simple-live-iso.config.system.build.isoImage;
+#        simple-live-iso = nixosConfigurations.simple-live-iso.config.system.build.isoImage;
       };
     };
 }
