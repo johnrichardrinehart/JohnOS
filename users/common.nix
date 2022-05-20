@@ -218,6 +218,8 @@ in
 
   programs.kitty = {
     enable = true;
+    font.size = 16;
+    font.name = "Fira Mono Medium for Powerline";
     extraConfig = ''
       enable_audio_bell no
       scrollback_lines 250000
