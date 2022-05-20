@@ -42,16 +42,63 @@ args @ { config, pkgs, lib, ... }:
   services.xserver = {
     enable = true;
     exportConfiguration = true; # https://github.com/NixOS/nixpkgs/issues/19629#issuecomment-368051434
-    layout = "us";
+    # layout = "us";
     displayManager = {
       # https://www.reddit.com/r/unixporn/comments/a7rg63/oc_a_tiny_riceable_lightdm_greeter/eckzt15?utm_source=share&utm_medium=web2x&context=3
       defaultSession = "default"; # TODO: figure out a way to use another string besides default
-      lightdm.greeters.tiny.enable = true;
+      lightdm.greeters.enso.enable = true;
       lightdm.extraConfig = ''
         logind-check-graphical = true
       '';
-      # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
+
+      sessionCommands =
+        let
+          laptopResolution = "2256x1504";
+        in
+        ''
+            configureKeyboards() {
+            ################################################################################
+            ########## Useful URLs from research
+            ################################################################################
+            # https://www.in-ulm.de/~mascheck/X11/xmodmap.html
+            # https://wiki.archlinux.org/title/Xorg/Keyboard_configuration#Using_X_configuration_files
+            # https://askubuntu.com/a/337431
+            #
+            ################################################################################
+            ########## Helpful commands to find the keyboard map
+            ################################################################################
+            # setxkbmap -query
+            # input list-props $NUMBER_YOURE_INTERESTED_IN
+            # localctl list-x11-keymap models
+            #
+            #  setxkbmap -model sun_type7_usb -layout gb -option ctrl:swapcaps
+            #  setxkbmap -model pc104 -layout cz,us -variant ,dvorak -option grp:alt_shift_toggle
+            #  localectl [--no-convert] set-x11-keymap layout [model [variant [options]]]
+
+              LAPTOP_KBD="AT Translated Set 2 keyboard"; LAPTOP_KBD_ID=$(${pkgs.xorg.xinput}/bin/xinput | grep "''${LAPTOP_KBD}" | cut -f 2 | cut -d = -f 2); ${pkgs.xorg.setxkbmap}/bin/setxkbmap -device $LAPTOP_KBD_ID -layout dvorak
+              }
+
+            configureMonitors() {
+            LAP_MONITOR="eDP-1"
+            ${pkgs.xorg.xrandr}/bin/xrandr --output "''${LAP_MONITOR}" --mode ${laptopResolution}
+            ${pkgs.xorg.xrandr}/bin/xrandr --setprovideroutputsource 1 0
+
+          # looks like: https://bugs.freedesktop.org/show_bug.cgi?id=110830
+          # which referencese: https://gist.github.com/szpak/71081b40217fb27c7a565b8c7b972067
+          # consider filing a bug at: https://gitlab.freedesktop.org/drm/nouveau/
+            for monitor in $(${pkgs.xorg.xrandr}/bin/xrandr | grep " connected" | cut -f1 -d " "); do
+            if [[ "''${monitor}" != "''${LAP_MONITOR}" ]]
+            then
+              ${pkgs.xorg.xrandr}/bin/xrandr --output "''${monitor}" --mode 2560x1440 --primary --above "''${LAP_MONITOR}"
+            fi
+            done
+            }
+
+            configureKeyboards
+            configureMonitors
+        '';
     };
+
     desktopManager.session = [
       {
         manage = "window";
