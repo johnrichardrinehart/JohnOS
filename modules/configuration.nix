@@ -25,11 +25,15 @@ args @ { config, pkgs, lib, ... }:
 
   # Set your time zone.
   time.timeZone = "Europe/Lisbon";
+  # time.timeZone = "America/Los_Angeles";
 
   console.useXkbConfig = true;
 
   networking.networkmanager.enable = true;
   networking.wireless.enable = false;
+  networking.extraHosts = ''
+    45.63.61.99 mongoloid
+  '';
 
   # useful for VS Code extensions that require an auth keyring
   services.gnome.gnome-keyring.enable = true;
