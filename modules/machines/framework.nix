@@ -2,42 +2,48 @@
 # and may be overwritten by future invocations.  Please make changes
 # to /etc/nixos/configuration.nix instead.
 { config, lib, pkgs, modulesPath, ... }:
-
+let
+  # https://discourse.nixos.org/t/load-automatically-kernel-module-and-deal-with-parameters/9200
+  v4l2loopback-dc = config.boot.kernelPackages.callPackage ./v4l2loopback-dc.nix { };
+in
 {
   imports =
-    [ (modulesPath + "/installer/scan/not-detected.nix")
+    [
+      (modulesPath + "/installer/scan/not-detected.nix")
     ];
 
   boot.initrd.availableKernelModules = [ "xhci_pci" "thunderbolt" "nvme" "uas" "usb_storage" "sd_mod" ];
   boot.initrd.kernelModules = [ ];
-  boot.kernelModules = [ "kvm-intel" ];
-  boot.extraModulePackages = [ ];
 
   fileSystems."/" =
-    { device = "/dev/disk/by-uuid/9dbd56c9-2344-450a-845b-6490d0879256";
+    {
+      device = "/dev/disk/by-uuid/9dbd56c9-2344-450a-845b-6490d0879256";
       fsType = "ext4";
     };
 
   fileSystems."/boot" =
-    { device = "/dev/disk/by-uuid/32F9-A71A";
+    {
+      device = "/dev/disk/by-uuid/32F9-A71A";
       fsType = "vfat";
     };
 
   swapDevices =
-    [ { device = "/dev/disk/by-uuid/960b1823-195e-4044-8c86-8407b1f25d92"; }
-    ];
+    [{ device = "/dev/disk/by-uuid/960b1823-195e-4044-8c86-8407b1f25d92"; }];
 
   # The global useDHCP flag is deprecated, therefore explicitly set to false here.
   # Per-interface useDHCP will be mandatory in the future, so this generated config
   # replicates the default behaviour.
   networking.useDHCP = lib.mkDefault false;
+  # networking.networkmanager.insertNameservers = [ "1.1.1.1" "8.8.8.8" "6.6.6.6" ];
+  networking.nameservers = [ "1.1.1.1" "8.8.8.8" "6.6.6.6" ];
   # networking.interfaces.docker0.useDHCP = lib.mkDefault true;
+  networking.resolvconf.enable = false;
   networking.interfaces.wlp170s0.useDHCP = lib.mkDefault true;
 
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
   # high-resolution display
-  hardware.video.hidpi.enable = lib.mkDefault true;
+  # hardware.video.hidpi.enable = lib.mkDefault true;
 
   security.rtkit.enable = true;
   services.pipewire = {
@@ -61,4 +67,18 @@
   hardware = {
     bluetooth.enable = true;
   };
+
+  ## Below v4l2loopback stuff stolen from https://gist.github.com/TheSirC/93130f70cc280cdcdff89faf8d4e98ab
+  # Extra kernel modules
+  boot.extraModulePackages = [
+    #config.boot.kernelPackages.v4l2loopback
+    v4l2loopback-dc
+  ];
+
+  # Register a v4l2loopback device at boot
+  boot.kernelModules = [
+    #"v4l2loopback"
+    "kvm-intel" # detected automatically
+    "v4l2loopback-dc" # droidcam-cli
+  ];
 }

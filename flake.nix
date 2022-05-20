@@ -22,6 +22,10 @@
       flake = true;
       inputs.nixpkgs.follows = "nixpkgs_unstable";
     };
+
+    nixos-hardware = {
+      url = "github:NixOS/nixos-hardware";
+    };
   };
 
   outputs = inputs:
@@ -93,7 +97,7 @@
             system = "x86_64-linux";
             modules = [
               (import "${nixpkgs}/nixos/modules/virtualisation/virtualbox-image.nix")
-              ./configuration.nix
+              ./modules/configuration.nix
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
             ];
@@ -147,6 +151,28 @@
             specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
           };
 
+        framework-laptop =
+          let
+            nixpkgs = nixpkgs-unstable;
+          in
+          nixpkgs.lib.nixosSystem {
+            system = "x86_64-linux";
+
+            modules = [
+              inputs.nixos-hardware.nixosModules.framework
+              ./modules/kernel.nix
+              ./modules/configuration.nix
+              ./modules/machines/framework.nix
+              inputs.home-manager.nixosModules.home-manager
+              home-manager-config
+              ({ config, pkgs, lib, ... }: {
+                fonts.fontconfig.enable = pkgs.lib.mkForce true;
+              })
+            ];
+            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
+          };
+
+
         simple-live-iso =
           let
             nixpkgs = nixpkgs-unstable;
@@ -155,40 +181,19 @@
             system = "x86_64-linux";
 
             modules = [
+              inputs.nixos-hardware.nixosModules.framework
               ./modules/kernel.nix
               ./modules/configuration.nix
               ./modules/machines/framework.nix
               inputs.home-manager.nixosModules.home-manager
               home-manager-config
               ({ config, pkgs, lib, ... }: {
-                boot.initrd.kernelModules = [ "i915" ];
-                boot.kernelParams = [ "acpi_backlight=vendor" ];
-                boot.blacklistedKernelModules = [ "modesetting" "nvidia" ];
+                # boot.initrd.kernelModules = [ "i915" ];
+                # boot.kernelParams = [ "acpi_backlight=vendor" ];
+                # boot.blacklistedKernelModules = [ "modesetting" "nvidia" ];
 
-                services.xserver = {
-
-                  libinput.enable = true;
-                  #videoDrivers = [ "modesetting" "nouveau" ];
-
-
-                  # manual implementation of https://github.com/NixOS/nixpkgs/blob/6c0c30146347188ce908838fd2b50c1b7db47c0c/nixos/modules/services/x11/xserver.nix#L737-L741
-                  # can not use xserver.config.enableCtrlAltBackspace because we want a mostly-empty xorg.conf
-                  config = pkgs.lib.mkForce ''
-                    Section "ServerFlags"
-                       Option "DontZap" "off"
-                    EndSection
-
-                    Section "Screen"
-                       Identifier "Placeholder-NotImportant"
-                       SubSection "Display"
-                         Depth 24
-                         Modes "1920x1080" "2560x1440"
-                       EndSubSection
-                    EndSection
-                  '';
-
-                };
-
+                # Fix font sizes in X
+                #services.xserver.dpi = 200;
                 fonts.fontconfig.enable = pkgs.lib.mkForce true;
               })
             ];
@@ -219,8 +224,7 @@
         spectre-live-iso = nixosConfigurations.spectre-live-iso.config.system.build.isoImage;
         mbp-live-iso = nixosConfigurations.mbp-live-iso.config.system.build.isoImage;
         ova = nixosConfigurations.ova.config.system.build.virtualBoxOVA;
-        vbox-config = nixosConfigurations.vbox-config;
-#        simple-live-iso = nixosConfigurations.simple-live-iso.config.system.build.isoImage;
+        vbox-config = nixosConfigurations.vbox-config.config.system.build.toplevel;
       };
     };
 }
