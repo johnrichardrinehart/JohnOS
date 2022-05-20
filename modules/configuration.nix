@@ -208,7 +208,8 @@ args @ { config, pkgs, lib, ... }:
       p.jq
       p.nixpkgs-fmt
       # os tools
-      p.htop
+      p.dig
+      p.btop
       p.tree
       p.killall
       p.lsof
