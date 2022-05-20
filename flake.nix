@@ -33,6 +33,7 @@
       home-manager-config = {
         config = {
           home-manager = {
+            useGlobalPkgs = true;
             useUserPackages = true;
             users.john = ./users/john.nix;
             users.ardan = ./users/ardan.nix;
