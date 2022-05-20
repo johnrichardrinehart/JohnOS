@@ -12,7 +12,7 @@
   inputs = {
     nixpkgs_unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    flake-templates.url = "github:NixOS/templates";
+    flake-templates.url = "github:NixOS/templates/master";
 
     nix-master.url = "github:NixOS/nix/master";
     nix-2_6_1.url = "github:nixos/nix/e044ccb67ce38d11059de32515306f5f1bd2f04f";
