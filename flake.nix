@@ -10,7 +10,7 @@
   };
 
   inputs = {
-    nixpkgs_unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs_unstable.url = "github:xaverdh/nixpkgs/2e880a53655fb98cc8e1242ba06c7823dc9c2eb3";
 
     flake-templates.url = "github:NixOS/templates/master";
 
