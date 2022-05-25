@@ -94,7 +94,7 @@ args @ { config, pkgs, lib, ... }:
             done
             }
 
-            configureKeyboards
+            #configureKeyboards
             configureMonitors
         '';
     };

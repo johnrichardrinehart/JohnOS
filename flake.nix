@@ -10,7 +10,10 @@
   };
 
   inputs = {
-    nixpkgs_unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # we can roll the branch back to nixos-unstable once
+    # https://github.com/NixOS/nixpkgs/pull/174091/files
+    # lands in nixos-unstable
+    nixpkgs_unstable.url = "github:NixOS/nixpkgs/master";
 
     flake-templates.url = "github:NixOS/templates/master";
 
