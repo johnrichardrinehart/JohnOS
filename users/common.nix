@@ -272,6 +272,13 @@ in
     enableAutosuggestions = true;
 
     shellAliases = {
+      ssh = "kitty +kitten ssh";
+      # from https://stackoverflow.com/a/47285611
+      gbbd = "git for-each-ref --sort=committerdate refs/heads/ --format='%(color: red)%(committerdate:short) %(color: cyan)%(refname:short)'";
+      # latest kernel version
+      lkv = ''curl --silent 'https://kernel.org' | xmllint -html -xpath '//*[@id="latest_link"]/a/text()' - 2>/dev/null'';
+      clv = ''uname -a | cut -f3 -d' ' | cut -f 1 -d'-' '';
+      k = "kubectl";
       chess = "scid";
       sudo-nixos-rebuild-flake = "sudo nixos-rebuild switch --flake $HOME/code/repos/mine/nix"; # https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
     };
@@ -314,7 +321,6 @@ in
           
           compctl -U -K jump_completion j
 
-          alias ssh="kitty +kitten ssh"
 
           # https://github.com/nix-community/nix-direnv
           eval "$(direnv hook zsh)"
@@ -327,9 +333,6 @@ in
             PS1=$(printf "%s\n$ " "$pwr")
           }
           precmd_functions+=(prompt)
-
-          # from https://stackoverflow.com/a/47285611
-          alias gbbd="git for-each-ref --sort=committerdate refs/heads/ --format='%(color: red)%(committerdate:short) %(color: cyan)%(refname:short)'"
         '';
       in
       if builtins.hasAttr "zshInitExtra" args
