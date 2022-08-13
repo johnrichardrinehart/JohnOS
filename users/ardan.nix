@@ -5,18 +5,10 @@ let
       p = pkgs;
     in
     [
-      # p.teams
-      p.awscli2
-      # p.ssm-session-manager-plugin
-      p.python39
-      p.python39Packages.pylint
       p.gnome.gnome-keyring
       p.gnumake
-      p.mysql
       p.docker-compose
-      # p.postman
       p.grpcurl
-      # (pkgs.callPackage ./nosql-workbench.nix { })
     ];
 
   zshInitExtra =
