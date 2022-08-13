@@ -34,16 +34,13 @@ in
   # Per-interface useDHCP will be mandatory in the future, so this generated config
   # replicates the default behaviour.
   networking.useDHCP = lib.mkDefault false;
-  # networking.networkmanager.insertNameservers = [ "1.1.1.1" "8.8.8.8" "6.6.6.6" ];
   networking.nameservers = [ "1.1.1.1" "8.8.8.8" "6.6.6.6" ];
-  # networking.interfaces.docker0.useDHCP = lib.mkDefault true;
   networking.resolvconf.enable = false;
   networking.interfaces.wlp170s0.useDHCP = lib.mkDefault true;
 
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
   # high-resolution display
-  # hardware.video.hidpi.enable = lib.mkDefault true;
 
   security.rtkit.enable = true;
   services.pipewire = {
@@ -71,14 +68,19 @@ in
   ## Below v4l2loopback stuff stolen from https://gist.github.com/TheSirC/93130f70cc280cdcdff89faf8d4e98ab
   # Extra kernel modules
   boot.extraModulePackages = [
-    #config.boot.kernelPackages.v4l2loopback
-    v4l2loopback-dc
+    config.boot.kernelPackages.v4l2loopback
   ];
+
+  environment.etc."modprobe.d/v4l2loopback.conf".text = ''
+    options v4l2loopback video_nr=0,1,2 card_label="Virtual Video 0,Virtual Video 1,Virtual Video 2" exclusive_caps=1
+  '';
+  environment.etc."modules-load.d/v4l2loopback.conf".text = ''
+    v4l2loopback
+  '';
 
   # Register a v4l2loopback device at boot
   boot.kernelModules = [
-    #"v4l2loopback"
+    "v4l2loopback"
     "kvm-intel" # detected automatically
-    "v4l2loopback-dc" # droidcam-cli
   ];
 }
