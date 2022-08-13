@@ -12,7 +12,7 @@ args @ { config, lib, pkgs, modulesPath, ... }:
     kernelModules = [ ];
     extraModulePackages = [ ];
     loader.grub = {
-      enable = true;
+      enable = lib.mkForce true; # mkForce because conflicts with iso-image.nix
       version = 2;
       # Define on which hard drive you want to install Grub.
       device = "/dev/vda"; # or "nodev" for efi only
