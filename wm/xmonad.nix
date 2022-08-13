@@ -32,8 +32,8 @@ let
     #  setxkbmap -model pc104 -layout cz,us -variant ,dvorak -option grp:alt_shift_toggle
     #  localectl [--no-convert] set-x11-keymap layout [model [variant [options]]]
 
-    # LAPTOP_KBD="AT Translated Set 2 keyboard"; LAPTOP_KBD_ID=$(${pkgs.xorg.xinput}/bin/xinput | grep "''${LAPTOP_KBD}" | cut -f 2 | cut -d = -f 2); ${pkgs.xorg.setxkbmap}/bin/setxkbmap -device $LAPTOP_KBD_ID -layout dvorak
-    ${pkgs.xorg.setxkbmap}/bin/setxkbmap -device 18 -layout us -variant dvorak
+    LAPTOP_KBD="AT Translated Set 2 keyboard"; LAPTOP_KBD_ID=$(${pkgs.xorg.xinput}/bin/xinput | grep "''${LAPTOP_KBD}" | cut -f 2 | cut -d = -f 2); ${pkgs.xorg.setxkbmap}/bin/setxkbmap -device $LAPTOP_KBD_ID -layout dvorak
+    #${pkgs.xorg.setxkbmap}/bin/setxkbmap -device 18 -layout us -variant dvorak
     ${pkgs.xorg.setxkbmap}/bin/setxkbmap -device 8 -layout us
       }
 
