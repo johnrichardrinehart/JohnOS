@@ -83,4 +83,6 @@ in
     "v4l2loopback"
     "kvm-intel" # detected automatically
   ];
+
+  sound.enable = true;
 }
