@@ -95,7 +95,7 @@ in
 
         startPolybar() {
            ${pkgs.coreutils}/bin/sleep 4
-           ${pkgs.polybar}/bin/polybar --config="${config.xdg.configFile."polybar/config".source}" $1
+           ${pkgs.polybar}/bin/polybar $1
         }
 
         startStalonetray() {
@@ -330,7 +330,8 @@ in
 
           # from https://stackoverflow.com/a/47285611
           alias gbbd="git for-each-ref --sort=committerdate refs/heads/ --format='%(color: red)%(committerdate:short) %(color: cyan)%(refname:short)'"
-        ''; in
+        '';
+      in
       if builtins.hasAttr "zshInitExtra" args
       then base + args.zshInitExtra
       else base;

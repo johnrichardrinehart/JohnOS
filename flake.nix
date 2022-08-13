@@ -13,17 +13,16 @@
     # we can roll the branch back to nixos-unstable once
     # https://github.com/NixOS/nixpkgs/pull/174091/files
     # lands in nixos-unstable
-    nixpkgs_unstable.url = "github:NixOS/nixpkgs/master";
+    nixpkgs.url = "github:nixos/nixpkgs/master";
 
     flake-templates.url = "github:NixOS/templates/master";
 
-    nix-master.url = "github:NixOS/nix/master";
-    nix-2_8.url = "github:NixOS/nix/2.8-maintenance";
+    nix.url = "github:NixOS/nix/2.10-maintenance";
 
     home-manager = {
       url = "github:nix-community/home-manager/master";
       flake = true;
-      inputs.nixpkgs.follows = "nixpkgs_unstable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     nixos-hardware = {
@@ -31,11 +30,10 @@
     };
   };
 
-  outputs = inputs:
+  outputs = { self, nixpkgs, flake-templates, nix, home-manager, nixos-hardware }:
     let
-      nix_pkg = inputs.nix-2_8.packages.x86_64-linux.nix;
-
-      nixpkgs-unstable = inputs.nixpkgs_unstable;
+      system = "x86_64-linux";
+      nix = self.inputs.nix.packages.${system}.nix;
 
       home-manager-config = {
         config = {
@@ -51,175 +49,185 @@
 
       photoDerivation =
         let
-          pkgs = import nixpkgs-unstable { system = "x86_64-linux"; };
+          pkgs = import nixpkgs { system = "x86_64-linux"; };
         in
         import ./photo/photo.nix { inherit pkgs; };
+
+      minikube-beta =
+        let
+          pkgs = nixpkgs.legacyPackages."x86_64-linux";
+          lib = pkgs.lib;
+          version = "v1.26.0-beta.1";
+          src = pkgs.fetchFromGitHub {
+            owner = "kubernetes";
+            rev = "${version}";
+            repo = "minikube";
+            sha256 = "sha256-oafO/K7+oXxp/SyvjcKdXZ+mOUVrrgcVuFmCyoNPbaw=";
+          };
+          name = "minikube-${version}";
+        in
+        (pkgs.callPackage "${pkgs.path}/pkgs/applications/networking/cluster/minikube" {
+          vmnet = pkgs.darwin.apple_sdk.framworks.vmnet;
+          buildGoModule = args: pkgs.buildGoModule (args // {
+            inherit name src version;
+            vendorSha256 = "sha256-JtNlvTSnlPuhr0nsBkH6Ke+Y6fCFyBAlduSPcMS8SS4=";
+          });
+        });
+
+      myOverlays = [
+        (self: super: {
+          inherit minikube-beta;
+
+        })
+      ];
     in
     rec {
       nixosConfigurations = {
         nixos = nixosConfigurations.vbox-config;
-
         # vbox_config is designed to be used within a pre-existing NixOS installation as
         # `nixos-rebuild switch --flake .#vbox-config` # default package is this flake
-        vbox-config =
-          let
-            nixpkgs = nixpkgs-unstable;
-          in
-          nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-            modules = [
-              ./modules/machines/virtualbox.nix
-              ./modules/configuration.nix
-              inputs.home-manager.nixosModules.home-manager
-              home-manager-config
-            ];
-            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
-          };
+        vbox-config = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [
+            ./modules/machines/virtualbox.nix
+            ./modules/configuration.nix
+            home-manager.nixosModules.home-manager
+            home-manager-config
+          ];
+          specialArgs = { inherit flake-templates; inherit nixpkgs nix; };
+        };
 
-        vultr =
-          let
-            nixpkgs = nixpkgs-unstable;
-          in
-          nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-            modules = [
-              ./modules/configuration.nix
-              ./modules/machines/vultr.nix
-              inputs.home-manager.nixosModules.home-manager
-              home-manager-config
-            ];
-            specialArgs = { inherit (inputs) agenix flake-templates; inherit nixpkgs nix_pkg; };
-          };
+        vultr = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [
+            ./modules/configuration.nix
+            ./modules/machines/vultr.nix
+            home-manager.nixosModules.home-manager
+            home-manager-config
+          ];
+          specialArgs = { inherit flake-templates; inherit nixpkgs nix; };
+        };
 
         # ova is designed to generate a VirtualBox Appliance output
-        ova =
-          let
-            nixpkgs = nixpkgs-unstable;
-          in
-          nixpkgs-unstable.lib.nixosSystem {
-            system = "x86_64-linux";
-            modules = [
-              (import "${nixpkgs}/nixos/modules/virtualisation/virtualbox-image.nix")
-              ./modules/configuration.nix
-              inputs.home-manager.nixosModules.home-manager
-              home-manager-config
-            ];
-            specialArgs = { inherit (inputs); inherit nixpkgs nix_pkg; };
-          };
+        ova = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [
+            (import "${nixpkgs}/nixos/modules/virtualisation/virtualbox-image.nix")
+            ./modules/configuration.nix
+            home-manager.nixosModules.home-manager
+            home-manager-config
+          ];
+          specialArgs = { inherit nixpkgs nix; };
+        };
 
-        vultr-iso =
-          let nixpkgs = nixpkgs-unstable; in
-          nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-            modules = [
-              ./modules/machines/vultr.nix
-              "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-              ({ config, pkgs, ... }: {
-                isoImage = {
-                  isoBaseName = "johnos_" + (inputs.self.rev or "dirty");
+        vultr-iso = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [
+            ./modules/machines/vultr.nix
+            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+            ({ config, pkgs, ... }: {
+              isoImage = {
+                isoBaseName = "johnos_" + (self.rev or "dirty");
+              };
+            })
+          ];
+          specialArgs = { inherit nixpkgs; };
+        };
+
+        mbp-live-iso = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+
+          modules = [
+            ./modules/machines/mbp.nix
+            ./modules/configuration.nix
+            home-manager.nixosModules.home-manager
+            {
+              config = {
+                home-manager = {
+                  useUserPackages = true;
+                  users.sergey = ./users/sergey.nix;
+                  extraSpecialArgs = { photo = photoDerivation; };
                 };
-              })
-            ];
-            specialArgs = { inherit nixpkgs; };
-          };
+              };
+            }
+            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+            ({ config, pkgs, ... }: {
+              isoImage = {
+                isoBaseName = "CergeyOS-" + (self.rev or "dirty");
+                makeEfiBootable = true;
+              };
+            })
+          ];
+          specialArgs = { inherit flake-templates; inherit nixpkgs nix; };
+        };
 
-        mbp-live-iso =
-          let
-            nixpkgs = nixpkgs-unstable;
-          in
-          nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
+        framework-laptop = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
 
-            modules = [
-              ./modules/machines/mbp.nix
-              ./modules/configuration.nix
-              inputs.home-manager.nixosModules.home-manager
-              {
-                config = {
-                  home-manager = {
-                    useUserPackages = true;
-                    users.sergey = ./users/sergey.nix;
-                    extraSpecialArgs = { photo = photoDerivation; };
-                  };
-                };
-              }
-              "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-              ({ config, pkgs, ... }: {
-                isoImage = {
-                  isoBaseName = "CergeyOS-" + (inputs.self.rev or "dirty");
-                  makeEfiBootable = true;
-                };
-              })
-            ];
-            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
-          };
+          modules = [
+            nixos-hardware.nixosModules.framework
+            ./modules/kernel.nix
+            ./modules/configuration.nix
+            ./modules/machines/framework.nix
+            home-manager.nixosModules.home-manager
+            home-manager-config
+            ({ config, pkgs, lib, ... }: {
+              fonts.fontconfig.enable = pkgs.lib.mkForce true;
+              services.sshd.enable = true;
+              virtualisation.containers.enable = true;
+              nixpkgs.overlays = myOverlays;
+            })
+          ];
+          specialArgs = { inherit flake-templates; inherit nixpkgs nix; };
+        };
 
-        framework-laptop =
-          let
-            nixpkgs = nixpkgs-unstable;
-          in
-          nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
+        simple-live-iso = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
 
-            modules = [
-              inputs.nixos-hardware.nixosModules.framework
-              ./modules/kernel.nix
-              ./modules/configuration.nix
-              ./modules/machines/framework.nix
-              inputs.home-manager.nixosModules.home-manager
-              home-manager-config
-              ({ config, pkgs, lib, ... }: {
-                fonts.fontconfig.enable = pkgs.lib.mkForce true;
-              })
-            ];
-            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
-          };
+          modules = [
+            nixos-hardware.nixosModules.framework
+            ./modules/kernel.nix
+            ./modules/configuration.nix
+            ./modules/machines/framework.nix
+            home-manager.nixosModules.home-manager
+            home-manager-config
+            ({ config, pkgs, lib, ... }: {
+              # boot.initrd.kernelModules = [ "i915" ];
+              # boot.kernelParams = [ "acpi_backlight=vendor" ];
+              # boot.blacklistedKernelModules = [ "modesetting" "nvidia" ];
 
+              # Fix font sizes in X
+              #services.xserver.dpi = 200;
+              fonts.fontconfig.enable = pkgs.lib.mkForce true;
+            })
+          ];
+          specialArgs = { inherit flake-templates; inherit nixpkgs nix; };
+        };
 
-        simple-live-iso =
-          let
-            nixpkgs = nixpkgs-unstable;
-          in
-          nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
+        spectre-live-iso = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
 
-            modules = [
-              inputs.nixos-hardware.nixosModules.framework
-              ./modules/kernel.nix
-              ./modules/configuration.nix
-              ./modules/machines/framework.nix
-              inputs.home-manager.nixosModules.home-manager
-              home-manager-config
-              ({ config, pkgs, lib, ... }: {
-                # boot.initrd.kernelModules = [ "i915" ];
-                # boot.kernelParams = [ "acpi_backlight=vendor" ];
-                # boot.blacklistedKernelModules = [ "modesetting" "nvidia" ];
+          modules = [
+            ./modules/configuration.nix
+            ./modules/kernel.nix
+            ./modules/machines/hp_spectre_x360.nix
+            home-manager.nixosModules.home-manager
+            home-manager-config
+            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+          ];
+          specialArgs = { inherit flake-templates; inherit nixpkgs nix; photo = photoDerivation; };
+        };
 
-                # Fix font sizes in X
-                #services.xserver.dpi = 200;
-                fonts.fontconfig.enable = pkgs.lib.mkForce true;
-              })
-            ];
-            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; };
-          };
-
-        spectre-live-iso =
-          let
-            nixpkgs = nixpkgs-unstable;
-          in
-          nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-
-            modules = [
-              ./modules/configuration.nix
-              ./modules/kernel.nix
-              ./modules/machines/hp_spectre_x360.nix
-              inputs.home-manager.nixosModules.home-manager
-              home-manager-config
-              "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-            ];
-            specialArgs = { inherit (inputs) flake-templates; inherit nixpkgs nix_pkg; photo = photoDerivation; };
-          };
+        gce = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [
+            ./modules/configuration.nix
+            ./modules/kernel.nix
+            ./modules/machines/gce.nix
+            "${nixpkgs}/nixos/modules/virtualisation/google-compute-image.nix"
+          ];
+          specialArgs = { inherit flake-templates; inherit nixpkgs nix; };
+        };
       };
 
       packages.x86_64-linux = {
@@ -228,6 +236,7 @@
         mbp-live-iso = nixosConfigurations.mbp-live-iso.config.system.build.isoImage;
         ova = nixosConfigurations.ova.config.system.build.virtualBoxOVA;
         vbox-config = nixosConfigurations.vbox-config.config.system.build.toplevel;
+        gce = nixosConfigurations.gce.config.system.build.googleComputeImage;
       };
     };
 }

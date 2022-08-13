@@ -232,7 +232,7 @@ args @ { config, pkgs, lib, ... }:
     ];
 
   nix = {
-    package = args.nix_pkg;
+    package = args.nix;
 
     settings = {
       substituters = [
@@ -269,5 +269,4 @@ args @ { config, pkgs, lib, ... }:
   # Enable touchpad support (enabled default in most desktopManager).
   services.xserver.libinput.enable = true;
 }
-
 
