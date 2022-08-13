@@ -143,6 +143,7 @@ args @ { config, pkgs, lib, ... }:
       p.peek # GIF/webp screen recording
       p.mpv # mplayer replacement
       p.simplescreenrecorder
+      p.obsidian
       # shell tools
       p.powerline-rs
       p.oil
@@ -156,6 +157,7 @@ args @ { config, pkgs, lib, ... }:
       p.libqalculate
       p.ncdu # ncurses disk usage (tree+du, basically)
       p.dive # docker image analyzer
+      p.xsel
       # language tools
       p.jq
       p.nixpkgs-fmt
@@ -175,12 +177,19 @@ args @ { config, pkgs, lib, ... }:
       p.zip
       p.unzip
       # programming languages
-      p.go_1_17
+      p.go_1_18
       p.gcc
       # communication tools
       p.droidcam
+      p.obs-studio
       # multimedia tools
+      p.pulseaudioFull
       p.playerctl
+      # DevOps tools
+      p.minikube
+      p.kubectl
+      # browsers
+      p.libxml2 # needed for alias lkv
     ];
 
   nix = {
