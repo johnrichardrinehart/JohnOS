@@ -6,22 +6,21 @@
   nixpkgs.overlays = [
     (
       self: super: {
-        JohnOS-kernel =
+        myLinux =
           let
-            v = "5.18";
+            v = "5.19.1"; # before a bunch of ALSA usb-audio changes
             os_name = "-JohnOS";
           in
           super.linuxPackagesFor (super.linux_latest.override {
             argsOverride = rec {
               src = super.fetchurl {
                 url = "mirror://kernel/linux/kernel/v5.x/linux-${version}.tar.xz";
-                sha256 = "sha256-UfPxaEqJbnlxgqCQcpnMHw/15bUd2aVUeK5jpAmFXO4=";
+                sha256 = "sha256-9OJ7km6ixmuAjbH1cGJUz5KoiZ4hCO7bDDp9Ekma6lU=";
               };
-
 
               version = v;
 
-              # stoled from https://github.com/NixOS/nixpkgs/blob/4f6e9865dd33d5635024a1164e17da5aa3af678a/pkgs/os-specific/linux/kernel/linux-5.18.nix#L8-L9
+              # stolen from https://github.com/NixOS/nixpkgs/blob/4f6e9865dd33d5635024a1164e17da5aa3af678a/pkgs/os-specific/linux/kernel/linux-5.18.nix#L8-L9
               modDirVersion = lib.concatStringsSep "." (lib.take 3 (lib.splitVersion "${v}.0")) + "${os_name}";
 
               extraConfig = ''
@@ -30,9 +29,11 @@
               '';
             };
           });
+
+          linux = self.myLinux.kernel;
       }
     )
   ];
 
-  boot.kernelPackages = pkgs.JohnOS-kernel;
+  boot.kernelPackages = pkgs.myLinux;
 }
