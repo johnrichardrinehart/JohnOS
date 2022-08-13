@@ -121,6 +121,7 @@ args @ { config, pkgs, lib, ... }:
     [
       p.openconnect
       p.alsa-tools # https://askubuntu.com/a/1293623
+      p.alsa-utils # https://askubuntu.com/a/1293623
       p.glxinfo
       p.vim
       # gui configuration
