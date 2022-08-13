@@ -85,4 +85,9 @@ in
   ];
 
   sound.enable = true;
+
+
+  services.chrony.enable = true;
+
+  networking.timeServers = options.networking.timeServers.default ++ [ "time.facebook.com" ];
 }
