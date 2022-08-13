@@ -30,7 +30,7 @@
             };
           });
 
-          linux = self.myLinux.kernel;
+        linux = self.myLinux.kernel;
       }
     )
   ];

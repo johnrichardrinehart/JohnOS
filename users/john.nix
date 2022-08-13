@@ -16,7 +16,9 @@ let
       p.discord
       p.element-desktop
       p.skypeforlinux
+      # development tools
+      p.google-cloud-sdk
+      p.cloud-sql-proxy
     ];
 in
 import ./common.nix (args // { inherit pp; })
-
