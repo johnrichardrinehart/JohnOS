@@ -94,7 +94,7 @@ in
         # loading.
 
         startPolybar() {
-           ${pkgs.coreutils}/bin/sleep 4
+           ${pkgs.coreutils}/bin/sleep 2
            ${pkgs.polybar}/bin/polybar $1
         }
 
