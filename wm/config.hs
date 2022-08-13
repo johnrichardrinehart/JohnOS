@@ -481,7 +481,7 @@ projects =
             }
   , Project { projectName      = commWs
             , projectDirectory = "~/"
-            , projectStartHook = Just $ do spawn "slack"
+            , projectStartHook = Just $ do spawn "discord"
                                            spawn "brave"
             }
   , Project { projectName      = free1Ws
