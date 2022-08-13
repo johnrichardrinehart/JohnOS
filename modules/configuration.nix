@@ -25,7 +25,6 @@ args @ { config, pkgs, lib, ... }:
 
   # Set your time zone.
   time.timeZone = "Europe/Lisbon";
-  # time.timeZone = "America/Los_Angeles";
 
   console.useXkbConfig = true;
 
@@ -42,7 +41,6 @@ args @ { config, pkgs, lib, ... }:
   services.xserver = {
     enable = true;
     exportConfiguration = true; # https://github.com/NixOS/nixpkgs/issues/19629#issuecomment-368051434
-    # layout = "us";
     displayManager = {
       # https://www.reddit.com/r/unixporn/comments/a7rg63/oc_a_tiny_riceable_lightdm_greeter/eckzt15?utm_source=share&utm_medium=web2x&context=3
       defaultSession = "default"; # TODO: figure out a way to use another string besides default
