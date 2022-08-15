@@ -15,6 +15,8 @@ in
   boot.initrd.availableKernelModules = [ "xhci_pci" "thunderbolt" "nvme" "uas" "usb_storage" "sd_mod" ];
   boot.initrd.kernelModules = [ ];
 
+  boot.resumeDevice = "/dev/disk/by-uuid/960b1823-195e-4044-8c86-8407b1f25d92";
+
   fileSystems."/" =
     {
       device = "/dev/disk/by-uuid/9dbd56c9-2344-450a-845b-6490d0879256";
