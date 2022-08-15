@@ -77,13 +77,12 @@
       myOverlays = [
         (self: super: {
           inherit minikube-beta;
-
         })
       ];
+
     in
     rec {
       nixosConfigurations = {
-        nixos = nixosConfigurations.vbox-config;
         # vbox_config is designed to be used within a pre-existing NixOS installation as
         # `nixos-rebuild switch --flake .#vbox-config` # default package is this flake
         vbox-config = nixpkgs.lib.nixosSystem {
@@ -231,12 +230,17 @@
       };
 
       packages.x86_64-linux = {
-        vultr-iso = nixosConfigurations.vultr-iso.config.system.build.isoImage;
+        # local configurations
         spectre-live-iso = nixosConfigurations.spectre-live-iso.config.system.build.isoImage;
         mbp-live-iso = nixosConfigurations.mbp-live-iso.config.system.build.isoImage;
+
+        # cloud configurations
+        vultr-iso = nixosConfigurations.vultr-iso.config.system.build.isoImage;
+        gce = nixosConfigurations.gce.config.system.build.googleComputeImage;
+
+        # VM configurations
         ova = nixosConfigurations.ova.config.system.build.virtualBoxOVA;
         vbox-config = nixosConfigurations.vbox-config.config.system.build.toplevel;
-        gce = nixosConfigurations.gce.config.system.build.googleComputeImage;
       };
     };
 }
