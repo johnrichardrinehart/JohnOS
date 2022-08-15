@@ -114,6 +114,8 @@ args @ { config, pkgs, lib, ... }:
   #   })
   # ];
 
+  nixpkgs.overlays = import ./overlays.nix;
+
   environment.systemPackages =
     let
       p = pkgs;
