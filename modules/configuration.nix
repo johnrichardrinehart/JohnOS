@@ -12,6 +12,8 @@ args @ { config, pkgs, lib, ... }:
     storageDriver = "overlay2";
   };
 
+  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+
   nixpkgs.config.allowUnsupportedSystem = true;
 
   # The global useDHCP flag is deprecated, therefore explicitly set to false here.
