@@ -91,5 +91,8 @@ in
 
   services.chrony.enable = true;
 
+  services.tailscale.enable = true;
+  networking.firewall.checkReversePath = "loose";
+
   networking.timeServers = options.networking.timeServers.default ++ [ "time.facebook.com" ];
 }
