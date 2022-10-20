@@ -17,7 +17,7 @@
 
     flake-templates.url = "github:NixOS/templates/master";
 
-    nix.url = "github:NixOS/nix/2.10-maintenance";
+    nix.url = "github:NixOS/nix/master"; # or 2.11-maintenance vs. master
 
     home-manager = {
       url = "github:nix-community/home-manager/master";
