@@ -357,17 +357,31 @@ in
 
     enableAutosuggestions = true;
 
-    shellAliases = {
-      ssh = "kitty +kitten ssh";
-      # from https://stackoverflow.com/a/47285611
-      gbbd = "git for-each-ref --sort=committerdate refs/heads/ --format='%(color: red)%(committerdate:short) %(color: cyan)%(refname:short)'";
-      # latest kernel version
-      lkv = ''curl --silent 'https://kernel.org' | xmllint -html -xpath '//*[@id="latest_link"]/a/text()' - 2>/dev/null'';
-      clv = ''uname -a | cut -f3 -d' ' | cut -f 1 -d'-' '';
-      k = "kubectl";
-      chess = "scid";
-      sudo-nixos-rebuild-flake = "sudo nixos-rebuild switch --flake $HOME/code/repos/mine/nix"; # https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
-    };
+    shellAliases =
+      let
+        fetchLatestKernelVersion = release_line:
+          let
+            kernelOrgXpath = release_line:
+              let
+                row = release_line: if release_line == "mainline" then "1" else "2";
+              in
+              ''//table[@id="releases"]/tr[${row release_line}]/td[2]/strong/text()'';
+            xpath = kernelOrgXpath release_line;
+          in
+          ''curl --silent 'https://kernel.org' | xmllint -html -xpath '${xpath}' - 2>/dev/null'';
+      in
+      {
+        ssh = "kitty +kitten ssh";
+        # from https://stackoverflow.com/a/47285611
+        gbbd = "git for-each-ref --sort=committerdate refs/heads/ --format='%(color: red)%(committerdate:short) %(color: cyan)%(refname:short)'";
+        # latest kernel version
+        lskv = fetchLatestKernelVersion "stable";
+        lmkv = fetchLatestKernelVersion "mainline";
+        clv = ''uname -a | cut -f3 -d' ' | cut -f 1 -d'-' '';
+        k = "kubectl";
+        chess = "scid";
+        sudo-nixos-rebuild-flake = "sudo nixos-rebuild switch --flake $HOME/code/repos/mine/nix"; # https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
+      };
 
     oh-my-zsh = {
       enable = true;
