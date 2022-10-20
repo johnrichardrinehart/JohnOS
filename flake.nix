@@ -74,7 +74,7 @@
           });
         });
 
-      myOverlays = [
+      myOverlays = (import ./modules/overlays.nix) ++ [
         (self: super: {
           inherit minikube-beta;
         })
