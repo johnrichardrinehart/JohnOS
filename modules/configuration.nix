@@ -178,7 +178,7 @@ args @ { config, pkgs, lib, ... }:
       p.cargo
       # os tools
       p.dig
-      p.btop
+      p.htop
       p.tree
       p.killall
       p.lsof
