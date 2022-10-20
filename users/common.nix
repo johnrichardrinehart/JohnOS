@@ -449,7 +449,7 @@ in
     initExtra = (import ../wm args).initExtra;
 
     profileExtra = ''
-      eval $(${pkgs.gnome3.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
+      eval $(${pkgs.gnome.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
       export SSH_AUTH_SOCK
     '';
   };
@@ -457,4 +457,6 @@ in
   home.packages = if builtins.hasAttr "pp" args then args.pp else [ ];
 
   home.stateVersion = "21.05";
+
+  manual.manpages.enable = false;
 }
