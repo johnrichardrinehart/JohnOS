@@ -169,6 +169,7 @@ args @ { config, pkgs, lib, ... }:
       p.ripgrep
       p.fzf
       # language tools
+      p.gnumake
       p.jq
       p.nixpkgs-fmt
       # os tools
