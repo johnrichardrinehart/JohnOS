@@ -127,7 +127,10 @@ args @ { config, pkgs, lib, ... }:
       p.alsa-tools # https://askubuntu.com/a/1293623
       p.alsa-utils # https://askubuntu.com/a/1293623
       p.glxinfo
+      # editors
       p.vim
+      p.helix
+      p.neovim
       # gui configuration
       p.feh
       p.multilockscreen
