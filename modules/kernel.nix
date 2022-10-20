@@ -8,20 +8,35 @@
       self: super: {
         myLinux =
           let
-            v = "5.19.6"; # before a bunch of ALSA usb-audio changes
+            v = "6.0.2"; # before a bunch of ALSA usb-audio changes
             os_name = "-JohnOS";
           in
           super.linuxPackagesFor (super.linux_latest.override {
             argsOverride = rec {
               src = super.fetchurl {
-                url = "mirror://kernel/linux/kernel/v5.x/linux-${version}.tar.xz";
-                sha256 = "sha256-QaT4JK9hRGDEKafHI+jcuw4ELwBH0yjBi07W8rTvpjo=";
+                url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${v}.tar.xz";
+                sha256 = "sha256-oTwmOIyszLaEzZ9REJWWooDIGGt+lRdNMe58VxjpXJ0=";
               };
 
               version = v;
 
               # stolen from https://github.com/NixOS/nixpkgs/blob/4f6e9865dd33d5635024a1164e17da5aa3af678a/pkgs/os-specific/linux/kernel/linux-5.18.nix#L8-L9
-              modDirVersion = lib.concatStringsSep "." (lib.take 3 (lib.splitVersion "${v}.0")) + "${os_name}";
+              modDirVersion =
+                let
+                  parts = builtins.filter (x: builtins.isString x) (builtins.split "-" v); # [ "6.0" "rc7" ]
+                  number = lib.concatStrings (lib.take 1 parts); # "6.0"
+                  suffix = lib.concatStrings (lib.sublist 1 1 parts); # "rc7"
+                  digits = builtins.splitVersion "${number}"; # [ "6 "0" ]
+                  extendedNumber =
+                    if builtins.length digits < 3 then
+                      if lib.stringLength suffix == 0 then
+                        number + ".0"
+                        else
+                        number + ".0" + "-" + suffix
+                    else
+                      v;
+                in
+                extendedNumber + os_name;
 
               extraConfig = ''
                 LOCALVERSION ${os_name}
