@@ -172,6 +172,10 @@ args @ { config, pkgs, lib, ... }:
       p.gnumake
       p.jq
       p.nixpkgs-fmt
+      ## rust stuff
+      p.rust-analyzer
+      p.clippy
+      p.cargo
       # os tools
       p.dig
       p.btop
@@ -190,6 +194,7 @@ args @ { config, pkgs, lib, ... }:
       # programming languages
       p.go_1_18
       p.gcc
+      p.rustc
       # communication tools
       p.droidcam
       p.obs-studio
