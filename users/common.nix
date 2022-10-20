@@ -325,6 +325,11 @@ in
       filetype on
 
       autocmd BufNewFile,BufRead *.svelte set filetype=html
+
+      " highlight trailing whitespace
+      " https://stackoverflow.com/a/4617156/1477586
+      :highlight ExtraWhitespace ctermbg=red guibg=red
+      :match ExtraWhitespace /\s\+$/
     '';
     plugins = let p = pkgs.vimPlugins; in
       [
