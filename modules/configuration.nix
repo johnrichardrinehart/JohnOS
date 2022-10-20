@@ -123,6 +123,7 @@ args @ { config, pkgs, lib, ... }:
       p = pkgs;
     in
     [
+      p.pciutils
       p.openconnect
       p.alsa-tools # https://askubuntu.com/a/1293623
       p.alsa-utils # https://askubuntu.com/a/1293623
@@ -165,6 +166,8 @@ args @ { config, pkgs, lib, ... }:
       p.ncdu # ncurses disk usage (tree+du, basically)
       p.dive # docker image analyzer
       p.xsel
+      p.ripgrep
+      p.fzf
       # language tools
       p.jq
       p.nixpkgs-fmt
