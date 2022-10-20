@@ -21,14 +21,14 @@ let
     #       {
     #         flameshot = prev.flameshot.overrideAttrs (old: rec {
     #           version = "11.0.0";
-    # 
+    #
     #           src = final.fetchFromGitHub {
     #             owner = "flameshot-org";
     #             repo = "flameshot";
     #             rev = "v${version}";
     #             sha256 = "SlnEXW3Uhdgl0icwYyYsKQOcYkAtHpAvL6LMXBF2gWM=";
     #           };
-    # 
+    #
     #           patches = [];
     #         });
     #       }
@@ -50,64 +50,64 @@ in
   services.gpg-agent.enable = true;
   services.network-manager-applet.enable = true;
 
-  services.polybar =
-    let
-      bars = builtins.readFile ./polybar/bars.ini;
-      colors = builtins.readFile ./polybar/colors.ini;
-      modules = builtins.readFile ./polybar/modules.ini;
-      user_modules = builtins.readFile ./polybar/user_modules.ini;
-      module_xmonad = ''
-        [module/xmonad]
-        type = custom/script
-        exec = ${pkgs.xmonad-log}/bin/xmonad-log
+  #services.polybar =
+  #  let
+  #    bars = builtins.readFile ./polybar/bars.ini;
+  #    colors = builtins.readFile ./polybar/colors.ini;
+  #    modules = builtins.readFile ./polybar/modules.ini;
+  #    user_modules = builtins.readFile ./polybar/user_modules.ini;
+  #    module_xmonad = ''
+  #      [module/xmonad]
+  #      type = custom/script
+  #      exec = ${pkgs.xmonad-log}/bin/xmonad-log
 
-        tail = true
-      '';
-      module_nyc_time = ''
-        [module/time-nyc]
-        type = custom/script
-        exec = TZ=America/New_York ${pkgs.coreutils}/bin/date +"(NYC: %H:%M)"
-        interval = 59
-      '';
-    in
-    {
-      enable = true;
-      package = pkgs.polybar.override {
-        alsaSupport = true;
-        pulseSupport = true;
-        githubSupport = true;
-      };
-      config = ./polybar/config.ini;
-      script = ''
-        # The below script has a weird structure, mostly owing to the long
-        # delay introduced by `xrandr` detecting and setting the display
-        # settings (when the window manager starts up). We basically need
-        # to wait a few seconds until the window manager has established 
-        # which screens are on and what their resolutions are before we
-        # start polybar, otherwise it starts on the first detected screen
-        # and then may jump to a later-activated screen (which may have a
-        # different resolution). The end result being a poylbar that is either
-        # either too short or too long. 3 seconds seems to be a kind of sweet
-        # spot for my hardware. However, stalonetray starts up faster than
-        # polybar so we need to add an additional delay to its startup so that
-        # we don't hide stalonetray behind polybar when polybar finishes
-        # loading.
+  #      tail = true
+  #    '';
+  #    module_nyc_time = ''
+  #      [module/time-nyc]
+  #      type = custom/script
+  #      exec = TZ=America/New_York ${pkgs.coreutils}/bin/date +"(NYC: %H:%M)"
+  #      interval = 59
+  #    '';
+  #  in
+  #  {
+  #    enable = true;
+  #    package = pkgs.polybar.override {
+  #      alsaSupport = true;
+  #      pulseSupport = true;
+  #      githubSupport = true;
+  #    };
+  #    config = ./polybar/config.ini;
+  #    script = ''
+  #      # The below script has a weird structure, mostly owing to the long
+  #      # delay introduced by `xrandr` detecting and setting the display
+  #      # settings (when the window manager starts up). We basically need
+  #      # to wait a few seconds until the window manager has established
+  #      # which screens are on and what their resolutions are before we
+  #      # start polybar, otherwise it starts on the first detected screen
+  #      # and then may jump to a later-activated screen (which may have a
+  #      # different resolution). The end result being a poylbar that is either
+  #      # either too short or too long. 3 seconds seems to be a kind of sweet
+  #      # spot for my hardware. However, stalonetray starts up faster than
+  #      # polybar so we need to add an additional delay to its startup so that
+  #      # we don't hide stalonetray behind polybar when polybar finishes
+  #      # loading.
 
-        startPolybar() {
-           ${pkgs.coreutils}/bin/sleep 2
-           ${pkgs.polybar}/bin/polybar $1
-        }
+  #      startPolybar() {
+  #         ${pkgs.coreutils}/bin/sleep 2
+  #         ${pkgs.polybar}/bin/polybar $1
+  #      }
 
-        startStalonetray() {
-           ${pkgs.coreutils}/bin/sleep 5
-           ${pkgs.stalonetray}/bin/stalonetray --config ${stalonetrayrc}
-        }
+  #      startStalonetray() {
+  #         ${pkgs.coreutils}/bin/sleep 5
+  #         ${pkgs.stalonetray}/bin/stalonetray --config ${stalonetrayrc}
+  #      }
 
-        startPolybar main &
-        startStalonetray &
-      '';
-      extraConfig = bars + colors + modules + user_modules + module_xmonad + module_nyc_time;
-    };
+  #      startPolybar main &
+  #      startStalonetray &
+  #    '';
+  #    extraConfig = bars + colors + modules + user_modules + module_xmonad + module_nyc_time;
+  #  };
 
 
   home.file =
@@ -418,7 +418,7 @@ in
 
           typeset -gaU chpwd_functions
           chpwd_functions+=__jump_chpwd
-          
+
           compctl -U -K jump_completion j
 
 
@@ -445,14 +445,23 @@ in
     # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
     scriptPath = ".hm-xsession";
 
-    windowManager.xmonad = (import ../wm args).xmonad;
-    initExtra = (import ../wm args).initExtra;
+  #  #windowManager.xmonad = (import ../wm args).xmonad;
+  #  #initExtra = (import ../wm args).initExtra;
+  #  #initExtra = ''
+  #  #  Hyprland
+  #  #'';
+  #  #windowManager.hyprland = {
+  #  #  enable = true;
+  #  #};
 
-    profileExtra = ''
-      eval $(${pkgs.gnome.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
-      export SSH_AUTH_SOCK
-    '';
-  };
+  initExtra = ''
+    nohup waybar
+  '';
+  #  profileExtra = ''
+  #    eval $(${pkgs.gnome.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
+  #    export SSH_AUTH_SOCK
+  #  '';
+};
 
   home.packages = if builtins.hasAttr "pp" args then args.pp else [ ];
 

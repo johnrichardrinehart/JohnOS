@@ -31,9 +31,16 @@
     };
 
     rust-overlay.url = "github:oxalica/rust-overlay";
+
+    hyprland = {
+      url = "github:hyprwm/Hyprland";
+# build with your own instance of nixpkgs
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, flake-templates, nix, home-manager, nixos-hardware, rust-overlay }:
+  outputs = { self, nixpkgs, flake-templates, nix, home-manager, nixos-hardware, rust-overlay, hyprland }:
+
     let
       system = "x86_64-linux";
       nix = self.inputs.nix.packages.${system}.nix;
@@ -167,6 +174,10 @@
           system = "x86_64-linux";
 
           modules = [
+
+            hyprland.nixosModules.default
+            { programs.hyprland.enable = true; }
+
             nixos-hardware.nixosModules.framework
             ./modules/kernel.nix
             ./modules/configuration.nix
@@ -181,7 +192,7 @@
               environment.systemPackages = [ pkgs.rust-bin.stable.latest.default ];
             })
           ];
-          specialArgs = { inherit flake-templates; inherit nixpkgs nix; };
+          specialArgs = { inherit flake-templates; inherit nixpkgs nix hyprland; };
         };
 
         simple-live-iso = nixpkgs.lib.nixosSystem {
