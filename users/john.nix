@@ -17,7 +17,7 @@ let
       p.element-desktop
       p.skypeforlinux
       # development tools
-      (p.google-cloud-sdk.withExtraComponents [ p.google-cloud-sdk.components.gke-gcloud-auth-plugin ])
+      (p.google-cloud-sdk.withExtraComponents [ p.google-cloud-sdk.components.gke-gcloud-auth-plugin p.google-cloud-sdk.components.config-connector ])
       p.cloud-sql-proxy
     ];
 in
