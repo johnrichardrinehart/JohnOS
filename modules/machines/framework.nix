@@ -95,4 +95,8 @@ in
   networking.firewall.checkReversePath = "loose";
 
   networking.timeServers = options.networking.timeServers.default ++ [ "time.facebook.com" ];
+
+  programs.noisetorch.enable = true;
+
+  systemd.services.NetworkManager-wait-online.enable = false;
 }
