@@ -202,6 +202,13 @@ args @ { config, pkgs, lib, ... }:
       p.kubectl
       # browsers
       p.libxml2 # needed for alias lkv
+      # media
+      p.ffmpeg_5-full
+      # stuff for lunarvim :(
+      p.python3
+      p.python39Packages.pip
+      p.nodejs
+      p.hunspellDicts.en-us
     ];
 
   nix = {
