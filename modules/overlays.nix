@@ -1,9 +1,9 @@
 [
-  (self: super: {
-    waybar = super.waybar.overrideAttrs (oldAttrs: {
-      mesonFlags = oldAttrs.mesonFlags ++ [ "-Dexperimental=true" ];
-    });
-  })
+#  (self: super: {
+#    waybar = super.waybar.overrideAttrs (oldAttrs: {
+#      mesonFlags = oldAttrs.mesonFlags ++ [ "-Dexperimental=true" ];
+#    });
+#  })
   (self: super: {
     vscodium = super.vscodium.overrideAttrs (final: prev:
       (

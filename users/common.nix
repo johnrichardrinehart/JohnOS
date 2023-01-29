@@ -454,9 +454,6 @@ in
   #  #  enable = true;
   #  #};
 
-  initExtra = ''
-    nohup waybar
-  '';
   #  profileExtra = ''
   #    eval $(${pkgs.gnome.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
   #    export SSH_AUTH_SOCK

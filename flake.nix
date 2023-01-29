@@ -188,7 +188,7 @@
               fonts.fontconfig.enable = pkgs.lib.mkForce true;
               services.sshd.enable = true;
               virtualisation.containers.enable = true;
-              nixpkgs.overlays = myOverlays ++ [ rust-overlay.overlays.default ];
+              nixpkgs.overlays = myOverlays ++ [ rust-overlay.overlays.default hyprland.overlays.default ];
               environment.systemPackages = [ pkgs.rust-bin.stable.latest.default ];
             })
           ];

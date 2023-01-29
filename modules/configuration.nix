@@ -213,7 +213,7 @@ args @ { config, pkgs, lib, ... }:
       p.nodejs
       p.hunspellDicts.en-us
       # GUI apps
-      p.waybar
+      p.waybar-hyprland
     ];
 
   nix = {
