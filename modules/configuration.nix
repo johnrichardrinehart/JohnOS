@@ -126,6 +126,10 @@ args @ { config, pkgs, lib, ... }:
       p = pkgs;
     in
     [
+      # https://github.com/flameshot-org/flameshot/blob/master/docs/Sway%20and%20wlroots%20support.md
+      #p.xdg-desktop-portal p.xdg-desktop-portal-wlr p.grim
+      #p.xdg-desktop-portal p.xdg-desktop-portal-hyprland p.grim
+      p.xdg-desktop-portal-hyprland
       p.pciutils
       p.openconnect
       p.alsa-tools # https://askubuntu.com/a/1293623
@@ -147,7 +151,7 @@ args @ { config, pkgs, lib, ... }:
       p.slack
       p.vscodium
       p.brave
-      p.flameshot
+      #p.flameshot
       p.keepassxc
       p.dbeaver
       p.stalonetray
@@ -162,7 +166,7 @@ args @ { config, pkgs, lib, ... }:
       p.jump
       p.tmux
       p.xdg-utils # `open`
-      p.xclip
+      p.wl-clipboard
       p.fd
       p.bc # needed for adjusting screen brightness
       p.libqalculate
