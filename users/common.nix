@@ -456,7 +456,7 @@ in
 
   home.packages = if builtins.hasAttr "pp" args then args.pp else [ ];
 
-  home.stateVersion = "21.05";
+  home.stateVersion = "23.05";
 
   manual.manpages.enable = false;
 }
