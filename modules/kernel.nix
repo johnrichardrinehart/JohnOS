@@ -8,14 +8,14 @@
       self: super: {
         myLinux =
           let
-            v = "6.1.10"; # before a bunch of ALSA usb-audio changes
+            v = "6.2.2"; # before a bunch of ALSA usb-audio changes
             os_name = "-JohnOS";
           in
           super.linuxPackagesFor (super.linux_latest.override {
             argsOverride = rec {
               src = super.fetchurl {
                 url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${v}.tar.xz";
-                sha256 = "sha256-C+KRm6kc9Yc6TLTUKd54qtBGkSDWJOMzpDtLAR100Z0=";
+                sha256 = "sha256-wSdVorsOGeg0V3J+lJ7hAgzCaPRCIkiCViI9qO7sv7A=";
               };
 
               version = v;
