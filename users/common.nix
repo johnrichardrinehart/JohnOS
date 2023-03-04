@@ -349,7 +349,7 @@ in
         src = pkgs.fetchFromGitHub {
           owner = "chisui";
           repo = "zsh-nix-shell";
-          rev = "v0.2.0";
+          rev = "v0.5.0";
           sha256 = "1gfyrgn23zpwv1vj37gf28hf5z0ka0w5qm6286a7qixwv7ijnrx9";
         };
       }
@@ -385,7 +385,7 @@ in
 
     oh-my-zsh = {
       enable = true;
-      plugins = [ "git" "sudo" "docker" "kubectl" ];
+      plugins = [ "git" "sudo" "docker" "kubectl" "fzf"];
       theme = "agnoster";
     };
 
