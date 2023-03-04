@@ -207,8 +207,10 @@ args @ { config, pkgs, lib, ... }:
       # stuff for lunarvim :(
       p.python3
       p.python39Packages.pip
-      p.nodejs
       p.hunspellDicts.en-us
+      p.ntfs3g
+      p.gparted
+      p.deluge
     ];
 
   nix = {
@@ -222,6 +224,8 @@ args @ { config, pkgs, lib, ... }:
       trusted-public-keys = [
         "johnos.cachix.org-1:wwbcQLNTaO9dx0CIXN+uC3vFl8fvhtkJbZWzMXWLFu0="
       ];
+
+      trusted-users = [ "john" ];
     };
 
     extraOptions =
