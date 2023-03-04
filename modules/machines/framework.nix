@@ -100,4 +100,8 @@ in
   programs.noisetorch.enable = true;
 
   systemd.services.NetworkManager-wait-online.enable = false;
+
+  services.upower = {
+    enable = true;
+  };
 }
