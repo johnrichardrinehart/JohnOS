@@ -142,7 +142,8 @@ args @ { config, pkgs, lib, ... }:
       # gui apps
       p.rofi
       p.slack
-      p.vscodium
+      p.vscodium.fhs
+      #p.vscode
       p.brave
       p.flameshot
       p.keepassxc

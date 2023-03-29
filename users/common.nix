@@ -21,14 +21,14 @@ let
     #       {
     #         flameshot = prev.flameshot.overrideAttrs (old: rec {
     #           version = "11.0.0";
-    # 
+    #
     #           src = final.fetchFromGitHub {
     #             owner = "flameshot-org";
     #             repo = "flameshot";
     #             rev = "v${version}";
     #             sha256 = "SlnEXW3Uhdgl0icwYyYsKQOcYkAtHpAvL6LMXBF2gWM=";
     #           };
-    # 
+    #
     #           patches = [];
     #         });
     #       }
@@ -418,7 +418,7 @@ in
 
           typeset -gaU chpwd_functions
           chpwd_functions+=__jump_chpwd
-          
+
           compctl -U -K jump_completion j
 
 
