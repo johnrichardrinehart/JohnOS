@@ -39,11 +39,11 @@
         "utils": "utils"
       },
       "locked": {
-        "lastModified": 1680000368,
-        "narHash": "sha256-TlgC4IJ7aotynUdkGRtaAVxquaiddO38Ws89nB7VGY8=",
+        "lastModified": 1680249941,
+        "narHash": "sha256-7Ylr0NAr8msd3YVaYBw6uyJIRbtOq5l6aLrmrYA5qTw=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "765e4007b6f9f111469a25d1df6540e8e0ca73a6",
+        "rev": "67b97020b6970d39b4126a7870063d11337ecb80",
         "type": "github"
       },
       "original": {
@@ -139,16 +139,16 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1675786603,
-        "narHash": "sha256-90W3HOpA8ZA0X5kNaElwNoy1XmsGC7JKy1XwpE3LYKY=",
-        "owner": "johnrichardrinehart",
+        "lastModified": 1680265595,
+        "narHash": "sha256-KYGSJLfW+fxpaRb6cKK2Ne6cB3e5dRwAo+8Dijp0C70=",
+        "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "e1e2a8f67114347712dff4c9915c32e24604cba4",
+        "rev": "f17e8603153e86d731d4fef2695c10ab88ee0905",
         "type": "github"
       },
       "original": {
-        "owner": "johnrichardrinehart",
-        "ref": "johnrichardrinehart/sqitch-upgraded-templates",
+        "owner": "nixos",
+        "ref": "master",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -185,11 +185,11 @@
         "nixpkgs": "nixpkgs_3"
       },
       "locked": {
-        "lastModified": 1680056830,
-        "narHash": "sha256-WB4KD8oLSxAAtmXYSzwVwQusC2Gy5vTEln1uTt0GI2k=",
+        "lastModified": 1680229280,
+        "narHash": "sha256-9UoyQCeKUmHcsIdpsAgcz41LAIDkWhI2PhVDjckrpg0=",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "c8d8d05b8100d451243b614d950fa3f966c1fcc2",
+        "rev": "aa480d799023141e1b9e5d6108700de63d9ad002",
         "type": "github"
       },
       "original": {
