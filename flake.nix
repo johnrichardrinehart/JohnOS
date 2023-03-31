@@ -13,8 +13,7 @@
     # we can roll the branch back to nixos-unstable once
     # https://github.com/NixOS/nixpkgs/pull/174091/files
     # lands in nixos-unstable
-    #nixpkgs.url = "github:nixos/nixpkgs/master";
-    nixpkgs.url = "github:johnrichardrinehart/nixpkgs/johnrichardrinehart/sqitch-upgraded-templates";
+    nixpkgs.url = "github:nixos/nixpkgs/master";
 
     flake-templates.url = "github:NixOS/templates/master";
 
