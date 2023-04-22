@@ -29,11 +29,9 @@
     nixos-hardware = {
       url = "github:NixOS/nixos-hardware";
     };
-
-    rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
-  outputs = { self, nixpkgs, flake-templates, nix, home-manager, nixos-hardware, rust-overlay }:
+  outputs = { self, nixpkgs, flake-templates, nix, home-manager, nixos-hardware, }:
     let
       system = "x86_64-linux";
       nix = self.inputs.nix.packages.${system}.nix;
@@ -177,8 +175,7 @@
               fonts.fontconfig.enable = pkgs.lib.mkForce true;
               services.sshd.enable = true;
               virtualisation.containers.enable = true;
-              nixpkgs.overlays = myOverlays ++ [ rust-overlay.overlays.default ];
-              environment.systemPackages = [ pkgs.rust-bin.stable.latest.default ];
+              nixpkgs.overlays = myOverlays ;
             })
           ];
           specialArgs = { inherit flake-templates; inherit nixpkgs nix; };
