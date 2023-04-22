@@ -29,9 +29,11 @@
     nixos-hardware = {
       url = "github:NixOS/nixos-hardware";
     };
+
+    nixos-generators.url = "github:nix-community/nixos-generators";
   };
 
-  outputs = { self, nixpkgs, flake-templates, nix, home-manager, nixos-hardware, }:
+  outputs = { self, nixpkgs, flake-templates, nix, home-manager, nixos-hardware, nixos-generators }:
     let
       system = "x86_64-linux";
       nix = self.inputs.nix.packages.${system}.nix;
@@ -172,13 +174,21 @@
             home-manager.nixosModules.home-manager
             home-manager-config
             ({ config, pkgs, lib, ... }: {
+              boot.loader.systemd-boot.enable = true;
+              boot.loader.efi.canTouchEfiVariables = true;
               fonts.fontconfig.enable = pkgs.lib.mkForce true;
               services.sshd.enable = true;
               virtualisation.containers.enable = true;
-              nixpkgs.overlays = myOverlays ;
+              nixpkgs.overlays = myOverlays ++ [
+                (self: super: {
+                  # make every nixpkgs derivation only use the same nix as is in my system to
+                  # reduce an extra dependency.
+                  inherit nix; # use nix from input
+                })
+              ];
             })
           ];
-          specialArgs = { inherit flake-templates; inherit nixpkgs nix; };
+          specialArgs = { inherit flake-templates; inherit nixpkgs; };
         };
 
         simple-live-iso = nixpkgs.lib.nixosSystem {
@@ -218,15 +228,15 @@
           specialArgs = { inherit flake-templates; inherit nixpkgs nix; photo = photoDerivation; };
         };
 
-        gce = nixpkgs.lib.nixosSystem {
+        gce = nixos-generators.nixosGenerate {
           system = "x86_64-linux";
           modules = [
             ./modules/configuration.nix
             ./modules/kernel.nix
             ./modules/machines/gce.nix
-            "${nixpkgs}/nixos/modules/virtualisation/google-compute-image.nix"
           ];
-          specialArgs = { inherit flake-templates; inherit nixpkgs nix; };
+          format = "gce";
+          specialArgs = { inherit flake-templates; inherit nixpkgs; };
         };
       };
 
@@ -237,7 +247,7 @@
 
         # cloud configurations
         vultr-iso = nixosConfigurations.vultr-iso.config.system.build.isoImage;
-        gce = nixosConfigurations.gce.config.system.build.googleComputeImage;
+        gce = nixosConfigurations.gce;
 
         # VM configurations
         ova = nixosConfigurations.ova.config.system.build.virtualBoxOVA;

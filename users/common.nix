@@ -385,7 +385,7 @@ in
 
     oh-my-zsh = {
       enable = true;
-      plugins = [ "git" "sudo" "docker" "kubectl" "fzf"];
+      plugins = [ "git" "sudo" "docker" "kubectl" "fzf" ];
       theme = "agnoster";
     };
 

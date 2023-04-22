@@ -116,14 +116,6 @@ args @ { config, pkgs, lib, ... }:
   #   })
   # ];
 
-  # make every nixpkgs derivation only use the same nix as is in my system to
-  # reduce an extra dependency.
-  nixpkgs.overlays = (import ./overlays.nix) ++ [
-    (self: super: {
-      nix = config.nix.package;
-    })
-  ];
-
   environment.systemPackages =
     let
       p = pkgs;
@@ -221,7 +213,7 @@ args @ { config, pkgs, lib, ... }:
     ];
 
   nix = {
-    package = args.nix;
+    package = pkgs.nix;
 
     settings = {
       substituters = [
@@ -246,8 +238,6 @@ args @ { config, pkgs, lib, ... }:
   };
 
   # Use the systemd-boot EFI boot loader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
 
   nixpkgs.config.allowUnfree = true;
 

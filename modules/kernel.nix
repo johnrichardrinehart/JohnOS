@@ -31,7 +31,7 @@
                     if builtins.length digits < 3 then
                       if lib.stringLength suffix == 0 then
                         number + ".0"
-                        else
+                      else
                         number + ".0" + "-" + suffix
                     else
                       v;
