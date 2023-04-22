@@ -25,6 +25,4 @@ args @ { config, pkgs, ... }:
     allowUnsupportedSystem = true;
     config.allowUnfree = true;
   };
-
-  system.stateVersion = "21.05"; # Did you read the comment?
 }
