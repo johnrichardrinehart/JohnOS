@@ -116,7 +116,13 @@ args @ { config, pkgs, lib, ... }:
   #   })
   # ];
 
-  nixpkgs.overlays = import ./overlays.nix;
+  # make every nixpkgs derivation only use the same nix as is in my system to
+  # reduce an extra dependency.
+  nixpkgs.overlays = (import ./overlays.nix) ++ [
+    (self: super: {
+      nix = config.nix.package;
+    })
+  ];
 
   environment.systemPackages =
     let
