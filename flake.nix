@@ -92,7 +92,7 @@
           system = "x86_64-linux";
           modules = [
             ./modules/machines/virtualbox.nix
-            ./modules/configuration.nix
+            ./modules/system.nix
             home-manager.nixosModules.home-manager
             home-manager-config
           ];
@@ -102,7 +102,7 @@
         vultr = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           modules = [
-            ./modules/configuration.nix
+            ./modules/system.nix
             ./modules/machines/vultr.nix
             home-manager.nixosModules.home-manager
             home-manager-config
@@ -115,7 +115,7 @@
           system = "x86_64-linux";
           modules = [
             (import "${nixpkgs}/nixos/modules/virtualisation/virtualbox-image.nix")
-            ./modules/configuration.nix
+            ./modules/system.nix
             home-manager.nixosModules.home-manager
             home-manager-config
           ];
@@ -141,7 +141,7 @@
 
           modules = [
             ./modules/machines/mbp.nix
-            ./modules/configuration.nix
+            ./modules/system.nix
             home-manager.nixosModules.home-manager
             {
               config = {
@@ -169,7 +169,7 @@
           modules = [
             nixos-hardware.nixosModules.framework
             ./modules/desktop.nix
-            ./modules/configuration.nix
+            ./modules/system.nix
             ./modules/kernel.nix
             ./modules/machines/framework.nix
             home-manager.nixosModules.home-manager
@@ -198,7 +198,7 @@
           modules = [
             nixos-hardware.nixosModules.framework
             ./modules/kernel.nix
-            ./modules/configuration.nix
+            ./modules/system.nix
             ./modules/machines/framework.nix
             home-manager.nixosModules.home-manager
             home-manager-config
@@ -219,7 +219,7 @@
           system = "x86_64-linux";
 
           modules = [
-            ./modules/configuration.nix
+            ./modules/system.nix
             ./modules/kernel.nix
             ./modules/machines/hp_spectre_x360.nix
             home-manager.nixosModules.home-manager
@@ -232,7 +232,7 @@
         gce = nixos-generators.nixosGenerate {
           system = "x86_64-linux";
           modules = [
-            ./modules/configuration.nix
+            ./modules/system.nix
             ./modules/kernel.nix
             ./modules/machines/gce.nix
           ];
