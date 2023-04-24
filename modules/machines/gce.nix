@@ -13,14 +13,19 @@ args @ { config, pkgs, ... }:
 
   virtualisation.docker.enable = true;
 
-  services.sshd.enable = true;
-  services.headscale.settings = {
-    log = {
-      level = "debug";
-      format = "json";
+  services = {
+    sshd = {
+      enable = true;
     };
-    address = "0.0.0.0";
-    enable = true;
+
+    headscale = {
+      settings.log = {
+        level = "debug";
+        format = "json";
+      };
+      address = "0.0.0.0";
+      enable = true;
+    };
   };
 
   networking = {
