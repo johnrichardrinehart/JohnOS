@@ -81,6 +81,11 @@
         (self: super: {
           inherit minikube-beta;
         })
+        (self: super: {
+          # make every nixpkgs derivation only use the same nix as is in my system to
+          # reduce an extra dependency.
+          inherit nix; # use nix from input
+        })
       ];
 
     in
@@ -180,13 +185,7 @@
               fonts.fontconfig.enable = pkgs.lib.mkForce true;
               services.sshd.enable = true;
               virtualisation.containers.enable = true;
-              nixpkgs.overlays = myOverlays ++ [
-                (self: super: {
-                  # make every nixpkgs derivation only use the same nix as is in my system to
-                  # reduce an extra dependency.
-                  inherit nix; # use nix from input
-                })
-              ];
+              nixpkgs.overlays = myOverlays;
             })
           ];
           specialArgs = { inherit flake-templates; inherit nixpkgs; };
@@ -235,6 +234,9 @@
             ./modules/system.nix
             ./modules/kernel.nix
             ./modules/machines/gce.nix
+            ({
+              nixpkgs.overlays = myOverlays;
+            })
           ];
           format = "gce";
           specialArgs = { inherit flake-templates; inherit nixpkgs; };
