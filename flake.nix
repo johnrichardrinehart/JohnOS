@@ -168,8 +168,9 @@
 
           modules = [
             nixos-hardware.nixosModules.framework
-            ./modules/kernel.nix
+            ./modules/desktop.nix
             ./modules/configuration.nix
+            ./modules/kernel.nix
             ./modules/machines/framework.nix
             home-manager.nixosModules.home-manager
             home-manager-config
