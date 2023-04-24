@@ -12,6 +12,7 @@ args @ { config, pkgs, lib, ... }:
     storageDriver = "overlay2";
   };
 
+  boot.loader.systemd-boot.configurationLimit = 20;
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 
   nixpkgs.config.allowUnsupportedSystem = true;
