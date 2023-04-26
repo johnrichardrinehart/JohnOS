@@ -23,7 +23,7 @@ args @ { config, pkgs, ... }:
         level = "debug";
         format = "json";
       };
-      port = 443;
+      port = 80;
       address = "0.0.0.0";
       enable = true;
     };
