@@ -19,9 +19,12 @@ args @ { config, pkgs, ... }:
     };
 
     headscale = {
-      settings.log = {
-        level = "debug";
-        format = "json";
+      settings = {
+        log = {
+          level = "debug";
+          format = "json";
+        };
+        server_url = "https://headscale.johnrinehart.dev.";
       };
       port = 80;
       address = "0.0.0.0";
