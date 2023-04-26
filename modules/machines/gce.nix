@@ -9,6 +9,7 @@ args @ { config, pkgs, ... }:
     pkgs.vim
     pkgs.git
     pkgs.nixpkgs-fmt
+    pkgs.headscale # put it on the path
   ];
 
   virtualisation.docker.enable = true;
