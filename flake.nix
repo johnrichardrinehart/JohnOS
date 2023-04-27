@@ -30,7 +30,10 @@
       url = "github:NixOS/nixos-hardware";
     };
 
-    nixos-generators.url = "github:nix-community/nixos-generators";
+    nixos-generators = {
+      url = "github:nix-community/nixos-generators";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = { self, nixpkgs, flake-templates, nix, home-manager, nixos-hardware, nixos-generators }:
