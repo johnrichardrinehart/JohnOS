@@ -34,9 +34,9 @@ args @ { config, pkgs, ... }:
   };
 
   networking = {
+    hostName = "headscale";
     useDHCP = pkgs.lib.mkForce true;
     nameservers = [ "1.1.1.1" "8.8.8.8" ];
-    firewall.allowedTCPPorts = [ ];
   };
 
   nixpkgs.config = {
