@@ -73,5 +73,5 @@ args @ { config, lib, pkgs, modulesPath, ... }:
     config.allowUnfree = true;
   };
 
-  system.stateVersion = "21.05"; # Did you read the comment?
+  system.stateVersion = "23.05"; # Did you read the comment?
 }

@@ -12,6 +12,7 @@ in
       (modulesPath + "/installer/scan/not-detected.nix")
     ];
 
+  boot.supportedFilesystems = [ "ntfs" "exfat" "vfat" "btrfs" "ext" ];
   boot.initrd.availableKernelModules = [ "xhci_pci" "thunderbolt" "nvme" "uas" "usb_storage" "sd_mod" ];
   boot.initrd.kernelModules = [ ];
 
@@ -35,6 +36,7 @@ in
   # The global useDHCP flag is deprecated, therefore explicitly set to false here.
   # Per-interface useDHCP will be mandatory in the future, so this generated config
   # replicates the default behaviour.
+  networking.hostName = "framie";
   networking.useDHCP = lib.mkDefault false;
   networking.nameservers = [ "1.1.1.1" "8.8.8.8" "6.6.6.6" ];
   networking.resolvconf.enable = false;
@@ -55,8 +57,6 @@ in
 
     # If you want to use JACK applications, uncomment this
     jack.enable = true;
-
-    media-session.enable = false;
 
     wireplumber.enable = true;
   };
@@ -99,4 +99,8 @@ in
   programs.noisetorch.enable = true;
 
   systemd.services.NetworkManager-wait-online.enable = false;
+
+  services.upower = {
+    enable = true;
+  };
 }

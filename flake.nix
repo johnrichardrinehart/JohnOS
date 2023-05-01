@@ -13,12 +13,12 @@
     # we can roll the branch back to nixos-unstable once
     # https://github.com/NixOS/nixpkgs/pull/174091/files
     # lands in nixos-unstable
-    #nixpkgs.url = "github:nixos/nixpkgs/master";
-    nixpkgs.url = "github:johnrichardrinehart/nixpkgs/johnrichardrinehart/sqitch-upgraded-templates";
+    nixpkgs.url = "github:nixos/nixpkgs/master";
 
     flake-templates.url = "github:NixOS/templates/master";
 
-    nix.url = "github:NixOS/nix/master"; # or 2.11-maintenance vs. master
+    #nix.url = "github:NixOS/nix/master"; # or 2.11-maintenance vs. master
+    nix.url = "github:NixOS/nix/2.14-maintenance"; # or 2.11-maintenance vs. master
 
     home-manager = {
       url = "github:nix-community/home-manager/master";
@@ -30,17 +30,18 @@
       url = "github:NixOS/nixos-hardware";
     };
 
-    rust-overlay.url = "github:oxalica/rust-overlay";
-
     hyprland = {
       url = "github:hyprwm/Hyprland";
-# build with your own instance of nixpkgs
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    nixos-generators = {
+      url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { self, nixpkgs, flake-templates, nix, home-manager, nixos-hardware, rust-overlay, hyprland }:
-
+  outputs = { self, nixpkgs, flake-templates, nix, home-manager, nixos-hardware, nixos-generators, hyprland }:
     let
       system = "x86_64-linux";
       nix = self.inputs.nix.packages.${system}.nix;
@@ -88,6 +89,11 @@
         (self: super: {
           inherit minikube-beta;
         })
+        (self: super: {
+          # make every nixpkgs derivation only use the same nix as is in my system to
+          # reduce an extra dependency.
+          inherit nix; # use nix from input
+        })
       ];
 
     in
@@ -99,7 +105,7 @@
           system = "x86_64-linux";
           modules = [
             ./modules/machines/virtualbox.nix
-            ./modules/configuration.nix
+            ./modules/system.nix
             home-manager.nixosModules.home-manager
             home-manager-config
           ];
@@ -109,7 +115,7 @@
         vultr = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           modules = [
-            ./modules/configuration.nix
+            ./modules/system.nix
             ./modules/machines/vultr.nix
             home-manager.nixosModules.home-manager
             home-manager-config
@@ -122,7 +128,7 @@
           system = "x86_64-linux";
           modules = [
             (import "${nixpkgs}/nixos/modules/virtualisation/virtualbox-image.nix")
-            ./modules/configuration.nix
+            ./modules/system.nix
             home-manager.nixosModules.home-manager
             home-manager-config
           ];
@@ -148,7 +154,7 @@
 
           modules = [
             ./modules/machines/mbp.nix
-            ./modules/configuration.nix
+            ./modules/system.nix
             home-manager.nixosModules.home-manager
             {
               config = {
@@ -179,17 +185,19 @@
             { programs.hyprland.enable = true; }
 
             nixos-hardware.nixosModules.framework
+            ./modules/desktop.nix
+            ./modules/system.nix
             ./modules/kernel.nix
-            ./modules/configuration.nix
             ./modules/machines/framework.nix
             home-manager.nixosModules.home-manager
             home-manager-config
             ({ config, pkgs, lib, ... }: {
+              boot.loader.systemd-boot.enable = true;
+              boot.loader.efi.canTouchEfiVariables = true;
               fonts.fontconfig.enable = pkgs.lib.mkForce true;
               services.sshd.enable = true;
               virtualisation.containers.enable = true;
-              nixpkgs.overlays = myOverlays ++ [ rust-overlay.overlays.default hyprland.overlays.default ];
-              environment.systemPackages = [ pkgs.rust-bin.stable.latest.default ];
+              nixpkgs.overlays = myOverlays ++ [ hyprland.overlays.default ];
             })
           ];
           specialArgs = { inherit flake-templates; inherit nixpkgs nix hyprland; };
@@ -201,7 +209,7 @@
           modules = [
             nixos-hardware.nixosModules.framework
             ./modules/kernel.nix
-            ./modules/configuration.nix
+            ./modules/system.nix
             ./modules/machines/framework.nix
             home-manager.nixosModules.home-manager
             home-manager-config
@@ -222,7 +230,7 @@
           system = "x86_64-linux";
 
           modules = [
-            ./modules/configuration.nix
+            ./modules/system.nix
             ./modules/kernel.nix
             ./modules/machines/hp_spectre_x360.nix
             home-manager.nixosModules.home-manager
@@ -232,15 +240,18 @@
           specialArgs = { inherit flake-templates; inherit nixpkgs nix; photo = photoDerivation; };
         };
 
-        gce = nixpkgs.lib.nixosSystem {
+        gce = nixos-generators.nixosGenerate {
           system = "x86_64-linux";
           modules = [
-            ./modules/configuration.nix
+            ./modules/system.nix
             ./modules/kernel.nix
             ./modules/machines/gce.nix
-            "${nixpkgs}/nixos/modules/virtualisation/google-compute-image.nix"
+            ({
+              nixpkgs.overlays = myOverlays;
+            })
           ];
-          specialArgs = { inherit flake-templates; inherit nixpkgs nix; };
+          format = "gce";
+          specialArgs = { inherit flake-templates; inherit nixpkgs; };
         };
       };
 
@@ -251,7 +262,7 @@
 
         # cloud configurations
         vultr-iso = nixosConfigurations.vultr-iso.config.system.build.isoImage;
-        gce = nixosConfigurations.gce.config.system.build.googleComputeImage;
+        gce = nixosConfigurations.gce;
 
         # VM configurations
         ova = nixosConfigurations.ova.config.system.build.virtualBoxOVA;
