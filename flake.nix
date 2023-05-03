@@ -13,7 +13,7 @@
     # we can roll the branch back to nixos-unstable once
     # https://github.com/NixOS/nixpkgs/pull/174091/files
     # lands in nixos-unstable
-    nixpkgs.url = "github:nixos/nixpkgs/c9a253ff7fd9bd62936a0129b6beba6afb65bff3";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
     flake-templates.url = "github:NixOS/templates/master";
 
@@ -192,13 +192,18 @@
             home-manager.nixosModules.home-manager
             home-manager-config
             ({ config, pkgs, lib, ... }: {
+              # https://github.com/hyprwm/Hyprland/issues/2001#issuecomment-1501119294
+              disabledModules = ["programs/hyprland.nix"];
               boot.loader.systemd-boot.enable = true;
               boot.loader.efi.canTouchEfiVariables = true;
               fonts.fontconfig.enable = pkgs.lib.mkForce true;
               services.sshd.enable = true;
               virtualisation.containers.enable = true;
-              nixpkgs.overlays = myOverlays ++ [ hyprland.overlays.default ];
-            })
+              nixpkgs.overlays = myOverlays ++ [
+                self.inputs.hyprland.overlays.default
+                #self.inputs.hyprland.inputs.hyprland-protocols.overlays.default
+              ];
+              })
           ];
           specialArgs = { inherit flake-templates; inherit nixpkgs nix hyprland; };
         };
