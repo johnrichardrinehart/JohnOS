@@ -126,7 +126,6 @@ args @ { config, pkgs, lib, ... }: {
       p.gnumake
       p.jq
       p.nixpkgs-fmt
-      ## rust stuff
       # os tools
       p.dig
       p.htop

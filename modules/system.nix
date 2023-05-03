@@ -57,13 +57,13 @@ args @ { config, pkgs, lib, ... }:
     package = pkgs.nix;
 
     settings = {
-      substituters = [
-        "https://johnos.cachix.org"
-      ];
+      #substituters = [
+      #  "https://johnos.cachix.org"
+      #];
 
-      trusted-public-keys = [
-        "johnos.cachix.org-1:wwbcQLNTaO9dx0CIXN+uC3vFl8fvhtkJbZWzMXWLFu0="
-      ];
+      #trusted-public-keys = [
+      #  "johnos.cachix.org-1:wwbcQLNTaO9dx0CIXN+uC3vFl8fvhtkJbZWzMXWLFu0="
+      #];
 
       trusted-users = [ "john" ];
     };
