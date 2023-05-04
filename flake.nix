@@ -31,7 +31,7 @@
     };
 
     hyprland = {
-      url = "github:hyprwm/Hyprland/main";
+      url = "github:johnrichardrinehart/hyprland/b3aa218b1d9a28140dd383bde85dc5a8a4f7b5a8";
     };
 
     nixos-generators = {
