@@ -31,8 +31,7 @@
     };
 
     hyprland = {
-      url = "github:hyprwm/Hyprland";
-      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:hyprwm/Hyprland/main";
     };
 
     nixos-generators = {
