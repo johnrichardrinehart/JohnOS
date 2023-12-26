@@ -4,7 +4,7 @@ let
     background "#3B4252"
     decorations "none"
     dockapp_mode "none"
-    geometry "5x1-150+0"
+    geometry "5x1+1850+0"
     grow_gravity "NE"
     icon_gravity "NE"
     icon_size "48"
@@ -47,7 +47,10 @@ let
 in
 {
   services.flameshot.enable = true;
-  services.gpg-agent.enable = true;
+  services.gpg-agent = {
+    pinentryFlavor = "curses";
+    enable = true;
+  };
   services.network-manager-applet.enable = true;
 
   services.polybar =
@@ -433,6 +436,8 @@ in
             PS1=$(printf "%s\n$ " "$pwr")
           }
           precmd_functions+=(prompt)
+
+          # ${pkgs.zellij}/bin/zellij attach --index 0 || ${pkgs.zellij}/bin/zellij
         '';
       in
       if builtins.hasAttr "zshInitExtra" args
