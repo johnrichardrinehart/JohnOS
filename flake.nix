@@ -14,7 +14,7 @@
     # https://github.com/NixOS/nixpkgs/pull/174091/files
     # lands in nixos-unstable
     #nixpkgs.url = "github:nixos/nixpkgs/81b354ceb05728eee931e95183f3b9d0fce77306";
-    nixpkgs.url = "github:nixos/nixpkgs/master";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
     flake-templates.url = "github:NixOS/templates/master";
 
