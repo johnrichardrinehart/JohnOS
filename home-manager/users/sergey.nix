@@ -5,5 +5,7 @@ let
 
   programs = { };
 in
-(import ./common.nix) (args // { inherit extraPackages programs; })
+  (import ./common.nix) (args // {
+    inherit extraPackages programs;
+  })
 

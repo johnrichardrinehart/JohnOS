@@ -4,7 +4,7 @@
 { config, lib, pkgs, options, modulesPath, ... }:
 let
   # https://discourse.nixos.org/t/load-automatically-kernel-module-and-deal-with-parameters/9200
-  v4l2loopback-dc = config.boot.kernelPackages.callPackage ./v4l2loopback-dc.nix { };
+  v4l2loopback-dc = config.boot.kernelPackages.callPackage ../../pkgs/v4l2loopback-dc.nix { };
 in
 {
   imports =

@@ -13,11 +13,10 @@ args @ { config, lib, pkgs, modulesPath, ... }:
     extraModulePackages = [ ];
     loader.grub = {
       enable = lib.mkForce true; # mkForce because conflicts with iso-image.nix
-      version = 2;
       # Define on which hard drive you want to install Grub.
       device = "/dev/vda"; # or "nodev" for efi only
     };
-    kernelPackages = pkgs.recurseIntoAttrs (pkgs.linuxPackagesFor pkgs.linuxKernel.kernels.linux_5_16);
+    kernelPackages = pkgs.recurseIntoAttrs (pkgs.linuxPackagesFor pkgs.linux_latest);
   };
 
 
@@ -73,5 +72,5 @@ args @ { config, lib, pkgs, modulesPath, ... }:
     config.allowUnfree = true;
   };
 
-  system.stateVersion = "23.05"; # Did you read the comment?
+  system.stateVersion = "24.05"; # Did you read the comment?
 }

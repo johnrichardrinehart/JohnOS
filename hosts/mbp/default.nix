@@ -1,7 +1,7 @@
 args @ { config, pkgs, lib, nixpkgs, ... }:
 let
   # https://discourse.nixos.org/t/load-automatically-kernel-module-and-deal-with-parameters/9200
-  v4l2loopback-dc = config.boot.kernelPackages.callPackage ./v4l2loopback-dc.nix { };
+  v4l2loopback-dc = config.boot.kernelPackages.callPackage ../../pkgs/v4l2loopback-dc.nix { };
 in
 {
   # TODO: remove allowUnbroken once ZFS in linux kernel is fixed
@@ -30,7 +30,7 @@ in
   );
 
   # disabled by installation-cd-minimal
-  fonts.fontconfig.enable = pkgs.lib.mkForce true;
+  fonts.fontconfig.enable = pkgs.lib.mkOverride 49; # higher priority than installation-cd-minimal.nix
 
   # use xinput to discover the name of the laptop keyboard (not lsusb)
   services.xserver = {
@@ -41,7 +41,7 @@ in
   programs.nm-applet.enable = true;
 
   networking = {
-    hostName = "cergeyos"; # Put your hostname here.
+    hostName = "sergeyos"; # Put your hostname here.
     networkmanager = {
       enable = true;
     };
@@ -68,8 +68,6 @@ in
 
     # If you want to use JACK applications, uncomment this
     jack.enable = true;
-
-    media-session.enable = false;
 
     wireplumber.enable = true;
   };

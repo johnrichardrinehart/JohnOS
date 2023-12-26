@@ -3,14 +3,14 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-args @ { config, pkgs, lib, ... }:
+{ config, pkgs, lib, flake-templates, nixpkgs, ... }:
 {
   # The global useDHCP flag is deprecated, therefore explicitly set to false here.
   # Per-interface useDHCP will be mandatory in the future, so this generated config
   # replicates the default behaviour.
   networking.useDHCP = false;
 
-  system.stateVersion = "23.11"; # Did you read the comment?
+  system.stateVersion = "24.05"; # Did you read the comment?
 
 
   programs.zsh.enable = true;
@@ -73,9 +73,9 @@ args @ { config, pkgs, lib, ... }:
         empty_registry = builtins.toFile "empty-flake-registry.json" ''{"flakes":[],"version":2}'';
       in
       "experimental-features = nix-command flakes\n" + "flake-registry = ${empty_registry}";
-    registry.nixpkgs.flake = args.nixpkgs;
-    registry.templates.flake = args.flake-templates;
-    nixPath = [ "nixpkgs=${args.nixpkgs}" ];
+    registry.nixpkgs.flake = nixpkgs;
+    registry.templates.flake = flake-templates;
+    nixPath = [ "nixpkgs=${nixpkgs}" ];
   };
 
   # Use the systemd-boot EFI boot loader.

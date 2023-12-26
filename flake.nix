@@ -120,7 +120,7 @@
             home-manager.nixosModules.home-manager
             home-manager-config
           ];
-          specialArgs = { inherit nixpkgs nix; };
+          specialArgs = { inherit flake-templates nixpkgs nix; };
         };
 
         vultr-iso = nixpkgs.lib.nixosSystem {
@@ -129,6 +129,7 @@
             ./hosts/vultr
             "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
             ({ config, pkgs, ... }: {
+              boot.swraid.enable = pkgs.lib.mkForce false;
               isoImage = {
                 isoBaseName = "johnos_" + (self.rev or "dirty");
               };
@@ -144,19 +145,21 @@
             ./hosts/mbp
             ./modules/system.nix
             home-manager.nixosModules.home-manager
-            {
+            ({ config, pkgs, ...}: {
               config = {
+                boot.swraid.enable = pkgs.lib.mkForce false;
+                users.users.sergey.isNormalUser = true;
                 home-manager = {
                   useUserPackages = true;
-                  users.sergey = ./users/sergey.nix;
+                  users.sergey = ./home-manager/users/sergey.nix;
                   extraSpecialArgs = { photo = photoDerivation; };
                 };
               };
-            }
+            })
             "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
             ({ config, pkgs, ... }: {
               isoImage = {
-                isoBaseName = "CergeyOS-" + (self.rev or "dirty");
+                isoBaseName = "SergeyOS-" + (self.rev or self.dirtyRev);
                 makeEfiBootable = true;
               };
             })
@@ -201,6 +204,7 @@
             home-manager.nixosModules.home-manager
             home-manager-config
             ({ config, pkgs, lib, ... }: {
+              boot.loader.grub.devices = ["/dev/sda1"];
               fonts.fontconfig.enable = pkgs.lib.mkForce true;
             })
           ];

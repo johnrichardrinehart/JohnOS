@@ -1,7 +1,7 @@
 args @ { config, pkgs, ... }:
 let
   # https://discourse.nixos.org/t/load-automatically-kernel-module-and-deal-with-parameters/9200
-  v4l2loopback-dc = config.boot.kernelPackages.callPackage ./v4l2loopback-dc.nix { };
+  v4l2loopback-dc = config.boot.kernelPackages.callPackage ../../pkgs/v4l2loopback-dc.nix { };
 in
 {
   # uncomment `imports` if you want to bundle nixpkgs into the installation
@@ -77,7 +77,7 @@ in
       });
 
   # disabled by installation-cd-minimal
-  fonts.fontconfig.enable = pkgs.lib.mkForce true;
+  fonts.fontconfig.enable = pkgs.lib.mkOverride 49 true;
 
   # use xinput to discover the name of the laptop keyboard (not lsusb)
   services.xserver = {
@@ -209,8 +209,6 @@ in
 
     # If you want to use JACK applications, uncomment this
     jack.enable = true;
-
-    media-session.enable = false;
 
     wireplumber.enable = true;
   };
