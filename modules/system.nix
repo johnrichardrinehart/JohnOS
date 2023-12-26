@@ -10,7 +10,7 @@ args @ { config, pkgs, lib, ... }:
   # replicates the default behaviour.
   networking.useDHCP = false;
 
-  system.stateVersion = "23.05"; # Did you read the comment?
+  system.stateVersion = "23.11"; # Did you read the comment?
 
 
   programs.zsh.enable = true;

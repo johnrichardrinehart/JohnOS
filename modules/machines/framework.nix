@@ -30,6 +30,13 @@ in
       fsType = "vfat";
     };
 
+  fileSystems."/mnt/framework250_1" =
+    {
+      device = "/dev/disk/by-uuid/caca60c2-483b-4a58-a443-5c8df3b3c82d";
+      fsType = "btrfs";
+      options = ["user" "rw" "async" "auto" "nofail"];
+    };
+
   swapDevices =
     [{ device = "/dev/disk/by-uuid/960b1823-195e-4044-8c86-8407b1f25d92"; }];
 
@@ -39,7 +46,7 @@ in
   networking.hostName = "framie";
   networking.useDHCP = lib.mkDefault false;
   networking.nameservers = [ "1.1.1.1" "8.8.8.8" "6.6.6.6" ];
-  networking.resolvconf.enable = false;
+  networking.resolvconf.enable = true;
   networking.interfaces.wlp170s0.useDHCP = lib.mkDefault true;
 
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";

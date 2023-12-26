@@ -89,14 +89,14 @@ args @ { config, pkgs, lib, ... }: {
       # gui apps
       p.rofi
       p.slack
-      p.vscodium.fhs
+      p.vscodium
       #p.vscode
       p.brave
       p.flameshot
       p.keepassxc
       p.dbeaver
       p.stalonetray
-      p.peek # GIF/webp screen recording
+      #p.peek # GIF/webp screen recording
       p.mpv # mplayer replacement
       p.simplescreenrecorder
       p.obsidian
@@ -120,6 +120,7 @@ args @ { config, pkgs, lib, ... }: {
       p.gnumake
       p.jq
       p.nixpkgs-fmt
+      p.tokei
       ## rust stuff
       # os tools
       p.dig
@@ -137,7 +138,7 @@ args @ { config, pkgs, lib, ... }: {
       p.zip
       p.unzip
       # programming languages
-      p.go_1_18
+      p.go_1_21
       p.gcc
       # communication tools
       p.droidcam
@@ -159,5 +160,10 @@ args @ { config, pkgs, lib, ... }: {
       p.ntfs3g
       p.gparted
       p.deluge
+      p.wirelesstools
+      p.usbutils
+      p.whatsapp-for-linux
+      # terminal stuff
+      p.zellij
     ];
 }
