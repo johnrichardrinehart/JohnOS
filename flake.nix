@@ -10,22 +10,12 @@
   };
 
   inputs = {
-    # we can roll the branch back to nixos-unstable once
-    # https://github.com/NixOS/nixpkgs/pull/174091/files
-    # lands in nixos-unstable
-    #nixpkgs.url = "github:nixos/nixpkgs/81b354ceb05728eee931e95183f3b9d0fce77306";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
     flake-templates.url = "github:NixOS/templates/master";
 
-    #nix.url = "github:NixOS/nix/master"; # or 2.11-maintenance vs. master
-#
-    #nix.url = "github:NixOS/nix/2.15-maintenance"; # or 2.11-maintenance vs. master
     nix.url = "github:NixOS/nix/2.17-maintenance"; # or 2.11-maintenance vs. master
-    #nix.url = "github:NixOS/nix/ac32609ed92a77d17d51c3e74cea7d9a614f2b8b";
-
     home-manager = {
-      #url = "github:nix-community/home-manager/master";
       url = "github:nix-community/home-manager/release-23.05";
       flake = true;
       inputs.nixpkgs.follows = "nixpkgs";
@@ -99,8 +89,6 @@
     in
     rec {
       nixosConfigurations = {
-        # vbox_config is designed to be used within a pre-existing NixOS installation as
-        # `nixos-rebuild switch --flake .#vbox-config` # default package is this flake
         vbox-config = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           modules = [
@@ -123,7 +111,7 @@
           specialArgs = { inherit flake-templates; inherit nixpkgs nix; };
         };
 
-        # ova is designed to generate a VirtualBox Appliance output
+        # VirtualBox Appliance output
         ova = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           modules = [
@@ -179,7 +167,6 @@
         framework-laptop = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
 
-
           modules = [
             nixos-hardware.nixosModules.framework-11th-gen-intel
             ./modules/desktop.nix
@@ -214,12 +201,6 @@
             home-manager.nixosModules.home-manager
             home-manager-config
             ({ config, pkgs, lib, ... }: {
-              # boot.initrd.kernelModules = [ "i915" ];
-              # boot.kernelParams = [ "acpi_backlight=vendor" ];
-              # boot.blacklistedKernelModules = [ "modesetting" "nvidia" ];
-
-              # Fix font sizes in X
-              #services.xserver.dpi = 200;
               fonts.fontconfig.enable = pkgs.lib.mkForce true;
             })
           ];
@@ -259,7 +240,6 @@
         # local configurations
         spectre-live-iso = nixosConfigurations.spectre-live-iso.config.system.build.isoImage;
         mbp-live-iso = nixosConfigurations.mbp-live-iso.config.system.build.isoImage;
-
         # cloud configurations
         vultr-iso = nixosConfigurations.vultr-iso.config.system.build.isoImage;
         gce = nixosConfigurations.gce;
