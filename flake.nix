@@ -174,8 +174,9 @@
         framework-laptop = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
 
+
           modules = [
-            nixos-hardware.nixosModules.framework
+            nixos-hardware.nixosModules.framework-11th-gen-intel
             ./modules/desktop.nix
             ./modules/system.nix
             ./modules/kernel.nix
@@ -198,7 +199,7 @@
           system = "x86_64-linux";
 
           modules = [
-            nixos-hardware.nixosModules.framework
+            nixos-hardware.nixosModules.framework-11th-gen-intel
             ./modules/kernel.nix
             ./modules/system.nix
             ./modules/machines/framework.nix

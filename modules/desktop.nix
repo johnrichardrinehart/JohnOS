@@ -14,7 +14,7 @@ args @ { config, pkgs, lib, ... }: {
 
   ##### John's Stuff #####
   # Set your time zone.
-  time.timeZone = "Europe/Lisbon";
+  time.timeZone = "America/Los_Angeles";
 
   console.useXkbConfig = true;
 
@@ -52,7 +52,7 @@ args @ { config, pkgs, lib, ... }: {
     ];
   };
 
-  fonts.fonts = let p = pkgs; in
+  fonts.packages = let p = pkgs; in
     [
       p.fira-code
       p.fira-code-symbols
@@ -60,6 +60,7 @@ args @ { config, pkgs, lib, ... }: {
       p.powerline-fonts
       p.powerline-symbols
       (p.nerdfonts.override { fonts = [ "DroidSansMono" ]; })
+      #p.comic-mono
     ];
 
   programs.adb.enable = true; # droidcam
