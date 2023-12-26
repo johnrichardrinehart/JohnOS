@@ -46,6 +46,10 @@ let
   ];
 in
 {
+  imports = [
+    ../wm/xmonad
+  ];
+
   services.flameshot.enable = true;
   services.gpg-agent = {
     pinentryFlavor = "curses";
@@ -117,11 +121,6 @@ in
     {
       ".config/powerline-rs/themes/gruvbox.theme" = {
         source = ./gruvbox.theme;
-      };
-
-      ".config/i3status/net-speed.sh" = {
-        source = ../wm/net-speed.sh;
-        executable = true;
       };
     };
 
@@ -395,7 +394,7 @@ in
     initExtra =
       let
         base = ''
-          export BGIMG="${args.photo}/bin/ocean.jpg"
+          export BGIMG="${../../static/ocean.jpg}"
           if [ ! -f $BGIMG ]; then
             curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
           fi
@@ -450,9 +449,7 @@ in
     # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
     scriptPath = ".hm-xsession";
 
-    windowManager.xmonad = (import ../wm args).xmonad;
-    initExtra = (import ../wm args).initExtra;
-
+    
     profileExtra = ''
       eval $(${pkgs.gnome.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
       export SSH_AUTH_SOCK

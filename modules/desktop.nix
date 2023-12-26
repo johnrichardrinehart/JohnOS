@@ -1,7 +1,7 @@
 args @ { config, pkgs, lib, ... }: {
   boot.loader.systemd-boot.configurationLimit = 20;
 
-  imports = [ ./home.nix ];
+  imports = [ ../home-manager/home.nix ];
 
   virtualisation.docker = {
     enable = true;

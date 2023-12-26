@@ -2,7 +2,7 @@ args @ { pkgs, ... }:
 
 let
   extra = ''
-    ${pkgs.feh}/bin/feh --bg-fill ${args.photo}/bin/ocean.jpg # configure background
+    ${pkgs.feh}/bin/feh --bg-fill ${../../../static/ocean.jpg} # configure background
     ${pkgs.xorg.xsetroot}/bin/xsetroot -cursor_name left_ptr # configure pointer
   '';
 
@@ -66,17 +66,19 @@ let
     '';
 in
 {
-  initExtra = extra + polybarOpts + configureKeyboards + configureMonitors;
+  xsession = {
+    initExtra = extra + polybarOpts + configureKeyboards + configureMonitors;
 
-  xmonad = {
-    enable = true;
-    enableContribAndExtras = true;
+    windowManager.xmonad = {
+      enable = true;
+      enableContribAndExtras = true;
 
-    extraPackages = hp: [
-      hp.dbus
-      hp.monad-logger
-    ];
+      extraPackages = hp: [
+        hp.dbus
+        hp.monad-logger
+      ];
 
-    config = ./config.hs;
+      config = ./config.hs;
+    };
   };
 }

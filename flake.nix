@@ -1,12 +1,12 @@
 {
   nixConfig = {
-        substituters = [
-          "https://johnos.cachix.org"
-        ];
+    substituters = [
+      "https://johnos.cachix.org"
+    ];
 
-        extra-trusted-public-keys = [
-          "johnos.cachix.org-1:wwbcQLNTaO9dx0CIXN+uC3vFl8fvhtkJbZWzMXWLFu0="
-        ];
+    extra-trusted-public-keys = [
+      "johnos.cachix.org-1:wwbcQLNTaO9dx0CIXN+uC3vFl8fvhtkJbZWzMXWLFu0="
+    ];
   };
 
   inputs = {
@@ -16,7 +16,7 @@
 
     nix.url = "github:NixOS/nix/2.17-maintenance"; # or 2.11-maintenance vs. master
     home-manager = {
-      url = "github:nix-community/home-manager/release-23.05";
+      url = "github:nix-community/home-manager/master";
       flake = true;
       inputs.nixpkgs.follows = "nixpkgs";
     };
@@ -41,8 +41,8 @@
           home-manager = {
             useGlobalPkgs = true;
             useUserPackages = true;
-            users.john = ./users/john.nix;
-            users.ardan = ./users/ardan.nix;
+            users.john = ./home-manager/users/john.nix;
+            users.ardan = ./home-manager/users/ardan.nix;
             extraSpecialArgs = { photo = photoDerivation; };
           };
         };
@@ -92,7 +92,7 @@
         vbox-config = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           modules = [
-            ./modules/machines/virtualbox.nix
+            ./hosts/virtualbox
             ./modules/system.nix
             home-manager.nixosModules.home-manager
             home-manager-config
@@ -104,7 +104,7 @@
           system = "x86_64-linux";
           modules = [
             ./modules/system.nix
-            ./modules/machines/vultr.nix
+            ./hosts/vultr
             home-manager.nixosModules.home-manager
             home-manager-config
           ];
@@ -126,7 +126,7 @@
         vultr-iso = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           modules = [
-            ./modules/machines/vultr.nix
+            ./hosts/vultr
             "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
             ({ config, pkgs, ... }: {
               isoImage = {
@@ -141,7 +141,7 @@
           system = "x86_64-linux";
 
           modules = [
-            ./modules/machines/mbp.nix
+            ./hosts/mbp
             ./modules/system.nix
             home-manager.nixosModules.home-manager
             {
@@ -172,7 +172,7 @@
             ./modules/desktop.nix
             ./modules/system.nix
             ./modules/kernel.nix
-            ./modules/machines/framework.nix
+            ./hosts/framework
             home-manager.nixosModules.home-manager
             home-manager-config
             ({ config, pkgs, lib, ... }: {
@@ -197,7 +197,7 @@
             nixos-hardware.nixosModules.framework-11th-gen-intel
             ./modules/kernel.nix
             ./modules/system.nix
-            ./modules/machines/framework.nix
+            ./hosts/framework
             home-manager.nixosModules.home-manager
             home-manager-config
             ({ config, pkgs, lib, ... }: {
@@ -213,7 +213,7 @@
           modules = [
             ./modules/system.nix
             ./modules/kernel.nix
-            ./modules/machines/hp_spectre_x360.nix
+            ./hosts/hp_spectre_x360
             home-manager.nixosModules.home-manager
             home-manager-config
             "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
@@ -226,7 +226,7 @@
           modules = [
             ./modules/system.nix
             ./modules/kernel.nix
-            ./modules/machines/gce.nix
+            ./hosts/gce
             ({
               nixpkgs.overlays = myOverlays;
             })
