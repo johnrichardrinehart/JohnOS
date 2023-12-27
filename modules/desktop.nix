@@ -1,7 +1,10 @@
 args @ { config, pkgs, lib, ... }: {
   boot.loader.systemd-boot.configurationLimit = 20;
 
-  imports = [ ../home-manager/home.nix ];
+  # useful for VS Code extensions that require an auth keyring
+  services.gnome.gnome-keyring.enable = true;
+
+  nixpkgs.config.allowUnfree = true;
 
   virtualisation.docker = {
     enable = true;
@@ -23,9 +26,6 @@ args @ { config, pkgs, lib, ... }: {
   networking.extraHosts = ''
     45.63.61.99 mongoloid
   '';
-
-  # useful for VS Code extensions that require an auth keyring
-  services.gnome.gnome-keyring.enable = true;
 
   # Configure keymap in X11
   services.xserver = {

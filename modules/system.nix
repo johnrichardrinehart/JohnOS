@@ -78,16 +78,6 @@
     nixPath = [ "nixpkgs=${nixpkgs}" ];
   };
 
-  # Use the systemd-boot EFI boot loader.
-
-  nixpkgs.config.allowUnfree = true;
-
-  # networking.hostName = "JohnOS-framework"; # Define your hostname.
-  # Pick only one of the below networking options.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-  # networking.wireless.userControlled.enable = true;
-  # networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
-
   # Enable touchpad support (enabled default in most desktopManager).
   services.xserver.libinput.enable = true;
 }

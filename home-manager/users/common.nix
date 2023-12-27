@@ -449,7 +449,6 @@ in
     # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
     scriptPath = ".hm-xsession";
 
-    
     profileExtra = ''
       eval $(${pkgs.gnome.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
       export SSH_AUTH_SOCK
