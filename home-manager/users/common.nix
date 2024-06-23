@@ -352,7 +352,7 @@ in
           owner = "chisui";
           repo = "zsh-nix-shell";
           rev = "v0.5.0";
-          sha256 = "1gfyrgn23zpwv1vj37gf28hf5z0ka0w5qm6286a7qixwv7ijnrx9";
+          hash = "sha256-IT3wpfw8zhiNQsrw59lbSWYh0NQ1CUdUtFzRzHlURH0=";
         };
       }
     ];

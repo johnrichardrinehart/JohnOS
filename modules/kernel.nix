@@ -45,10 +45,11 @@
             };
           });
 
-        linux = self.myLinux.kernel;
+        linux = self.myLinux.kernel_latest;
       }
     )
   ];
 
-  boot.kernelPackages = pkgs.myLinux;
+  #boot.kernelPackages = pkgs.myLinux;
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 }
