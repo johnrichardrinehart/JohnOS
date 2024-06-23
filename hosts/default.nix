@@ -6,11 +6,11 @@ lib.mapAttrs (
   dir: _:
   lib.nixosSystem {
     modules = [
-      # may need to be `nixosModules.home-manager`
+      ../modules
       inputs.home-manager.nixosModules.default
-      #inputs.nixos-hardware.nixosModules.default
       ./${dir}
       ({ pkgs, ... }: {
+        dev.johnrinehart.kernel.latest.enable = true;
         nix = {
           registry = {
             nixpkgs.flake = inputs.nixpkgs;

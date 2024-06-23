@@ -28,18 +28,19 @@ args @ { config, pkgs, lib, ... }: {
   '';
 
   # Configure keymap in X11
+  services.displayManager = {
+      # https://www.reddit.com/r/unixporn/comments/a7rg63/oc_a_tiny_riceable_lightdm_greeter/eckzt15?utm_source=share&utm_medium=web2x&context=3
+      defaultSession = "default"; # TODO: figure out a way to use another string besides default
+  };
   services.xserver = {
     enable = true;
     exportConfiguration = true; # https://github.com/NixOS/nixpkgs/issues/19629#issuecomment-368051434
     displayManager = {
-      # https://www.reddit.com/r/unixporn/comments/a7rg63/oc_a_tiny_riceable_lightdm_greeter/eckzt15?utm_source=share&utm_medium=web2x&context=3
-      defaultSession = "default"; # TODO: figure out a way to use another string besides default
       lightdm.greeters.enso.enable = true;
       lightdm.extraConfig = ''
         logind-check-graphical = true
       '';
     };
-
     desktopManager.session = [
       {
         manage = "window";
@@ -94,7 +95,6 @@ args @ { config, pkgs, lib, ... }: {
       p.brave
       p.flameshot
       p.keepassxc
-      p.dbeaver
       p.stalonetray
       #p.peek # GIF/webp screen recording
       p.mpv # mplayer replacement

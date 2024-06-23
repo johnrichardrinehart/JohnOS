@@ -3,7 +3,6 @@
     ../../modules/home-manager.nix
     ../../modules/desktop.nix
     ../../modules/system.nix
-    ../../modules/kernel.nix
     ./framework.nix
     ({ lib, ... }: {
       nixpkgs = {
