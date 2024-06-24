@@ -10,6 +10,7 @@ lib.mapAttrs
         ./${dir}
         ../modules
         inputs.home-manager.nixosModules.default
+        ({ hardware.enableRedistributableFirmware = true; })
         ({ ... }: {
           dev.johnrinehart = {
             kernel.latest.enable = true;
@@ -18,7 +19,18 @@ lib.mapAttrs
             xmonad.enable = true;
           };
         })
-        ({ hardware.enableRedistributableFirmware = true; })
+        ({ lib, ... }: {
+          nixpkgs = {
+            hostPlatform = lib.mkDefault "x86_64-linux";
+            config = {
+              allowUnfree = true;
+              permittedInsecurePackages = [
+                "electron-25.9.0"
+              ];
+              allowUnsupportedSystem = true;
+            };
+          };
+        })
         ({ pkgs, ... }: {
           nix = {
             registry = {
