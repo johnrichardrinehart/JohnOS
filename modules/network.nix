@@ -1,4 +1,4 @@
-{ lib, ... }: 
+{ lib, config, ... }: 
 let cfg = config.dev.johnrinehart.network; in {
   options = {
     dev.johnrinehart.network = {
@@ -6,7 +6,7 @@ let cfg = config.dev.johnrinehart.network; in {
     };
   };
 
-  config = {
+  config = lib.mkIf cfg.enable {
     networking.networkmanager.enable = true;
     networking.wireless.enable = false;
     networking.extraHosts = ''

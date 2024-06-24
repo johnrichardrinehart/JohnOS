@@ -13,7 +13,9 @@ lib.mapAttrs
         ({ ... }: {
           dev.johnrinehart = {
             kernel.latest.enable = true;
+            network.enable = true;
             systemPackages.enable = true;
+            xmonad.enable = true;
           };
         })
         ({ hardware.enableRedistributableFirmware = true; })
