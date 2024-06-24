@@ -1,10 +1,10 @@
-{ config, lib, options, ... }: 
+{ config, lib, options, ... }:
 let cfg = config.dev.johnrinehart.boot.loader.grub; in {
   options.dev.johnrinehart.boot.loader.grub = {
     enable = lib.mkEnableOption "John's GRUB2 config";
 
     device = lib.mkOption {
-      type = lib.types.string;
+      type = options.boot.loader.grub.device.type;
       default = "/dev/sda";
       description = options.boot.loader.grub.device.description;
     };

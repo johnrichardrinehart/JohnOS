@@ -76,7 +76,6 @@ let cfg = config.dev.johnrinehart.systemPackages; in {
     pkgs.go_1_21
     pkgs.gcc
     # communication tools
-    pkgs.droidcam
     pkgs.obs-studio
     # multimedia tools
     pkgs.pulseaudioFull

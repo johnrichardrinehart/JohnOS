@@ -13,6 +13,7 @@ lib.mapAttrs
         ({ hardware.enableRedistributableFirmware = true; })
         ({ lib, ... }: {
           dev.johnrinehart = {
+            sound.enable = true;
             kernel.latest.enable = true;
             network.enable = true;
             systemPackages.enable = true;

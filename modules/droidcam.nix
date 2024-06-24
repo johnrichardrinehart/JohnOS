@@ -20,7 +20,7 @@ let
 
     sourceRoot = "source/v4l2loopback";
 
-    # https://github.com/SebTM/nixpkgs/blob/1a92639f290e05d823282ed9a0145d2b82b3c1f6/pkgs/os-specific/linux/sysdig/default.nix#L76-L80 
+    # https://github.com/SebTM/nixpkgs/blob/1a92639f290e05d823282ed9a0145d2b82b3c1f6/pkgs/os-specific/linux/sysdig/default.nix#L76-L80
     postUnpack = lib.optionalString (lib.versionAtLeast kernel.version "6.8") ''
       substituteInPlace source/v4l2loopback/v4l2loopback-dc.c --replace-fail "strlcpy" "strscpy"
     '';
@@ -51,8 +51,9 @@ in {
     enable = lib.mkEnableOption "DroidCam V4L2 plug-in";
   };
 
-  config = lib.mkIf config.dev.johnrinehart.droidcam.enable {
+  config = lib.mkIf cfg.enable {
     # below stolen from https://gist.github.com/TheSirC/93130f70cc280cdcdff89faf8d4e98ab
+    environment.systemPackages = [ pkgs.droidcam ];
     boot.extraModulePackages = [ droidcamDrv ];
     boot.kernelModules = [ "v4l2loopback-dc" ];
   };
