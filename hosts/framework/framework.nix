@@ -2,15 +2,13 @@
 # and may be overwritten by future invocations.  Please make changes
 # to /etc/nixos/configuration.nix instead.
 { config, lib, pkgs, options, modulesPath, ... }:
-let
-  # https://discourse.nixos.org/t/load-automatically-kernel-module-and-deal-with-parameters/9200
-  v4l2loopback-dc = config.boot.kernelPackages.callPackage ../../pkgs/v4l2loopback-dc.nix { };
-in
 {
   imports =
     [
       (modulesPath + "/installer/scan/not-detected.nix")
     ];
+
+  dev.johnrinehart.droidcam.enable = true;
 
   boot.supportedFilesystems = [ "ntfs" "exfat" "vfat" "btrfs" "ext" ];
   boot.initrd.availableKernelModules = [ "xhci_pci" "thunderbolt" "nvme" "uas" "usb_storage" "sd_mod" ];
@@ -87,9 +85,7 @@ in
     v4l2loopback
   '';
 
-  # Register a v4l2loopback device at boot
   boot.kernelModules = [
-    "v4l2loopback"
     "kvm-intel" # detected automatically
   ];
 

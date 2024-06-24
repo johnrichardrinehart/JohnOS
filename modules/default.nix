@@ -7,5 +7,6 @@
     ./locale.nix
     ./fonts.nix
     ./ide.nix
+    ./droidcam.nix
   ];
 }

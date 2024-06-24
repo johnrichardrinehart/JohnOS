@@ -1,8 +1,4 @@
 args @ { config, pkgs, lib, nixpkgs, ... }:
-let
-  # https://discourse.nixos.org/t/load-automatically-kernel-module-and-deal-with-parameters/9200
-  v4l2loopback-dc = config.boot.kernelPackages.callPackage ../../pkgs/v4l2loopback-dc.nix { };
-in
 {
   # TODO: remove allowUnbroken once ZFS in linux kernel is fixed
   nixpkgs.config.allowBroken = true;
@@ -78,16 +74,10 @@ in
     bluetooth.enable = true;
   };
 
-  ## Below v4l2loopback stuff stolen from https://gist.github.com/TheSirC/93130f70cc280cdcdff89faf8d4e98ab
-  # Extra kernel modules
+  dev.johnrinehart.droidcam.enable = true;
+
   boot.extraModulePackages = [
     config.boot.kernelPackages.broadcom_sta
-    v4l2loopback-dc
-  ];
-
-  # Register a v4l2loopback device at boot
-  boot.kernelModules = [
-    "v4l2loopback-dc"
   ];
 
   # below from https://github.com/NixOS/nixos-hardware/blob/master/apple/default.nix
