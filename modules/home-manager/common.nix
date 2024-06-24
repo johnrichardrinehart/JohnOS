@@ -1,4 +1,4 @@
-args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
+{ pkgs, ... }:
 let
   stalonetrayrc = pkgs.writeText "stalonetrayrc" ''
     background "#3B4252"
@@ -15,40 +15,29 @@ let
     window_strut "none"
     window_type "dock"
   '';
-
-  overlays = [
-    #     (final: prev:
-    #       {
-    #         flameshot = prev.flameshot.overrideAttrs (old: rec {
-    #           version = "11.0.0";
-    #
-    #           src = final.fetchFromGitHub {
-    #             owner = "flameshot-org";
-    #             repo = "flameshot";
-    #             rev = "v${version}";
-    #             sha256 = "SlnEXW3Uhdgl0icwYyYsKQOcYkAtHpAvL6LMXBF2gWM=";
-    #           };
-    #
-    #           patches = [];
-    #         });
-    #       }
-    #     )
-
-    #  needed before https://github.com/NixOS/nixpkgs/pull/158654 had landed in
-    #  nixos-unstable
-    #  (self: super: {
-    #    dbeaver = super.dbeaver.overrideAttrs (old: {
-    #      fetchedMavenDeps = old.fetchedMavenDeps.overrideAttrs (_: {
-    #        outputHash = "sha256-fJs/XM8PZqm/CrhShtcy4R/4s8dCc1WdXIvYSCYZ4dw=";
-    #      });
-    #    });
-    #  })
-  ];
 in
 {
   imports = [
-    ../wm/xmonad
+#    ../wm/xmonad
   ];
+
+  home.packages = [
+      # games
+      pkgs.gnuchess
+      pkgs.stockfish
+      pkgs.scid-vs-pc
+      # CLI
+      pkgs.fzf
+      # instant messengers
+      pkgs.tdesktop
+      pkgs.signal-desktop
+      pkgs.discord
+      pkgs.element-desktop
+      pkgs.skypeforlinux
+      # development tools
+      (pkgs.google-cloud-sdk.withExtraComponents [ pkgs.google-cloud-sdk.components.gke-gcloud-auth-plugin pkgs.google-cloud-sdk.components.config-connector ])
+      pkgs.google-cloud-sql-proxy
+    ];
 
   services.flameshot.enable = true;
   services.gpg-agent = {
@@ -438,10 +427,7 @@ in
 
           # ${pkgs.zellij}/bin/zellij attach --index 0 || ${pkgs.zellij}/bin/zellij
         '';
-      in
-      if builtins.hasAttr "zshInitExtra" args
-      then base + args.zshInitExtra
-      else base;
+      in base;
   };
 
   xsession = {
@@ -454,8 +440,6 @@ in
       export SSH_AUTH_SOCK
     '';
   };
-
-  home.packages = if builtins.hasAttr "pp" args then args.pp else [ ];
 
   home.stateVersion = "24.05";
 

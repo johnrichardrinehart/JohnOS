@@ -8,5 +8,6 @@
     ./fonts.nix
     ./ide.nix
     ./droidcam.nix
+    ./home-manager
   ];
 }

@@ -49,3 +49,4 @@ cmd_passed_bg = 237
 cmd_passed_fg = 246
 cmd_failed_bg = 124
 cmd_failed_fg = 229
+

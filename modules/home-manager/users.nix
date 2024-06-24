@@ -1,9 +1,6 @@
 args @ { pkgs, lib, config, nixpkgs, options, specialArgs, nixosConfig, ... }:
 let
-  pp =
-    let p = pkgs;
-    in
-    [
+  pkgs = [
       # games
       p.gnuchess
       p.stockfish
@@ -22,3 +19,4 @@ let
     ];
 in
 import ./common.nix (args // { inherit pp; })
+

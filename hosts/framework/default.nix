@@ -1,6 +1,5 @@
 { ... }: {
   imports = [
-    ../../modules/home-manager.nix
     ../../modules/system.nix
     ./framework.nix
     ({ lib, ... }: {
