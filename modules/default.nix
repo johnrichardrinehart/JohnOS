@@ -1,5 +1,6 @@
 { ... }: {
   imports = [
+    ./droidcam.nix
     ./fonts.nix
     ./ide.nix
     ./locale.nix

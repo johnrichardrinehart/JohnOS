@@ -66,8 +66,10 @@ let
     '';
 in
 {
+  dev.johnrinehart.xorg.enable = true;
+
   xsession = {
-    initExtra = extra + polybarOpts + configureKeyboards + configureMonitors;
+   initExtra = extra + polybarOpts + configureKeyboards + configureMonitors;
 
     windowManager.xmonad = {
       enable = true;

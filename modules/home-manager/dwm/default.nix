@@ -5,6 +5,8 @@ let cfg = config.dev.johnrinehart.dwm; in {
   };
 
   config = lib.mkIf cfg.enable  {
+    dev.johnrinehart.xorg.enable = true;
+
     environment.systemPackages = [ pkgs.st ];
 
     nixpkgs.overlays = [
@@ -16,4 +18,3 @@ let cfg = config.dev.johnrinehart.dwm; in {
     services.xserver.windowManager.dwm.enable = true;
   };
 }
-

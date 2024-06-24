@@ -3,11 +3,6 @@
 # to /etc/nixos/configuration.nix instead.
 { config, lib, pkgs, options, modulesPath, ... }:
 {
-  imports =
-    [
-      (modulesPath + "/installer/scan/not-detected.nix")
-    ];
-
   dev.johnrinehart.droidcam.enable = true;
 
   boot.supportedFilesystems = [ "ntfs" "exfat" "vfat" "btrfs" "ext" ];

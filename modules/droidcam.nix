@@ -2,8 +2,8 @@
 { pkgs, config, lib, ... }:
 let
   cfg = config.dev.johnrinehart.droidcam;
-  droidcamDrv = 
-  let 
+  droidcamDrv =
+  let
     stdenv = pkgs.stdenv;
     kernel = config.boot.kernelPackages.kernel;
   in

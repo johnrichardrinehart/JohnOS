@@ -13,10 +13,10 @@ lib.mapAttrs
         ({ ... }: {
           dev.johnrinehart = {
             kernel.latest.enable = true;
-            xorg.enable = true;
             systemPackages.enable = true;
           };
         })
+        ({ hardware.enableRedistributableFirmware = true; })
         ({ pkgs, ... }: {
           nix = {
             registry = {

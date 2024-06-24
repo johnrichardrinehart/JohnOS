@@ -1,9 +1,14 @@
 { pkgs, lib, ... }:
-let cfg = config.dev.johnrinehart.i3; in {
+let
+  cfg = config.dev.johnrinehart.i3;
+in {
   options.dev.johnrinehart.i3 = {
     enable = lib.mkEnableOption "John's i3 config";
   };
+
   config = lib.mkIf cfg.enable {
+    dev.johnrinehart.xorg.enable = true;
+
     home.file."config/i3status/net-speed.sh" = {
       source = ./net-speed.sh;
       executable = true;
