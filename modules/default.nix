@@ -1,13 +1,13 @@
 { ... }: {
   imports = [
-    ./bootloader
-    ./kernel
-    ./desktop
-    ./packages.nix
-    ./locale.nix
     ./fonts.nix
     ./ide.nix
-    ./droidcam.nix
+    ./locale.nix
+    ./packages.nix
+
+    ./bootloader
+    ./desktop
     ./home-manager
+    ./kernel
   ];
 }

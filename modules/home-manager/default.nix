@@ -1,5 +1,6 @@
 { ... }: {
   imports = [
+    ./dwm
     ({
       home-manager = {
         useGlobalPkgs = true;
