@@ -34,7 +34,7 @@ in
     {
       device = "/dev/disk/by-uuid/caca60c2-483b-4a58-a443-5c8df3b3c82d";
       fsType = "btrfs";
-      options = ["user" "rw" "async" "auto" "nofail"];
+      options = [ "user" "rw" "async" "auto" "nofail" ];
     };
 
   swapDevices =
