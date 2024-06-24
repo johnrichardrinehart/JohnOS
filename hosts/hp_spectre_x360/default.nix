@@ -1,11 +1,8 @@
 args @ { config, pkgs, ... }:
 {
-  # uncomment `imports` if you want to bundle nixpkgs into the installation
-  #  imports = [
-  #    "${args.nixpkgs}/nixos/modules/installer/cd-dvd/channel.nix"
-  #  ];
-
-  # https://nixos.wiki/wiki/Linux_kernel#Booting_a_kernel_from_a_custom_source
+  boot.extraModprobeConfig = ''
+      options snd-hda-intel model=alc295-hp-x360
+  '';
 
   # TODO: remove allowUnbroken once ZFS in linux kernel is fixed
   nixpkgs.config.allowBroken = true;
@@ -189,7 +186,6 @@ args @ { config, pkgs, ... }:
   # hardware.pulseaudio = {
   #   enable = true;
   #   support32Bit = true;
-  #   extraModules = [ pkgs.pulseaudio-modules-bt ];
   #   package = pkgs.pulseaudioFull;
   # };
 

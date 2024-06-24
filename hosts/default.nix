@@ -11,12 +11,13 @@ lib.mapAttrs
         ../modules
         inputs.home-manager.nixosModules.default
         ({ hardware.enableRedistributableFirmware = true; })
-        ({ ... }: {
+        ({ lib, ... }: {
           dev.johnrinehart = {
             kernel.latest.enable = true;
             network.enable = true;
             systemPackages.enable = true;
             xmonad.enable = true;
+            bluetooth.enable = true;
           };
         })
         ({ lib, ... }: {
