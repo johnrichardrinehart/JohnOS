@@ -27,11 +27,6 @@
 #     system = "x86_64-linux";
 #     nix = inputs.nix.packages.${system}.nix;
 #
-#     photoDerivation =
-#       let
-#         pkgs = import inputs.nixpkgs { system = "x86_64-linux"; };
-#       in
-#       import ./photo/photo.nix { inherit pkgs; };
 #    in
 #    rec {
 #      nixosConfigurations = {
