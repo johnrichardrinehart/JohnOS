@@ -171,14 +171,16 @@ in
 
   home.file =
     {
-      ".config/powerline-rs/themes/gruvbox.theme" = {
-        source = ./gruvbox.theme;
+      ".config/powerline-rs/themes/gruvbox.theme".source = ./gruvbox.theme;
+    }
+    // lib.optionalAttrs osConfig.dev.johnrinehart.i3.enable {
+      home.file."config/i3status/net-speed.sh" = {
+        source = ./net-speed.sh;
+        executable = true;
       };
     };
 
-  home.sessionVariables = {
-    EDITOR = "vim";
-  };
+  home.sessionVariables.EDITOR = "vim";
 
   gtk = {
     enable = true;
@@ -209,7 +211,7 @@ in
 
   programs.gpg.enable = true;
 
-  programs.i3status = {
+  programs.i3status = lib.optionalAttrs osConfig.dev.johnrinehart.i3.enable {
     enable = true;
     enableDefault = false;
 
