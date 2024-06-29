@@ -9,17 +9,5 @@ in
 
   config = lib.mkIf cfg.enable {
     dev.johnrinehart.xorg.enable = true;
-
-    services.xserver.windowManager.xmonad = {
-      enable = true;
-      enableContribAndExtras = true;
-
-      extraPackages = hp: [
-        hp.dbus
-        hp.monad-logger
-      ];
-
-      config = ./config.hs;
-    };
   };
 }

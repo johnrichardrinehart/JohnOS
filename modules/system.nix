@@ -22,7 +22,7 @@
     users = {
       john = {
         isNormalUser = true;
-        extraGroups = [ "wheel" "vboxsf" "audio" "docker" "adbusers" ]; # Enable ‘sudo’ for the user. And enable access to VBox shared folders
+        extraGroups = [ "wheel" "vboxsf" "audio" "docker" "adbusers" "video" ]; # Enable ‘sudo’ for the user. And enable access to VBox shared folders
         shell = pkgs.zsh;
         hashedPassword = "$6$IQcYRQaTKCrDfClQ$k7MAqJDodwnGdtpj7zXEHq9UsPDAeME5XweKRosRjA8QFfMc2k.eZoGTHc4pnHAWAxaNtYylWN85fkroQg7lj.";
         group = "john";

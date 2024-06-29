@@ -65,18 +65,11 @@ let
     '';
   stalonetrayrc = pkgs.writeText "stalonetrayrc" ''
     background "#3B4252"
-    decorations "none"
-    dockapp_mode "none"
-    geometry "5x1+1850+0"
-    grow_gravity "NE"
-    icon_gravity "NE"
-    icon_size "48"
-    kludges "force_icons_size"
-    skip_taskbar "true"
+    geometry "3x1+1150-0"
+    icon_size "24"
     sticky true
-    transparent "false"
-    window_strut "none"
-    window_type "dock"
+    transparent true
+    window_strut bottom
   '';
 in
 {
@@ -122,10 +115,16 @@ in
 
         tail = true
       '';
+      module_pt = ''
+        [module/time-pt]
+        type = custom/script
+        exec = TZ=America/Los_Angeles ${pkgs.coreutils}/bin/date +"%a, %d %b %H:%M"
+        interval = 59
+      '';
       module_nyc_time = ''
         [module/time-nyc]
         type = custom/script
-        exec = TZ=America/New_York ${pkgs.coreutils}/bin/date +"(NYC: %H:%M)"
+        exec = TZ=America/New_York ${pkgs.coreutils}/bin/date +"(ET: %H:%M)"
         interval = 59
       '';
     in
@@ -165,7 +164,7 @@ in
         startPolybar main &
         startStalonetray &
       '';
-      extraConfig = bars + colors + modules + user_modules + module_xmonad + module_nyc_time;
+      extraConfig = bars + colors + modules + user_modules + module_xmonad + module_pt + module_nyc_time;
     };
 
 
@@ -274,7 +273,7 @@ in
 
   programs.kitty = {
     enable = true;
-    font.size = 16;
+    font.size = 12;
     font.name = "Fira Mono Medium for Powerline";
     extraConfig = ''
       enable_audio_bell no
@@ -445,9 +444,7 @@ in
       theme = "agnoster";
     };
 
-    initExtra =
-      let
-        base = ''
+    initExtra = ''
           export BGIMG="${../../static/ocean.jpg}"
           if [ ! -f $BGIMG ]; then
             curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
@@ -492,7 +489,6 @@ in
 
           # ${pkgs.zellij}/bin/zellij attach --index 0 || ${pkgs.zellij}/bin/zellij
         '';
-      in base;
   };
 
   xsession = {
@@ -505,7 +501,19 @@ in
       export SSH_AUTH_SOCK
     '';
   } // lib.optionalAttrs osConfig.dev.johnrinehart.xmonad.enable {
-    initExtra = extra + polybarOpts + configureKeyboards + configureMonitors;
+    initExtra = extra + polybarOpts + configureKeyboards;
+
+    windowManager.xmonad = {
+      enable = true;
+      enableContribAndExtras = true;
+
+      extraPackages = hp: [
+        hp.dbus
+        hp.monad-logger
+      ];
+
+      config = ./config.hs;
+    };
   };
 
   home.stateVersion = "24.05";
