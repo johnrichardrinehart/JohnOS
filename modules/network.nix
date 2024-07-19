@@ -12,5 +12,7 @@ let cfg = config.dev.johnrinehart.network; in {
     networking.resolvconf.enable = true;
     networking.networkmanager.enable = true;
     networking.wireless.enable = false;
+
+    networking.networkmanager.unmanaged = [ "tailscale0" ];
   };
 }
