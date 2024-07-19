@@ -97,7 +97,6 @@ in
 
   services.flameshot.enable = true;
   services.gpg-agent = {
-    pinentryFlavor = "curses";
     enable = true;
   };
   services.network-manager-applet.enable = true;
@@ -410,7 +409,8 @@ in
       }
     ];
 
-    enableAutosuggestions = true;
+
+    autosuggestion.enable = true;
 
     shellAliases =
       let

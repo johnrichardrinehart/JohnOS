@@ -6,9 +6,6 @@ let cfg = config.dev.johnrinehart.sound; in
   };
 
   config = lib.mkIf cfg.enable {
-    sound.enable = true;
-
-
     hardware.pulseaudio = {
       enable = true;
       support32Bit = true;
