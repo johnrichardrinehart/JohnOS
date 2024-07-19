@@ -329,11 +329,11 @@ myLayout =
     . wrkLayout $ (tiled ||| Mirror tiled ||| column3 ||| full)
    where
      -- default tiling algorithm partitions the screen into two panes
-     tiled   = gapSpaced 5 $ Tall nmaster delta ratio
+     tiled   = gapSpaced 1 $ Tall nmaster delta ratio
 --     tiled   = gapSpaced 10 $ Tall nmaster delta ratio
 --      full    = gapSpaced 5 Full
      full    = gapSpaced 2 Full
-     column3 = gapSpaced 10 $ ThreeColMid 1 (3/100) (1/2)
+     column3 = gapSpaced 2 $ ThreeColMid 1 (3/100) (1/2)
 
      -- The default number of windows in the master pane
      nmaster = 1
