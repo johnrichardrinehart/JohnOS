@@ -1,4 +1,4 @@
-{ lib, ... }: {
+{ lib, pkgs, ... }: {
   dev.johnrinehart.boot.loader.grub.enable = true;
 
   networking.hostName = "thinkie";
@@ -24,4 +24,12 @@
   networking.interfaces.wlp3s0.useDHCP = true;
 
   services.upower.enable = true;
+
+  environment.systemPackages = [
+    pkgs.opensc
+    pkgs.pcsc-tools
+    pkgs.global-platform-pro
+  ];
+
+  services.pcscd.enable = true;
 }
