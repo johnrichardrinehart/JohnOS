@@ -497,7 +497,7 @@ in
     scriptPath = ".hm-xsession";
 
     profileExtra = ''
-      eval $(${pkgs.gnome.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
+      eval $(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
       export SSH_AUTH_SOCK
     '';
   } // lib.optionalAttrs osConfig.dev.johnrinehart.xmonad.enable {
