@@ -1,4 +1,4 @@
-{ lib, pkgs, ... }: {
+{ lib, pkgs, config, ... }: {
   dev.johnrinehart.boot.loader.grub.enable = true;
 
   networking.hostName = "thinkie";
@@ -29,7 +29,12 @@
     pkgs.opensc
     pkgs.pcsc-tools
     pkgs.global-platform-pro
+    config.boot.kernelPackages.v4l2loopback.bin
   ];
 
   services.pcscd.enable = true;
+
+  boot.extraModulePackages = [ config.boot.kernelPackages.v4l2loopback.out ];
+  #boot.extraModulePackages = [ pkgs.linuxPackages.v4l2loopback ];
+  boot.kernelModules = [ "v4l2loopback" ];
 }
