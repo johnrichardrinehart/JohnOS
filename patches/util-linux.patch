@@ -1,0 +1,27 @@
+diff --git a/libmount/src/context.c b/libmount/src/context.c
+index d38e3671f..411f98f3f 100644
+--- a/libmount/src/context.c
++++ b/libmount/src/context.c
+@@ -2097,6 +2097,11 @@ int mnt_context_prepare_helper(struct libmnt_context *cxt, const char *name,
+ 	if (!ns_old)
+ 		return -MNT_ERR_NAMESPACE;
+ 
++	/* Record number of '.' in `type` so we can try a few things later. */
++	int dot_count = 0;
++	for (int i=0; type[i]; i++)
++		dot_count += (type[i] == '.');
++
+ 	/* Ignore errors when search in $PATH and do not modify @rc
+ 	 */
+ 	path = strtok_r(search_path, ":", &p);
+@@ -2112,8 +2117,8 @@ int mnt_context_prepare_helper(struct libmnt_context *cxt, const char *name,
+ 			continue;
+ 
+ 		found = mnt_is_path(helper);
+-		if (!found && strchr(type, '.')) {
+-			/* If type ends with ".subtype" try without it */
++		/* If type contains '.' then try without them. */
++		for (int cnt = dot_count; !found && cnt; --cnt) {
+ 			char *hs = strrchr(helper, '.');
+ 			if (hs)
+ 				*hs = '\0';

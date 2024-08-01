@@ -11,6 +11,7 @@
     ./sound.nix
     ./system.nix
     ./virtualisation.nix
+    ./s3_mount.nix
 
     ./bootloader
     ./desktop

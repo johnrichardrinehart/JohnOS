@@ -55,6 +55,18 @@ lib.mapAttrs
             nixPath = [ "nixpkgs=${inputs.nixpkgs}" ];
           };
         })
+        ({ pkgs, ...}: {
+          nixpkgs.overlays = [
+            (final: prev: {
+              util-linux = prev.util-linux.overrideAttrs (old: {
+                patches = old.patches ++ [ ../patches/util-linux.patch ];
+              });
+            })
+          ];
+        })
+        ({ ... }: {
+          imports = [ inputs.sops-nix.nixosModules.default ];
+        })
       ];
     }
   )

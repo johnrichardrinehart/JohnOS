@@ -1,5 +1,15 @@
 { lib, pkgs, config, ... }: {
-  dev.johnrinehart.boot.loader.grub.enable = true;
+  dev.johnrinehart = {
+    boot.loader.grub.enable = true;
+    s3_mount = {
+      enable = true;
+      mounts = [{
+        bucketName = "rinehartstorage";
+        url = "https://s3.us-west-000.backblazeb2.com";
+        passwordFile = config.sops.secrets.backblaze-passwd-s3fs-rinehartstorage.path;
+      }];
+    };
+  };
 
   networking.hostName = "thinkie";
 
@@ -35,6 +45,10 @@
   services.pcscd.enable = true;
 
   boot.extraModulePackages = [ config.boot.kernelPackages.v4l2loopback.out ];
-  #boot.extraModulePackages = [ pkgs.linuxPackages.v4l2loopback ];
   boot.kernelModules = [ "v4l2loopback" ];
+
+  sops.defaultSopsFile = ../../secrets/sops.yaml;
+  #sops.age.keyFile = "/home/john/.config/sops/age/keys.txt";
+  sops.age.sshKeyPaths = [ "/home/john/.ssh/sops" ];
+  sops.secrets.backblaze-passwd-s3fs-rinehartstorage = {};
 }
