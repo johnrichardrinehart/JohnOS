@@ -87,9 +87,9 @@ in
       # instant messengers
       pkgs.tdesktop
       pkgs.signal-desktop
-      pkgs.discord
-      pkgs.element-desktop
-      pkgs.skypeforlinux
+      #pkgs.discord
+      #pkgs.element-desktop
+      #pkgs.skypeforlinux
       # development tools
       (pkgs.google-cloud-sdk.withExtraComponents [ pkgs.google-cloud-sdk.components.gke-gcloud-auth-plugin pkgs.google-cloud-sdk.components.config-connector ])
       pkgs.google-cloud-sql-proxy

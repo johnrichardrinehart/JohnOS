@@ -12,9 +12,11 @@
     ./system.nix
     ./virtualisation.nix
     ./s3_mount.nix
+    ./gocryptfs.nix
 
     ./bootloader
     ./desktop
+    ./hardware
     ./home-manager
     ./kernel
   ];

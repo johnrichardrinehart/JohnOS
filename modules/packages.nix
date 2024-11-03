@@ -24,7 +24,7 @@ let cfg = config.dev.johnrinehart.systemPackages; in {
     pkgs.gnome-icon-theme
     # gui apps
     pkgs.rofi
-    pkgs.slack
+    #pkgs.slack
     pkgs.vscodium
     #pkgs.vscode
     pkgs.brave
@@ -86,7 +86,7 @@ let cfg = config.dev.johnrinehart.systemPackages; in {
     # browsers
     pkgs.libxml2 # needed for alias lkv
     # media
-    pkgs.ffmpeg_5-full
+    pkgs.ffmpeg_7-full
     # stuff for lunarvim :(
       pkgs.python3
       pkgs.python39Packages.pip
