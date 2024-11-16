@@ -16,7 +16,7 @@
 
     ./bootloader
     ./desktop
-    ./hardware
+    ./rock5c
     ./home-manager
     ./kernel
   ];

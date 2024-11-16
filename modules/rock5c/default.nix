@@ -2,6 +2,10 @@
 let
   cfg = config.dev.johnrinehart.rock5c;
 in {
+  imports = [
+    ./kernel_radxa.nix
+  ];
+
   options.dev.johnrinehart.rock5c = {
     enable = lib.mkEnableOption "radxa rock5c hardware stuff";
   };
@@ -39,17 +43,6 @@ in {
         set -x
         export img=$out;
         root_fs=${rootfsImage};
-        ''
-        #mkdir $PWD/all_fs $PWD/mount;
-        #ls -lh
-        #ln -s ${pkgs.linux}/lib /lib
-        #ls -lh ${rootfsImage}
-        #${pkgs.kmod}/bin/modprobe loop
-        #${pkgs.strace}/bin/strace mount -o loop ${rootfsImage} $PWD/mount;
-        #cp -ra $PWD/mount/* $PWD/all_fs/;
-        #mkdir $PWD/all_fs/boot;
-        #cp -ra /boot/* $PWD/all_fs/boot/;
-        + ''
 
         rootSizeSectors=$(du -B 512 --apparent-size $root_fs | awk '{print $1}');
         imageSize=$((512*(rootSizeSectors + 0x8000)));
@@ -102,40 +95,13 @@ in {
       "earlyprintk"
       "console=ttyS0,1500000"
       "console=ttyS1,1500000"
+      "console=ttyS2,1500000"
+      "console=ttyAMA0,1500000"
+      "console=tty0"
+      "console=ttyFIQ0,1500000"
+      "printk.synchronous=1"
+      "earlycon=uart8250,mmio32,0xfeb50000"
     ];
 
-    nixpkgs.overlays = [
-      (self: super: {
-        linuxRock5C = config.boot.kernelPackages.kernel.override (old: {
-          structuredExtraConfig = with lib.kernel; old.structuredExtraConfig // {
-            EARLY_PRINTK=Y;
-            CONFIG_DEBUG=Y;
-          };
-        });
-      })
-    ];
-
-    boot.kernelPatches = [
-      {
-        name = "arm64-dts-rockchip-add-rock-5c (rev: d14f6c55c9d6a6fc5bed6f9ee4734f3a7f4e2b94)";
-        patch = ./0001-arm64-dts-rockchip-add-rock-5c.patch;
-      }
-      {
-        name = "arm64-dts-rockchip-add-rock5c-spi-devicetree (rev: 72b99c4fdfee18b85e3e2f582e6be0e01d709aa1)";
-        patch = ./0002-arm64-dts-rockchip-add-rock5c-spi-devicetree.patch;
-      }
-      {
-        name = "pull in necessary files";
-        patch = ./0003-chore-pull-in-necessary-dt-bindings-and-dtsi-files.patch;
-      }
-      {
-        name = "check out the dts explicitly";
-        patch = ./0004-fix-just-checkout-the-dts-from-linux-6.1-stan-rkr1.patch;
-      }
-      {
-        name = "keep only the device trees that matter (Rock 5C)";
-        patch = ./0005-chore-retain-only-those-device-trees-that-I-care-abo.patch;
-      }
-    ];
   };
 }
