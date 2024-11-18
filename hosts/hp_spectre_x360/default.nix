@@ -1,5 +1,9 @@
 args @ { config, pkgs, ... }:
 {
+  imports = [
+    ../desktop.nix
+  ];
+
   boot.extraModprobeConfig = ''
       options snd-hda-intel model=alc295-hp-x360
   '';

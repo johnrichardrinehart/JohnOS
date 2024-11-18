@@ -1,6 +1,7 @@
 { ... }: {
   imports = [
     ../../modules/system.nix
+    ../desktop.nix
     ./framework.nix
     ({ lib, ... }: {
       boot.loader.systemd-boot.enable = true;

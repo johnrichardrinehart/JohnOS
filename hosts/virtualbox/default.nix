@@ -1,5 +1,9 @@
 args @ { config, pkgs, ... }:
 {
+  imports = [
+    ../desktop.nix
+  ];
+  
   hardware.pulseaudio.enable = true;
   networking.interfaces.enp0s3.useDHCP = true;
   # Use the GRUB 2 boot loader.
