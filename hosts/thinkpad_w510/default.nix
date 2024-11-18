@@ -1,32 +1,42 @@
-{ lib, pkgs, config, ... }: {
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
+{
   imports = [
     ../desktop.nix
   ];
 
-  dev.johnrinehart = 
-  let
-    cipherMount = "/mnt/.b2-rinehartstorage";
-  in
-  {
-    boot.loader.grub.enable = true;
-    s3_mount = {
-      enable = true;
-      mounts = [{
-        mountPoint = cipherMount;
-        bucketName = "rinehartstorage";
-        url = "https://s3.us-west-000.backblazeb2.com";
-        passwordFile = config.sops.secrets.backblaze-passwd-s3fs-rinehartstorage.path;
-      }];
+  dev.johnrinehart =
+    let
+      cipherMount = "/mnt/.b2-rinehartstorage";
+    in
+    {
+      boot.loader.grub.enable = true;
+      s3_mount = {
+        enable = true;
+        mounts = [
+          {
+            mountPoint = cipherMount;
+            bucketName = "rinehartstorage";
+            url = "https://s3.us-west-000.backblazeb2.com";
+            passwordFile = config.sops.secrets.backblaze-passwd-s3fs-rinehartstorage.path;
+          }
+        ];
+      };
+      gocryptfs = {
+        enable = true;
+        mounts = [
+          {
+            inherit cipherMount;
+            plaintextMount = "/mnt/b2-rinehartstorage";
+            passwordFile = config.sops.secrets.backblaze-passwd-gocryptfs-rinehartstorage.path;
+          }
+        ];
+      };
     };
-    gocryptfs = {
-      enable = true;
-      mounts = [{
-        inherit cipherMount;
-        plaintextMount = "/mnt/b2-rinehartstorage";
-        passwordFile = config.sops.secrets.backblaze-passwd-gocryptfs-rinehartstorage.path;
-      }];
-    };
-  };
 
   networking.hostName = "thinkie";
 
@@ -42,7 +52,10 @@
     "/boot" = lib.mkForce {
       device = "/dev/disk/by-uuid/84EE-E35C";
       fsType = "vfat";
-      options = [ "fmask=0022" "dmask=0022" ];
+      options = [
+        "fmask=0022"
+        "dmask=0022"
+      ];
     };
   };
 
@@ -52,14 +65,16 @@
 
   services.upower.enable = true;
 
-  environment.systemPackages = [
-    pkgs.opensc
-    pkgs.pcsc-tools
-    pkgs.global-platform-pro
-    config.boot.kernelPackages.v4l2loopback.bin
-  ] ++ [
-    pkgs.nload
-  ];
+  environment.systemPackages =
+    [
+      pkgs.opensc
+      pkgs.pcsc-tools
+      pkgs.global-platform-pro
+      config.boot.kernelPackages.v4l2loopback.bin
+    ]
+    ++ [
+      pkgs.nload
+    ];
 
   services.pcscd.enable = true;
 
@@ -70,6 +85,6 @@
   sops.defaultSopsFile = ../../secrets/sops.yaml;
   #sops.age.keyFile = "/home/john/.config/sops/age/keys.txt";
   sops.age.sshKeyPaths = [ "/home/john/.ssh/sops" ];
-  sops.secrets.backblaze-passwd-s3fs-rinehartstorage = {};
-  sops.secrets.backblaze-passwd-gocryptfs-rinehartstorage = {};
+  sops.secrets.backblaze-passwd-s3fs-rinehartstorage = { };
+  sops.secrets.backblaze-passwd-gocryptfs-rinehartstorage = { };
 }

@@ -1,5 +1,13 @@
-{ config, lib, options, ... }:
-let cfg = config.dev.johnrinehart.boot.loader.grub; in {
+{
+  config,
+  lib,
+  options,
+  ...
+}:
+let
+  cfg = config.dev.johnrinehart.boot.loader.grub;
+in
+{
   options.dev.johnrinehart.boot.loader.grub = {
     enable = lib.mkEnableOption "John's GRUB2 config";
 
@@ -9,7 +17,7 @@ let cfg = config.dev.johnrinehart.boot.loader.grub; in {
       description = options.boot.loader.grub.device.description;
     };
 
-    splashImage  = lib.mkOption {
+    splashImage = lib.mkOption {
       type = lib.types.path;
       default = ../../static/ocean.jpg;
       description = options.boot.loader.grub.splashImage.description;

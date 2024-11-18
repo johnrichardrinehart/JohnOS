@@ -1,5 +1,12 @@
-{ config, pkgs, lib, ... }:
-let cfg = config.dev.johnrinehart.sound; in
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
+let
+  cfg = config.dev.johnrinehart.sound;
+in
 {
   options.dev.johnrinehart.sound = {
     enable = lib.mkEnableOption "John's sound config";
@@ -14,4 +21,3 @@ let cfg = config.dev.johnrinehart.sound; in
     };
   };
 }
-

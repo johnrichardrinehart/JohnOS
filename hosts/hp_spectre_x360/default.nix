@@ -1,11 +1,11 @@
-args @ { config, pkgs, ... }:
+args@{ config, pkgs, ... }:
 {
   imports = [
     ../desktop.nix
   ];
 
   boot.extraModprobeConfig = ''
-      options snd-hda-intel model=alc295-hp-x360
+    options snd-hda-intel model=alc295-hp-x360
   '';
 
   # TODO: remove allowUnbroken once ZFS in linux kernel is fixed
@@ -25,53 +25,50 @@ args @ { config, pkgs, ... }:
   ];
 
   # add some filesystems for helping maintain state between reboots
-  fileSystems = pkgs.lib.mkForce
-    (config.lib.isoFileSystems //
-      {
-        "/mnt/root" =
-          {
-            device = "/dev/mmcblk0p1";
-            fsType = "ext4";
-            neededForBoot = false;
-          };
-        "/var/lib/docker" =
-          {
-            fsType = "ext4";
-            device = "/mnt/root/var-lib-docker";
-            options = [
-              "defaults,bind"
-              "x-systemd.requires=/mnt/root"
-            ];
-          };
-        "/var/lib/bluetooth" =
-          {
-            fsType = "overlay";
-            device = "overlay";
-            options = [
-              "lowerdir=/var/lib/bluetooth"
-              "upperdir=/mnt/root/var-lib-bluetooth"
-              "workdir=/mnt/root/.var-lib-bluetooth"
-              "x-systemd.requires=/mnt/root"
-              "x-systemd.requires=/var/lib/bluetooth"
-              "nofail"
-            ];
-            neededForBoot = false;
-          };
-        "/home" =
-          {
-            fsType = "overlay";
-            device = "overlay";
-            options = [
-              "lowerdir=/home"
-              "upperdir=/mnt/root/home"
-              "workdir=/mnt/root/.home"
-              "x-systemd.requires=/mnt/root"
-              "x-systemd.requires=/home"
-              "nofail"
-            ];
-            neededForBoot = false;
-          };
-      });
+  fileSystems = pkgs.lib.mkForce (
+    config.lib.isoFileSystems
+    // {
+      "/mnt/root" = {
+        device = "/dev/mmcblk0p1";
+        fsType = "ext4";
+        neededForBoot = false;
+      };
+      "/var/lib/docker" = {
+        fsType = "ext4";
+        device = "/mnt/root/var-lib-docker";
+        options = [
+          "defaults,bind"
+          "x-systemd.requires=/mnt/root"
+        ];
+      };
+      "/var/lib/bluetooth" = {
+        fsType = "overlay";
+        device = "overlay";
+        options = [
+          "lowerdir=/var/lib/bluetooth"
+          "upperdir=/mnt/root/var-lib-bluetooth"
+          "workdir=/mnt/root/.var-lib-bluetooth"
+          "x-systemd.requires=/mnt/root"
+          "x-systemd.requires=/var/lib/bluetooth"
+          "nofail"
+        ];
+        neededForBoot = false;
+      };
+      "/home" = {
+        fsType = "overlay";
+        device = "overlay";
+        options = [
+          "lowerdir=/home"
+          "upperdir=/mnt/root/home"
+          "workdir=/mnt/root/.home"
+          "x-systemd.requires=/mnt/root"
+          "x-systemd.requires=/home"
+          "nofail"
+        ];
+        neededForBoot = false;
+      };
+    }
+  );
 
   # disabled by installation-cd-minimal
   fonts.fontconfig.enable = pkgs.lib.mkOverride 49 true;
@@ -80,7 +77,10 @@ args @ { config, pkgs, ... }:
   services.xserver = {
     enable = true;
 
-    videoDrivers = [ "modesetting" "nouveau" ];
+    videoDrivers = [
+      "modesetting"
+      "nouveau"
+    ];
 
     # manual implementation of https://github.com/NixOS/nixpkgs/blob/6c0c30146347188ce908838fd2b50c1b7db47c0c/nixos/modules/services/x11/xserver.nix#L737-L741
     # can not use xserver.config.enableCtrlAltBackspace because we want a mostly-empty xorg.conf

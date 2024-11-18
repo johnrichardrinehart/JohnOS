@@ -1,4 +1,5 @@
-{ ... }: {
+{ ... }:
+{
   imports = [
     ./bluetooth.nix
     ./droidcam.nix

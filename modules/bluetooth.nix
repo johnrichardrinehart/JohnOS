@@ -1,5 +1,13 @@
-{ config, pkgs, lib, ... }:
-let cfg = config.dev.johnrinehart.bluetooth; in {
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
+let
+  cfg = config.dev.johnrinehart.bluetooth;
+in
+{
   options.dev.johnrinehart.bluetooth = {
     enable = lib.mkEnableOption "John's Bluetooth settings.";
   };

@@ -1,4 +1,10 @@
-{ config, pkgs, lib, utils, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  utils,
+  ...
+}:
 let
   cfg = config.dev.johnrinehart.gocryptfs;
 
@@ -20,18 +26,19 @@ let
     };
   };
 in
-  {
-    options.dev.johnrinehart.gocryptfs = {
-      enable = lib.mkEnableOption "gocryptfs mounts";
+{
+  options.dev.johnrinehart.gocryptfs = {
+    enable = lib.mkEnableOption "gocryptfs mounts";
 
-      mounts = lib.mkOption {
-        type = lib.types.listOf gocryptfs;
-      };
+    mounts = lib.mkOption {
+      type = lib.types.listOf gocryptfs;
     };
+  };
 
-    config = lib.mkIf cfg.enable {
-      environment.systemPackages = [ pkgs.gocryptfs ];
-      fileSystems = builtins.listToAttrs (builtins.map (x: {
+  config = lib.mkIf cfg.enable {
+    environment.systemPackages = [ pkgs.gocryptfs ];
+    fileSystems = builtins.listToAttrs (
+      builtins.map (x: {
         name = lib.last (lib.splitString "/" x.plaintextMount);
         value = {
           device = x.cipherMount;
@@ -39,10 +46,15 @@ in
           fsType = "fuse.${builtins.unsafeDiscardStringContext pkgs.gocryptfs}/bin/gocryptfs";
           #noCheck = true;
           depends = x.cipherMount;
-        # cf. https://unix.stackexchange.com/a/349278
-        options = [ "x-systemd.automount" "allow_other" "passfile=${x.passwordFile}" ];
+          # cf. https://unix.stackexchange.com/a/349278
+          options = [
+            "x-systemd.automount"
+            "allow_other"
+            "passfile=${x.passwordFile}"
+          ];
           #"x-systemd.after=${utils.escapeSystemdPath x.cipherMount}.mount"
-      };
-    }) cfg.mounts);
+        };
+      }) cfg.mounts
+    );
   };
 }

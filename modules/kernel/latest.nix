@@ -1,5 +1,13 @@
-{ config, lib, pkgs, ... }:
-let cfg = config.dev.johnrinehart.kernel.latest; in {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.dev.johnrinehart.kernel.latest;
+in
+{
   options.dev.johnrinehart.kernel.latest = {
     enable = lib.mkEnableOption "latest kernel";
   };

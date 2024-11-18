@@ -1,13 +1,24 @@
-args @ { config, lib, pkgs, modulesPath, ... }:
+args@{
+  config,
+  lib,
+  pkgs,
+  modulesPath,
+  ...
+}:
 {
 
-  imports =
-    [
-      (modulesPath + "/profiles/qemu-guest.nix")
-    ];
+  imports = [
+    (modulesPath + "/profiles/qemu-guest.nix")
+  ];
 
   boot = {
-    initrd.availableKernelModules = [ "ahci" "xhci_pci" "virtio_pci" "sr_mod" "virtio_blk" ];
+    initrd.availableKernelModules = [
+      "ahci"
+      "xhci_pci"
+      "virtio_pci"
+      "sr_mod"
+      "virtio_blk"
+    ];
     initrd.kernelModules = [ ];
     kernelModules = [ ];
     extraModulePackages = [ ];
@@ -19,27 +30,22 @@ args @ { config, lib, pkgs, modulesPath, ... }:
     kernelPackages = pkgs.recurseIntoAttrs (pkgs.linuxPackagesFor pkgs.linux_latest);
   };
 
+  fileSystems."/" = {
+    device = "/dev/vda1";
+    fsType = "ext4";
+  };
 
-  fileSystems."/" =
-    {
-      device = "/dev/vda1";
-      fsType = "ext4";
-    };
+  fileSystems."/nix" = {
+    device = "/dev/disk/by-label/nix_store";
+    fsType = "ext4";
+  };
 
-  fileSystems."/nix" =
-    {
-      device = "/dev/disk/by-label/nix_store";
-      fsType = "ext4";
-    };
+  fileSystems."/tmp" = {
+    device = "/dev/disk/by-label/tmp";
+    fsType = "ext4";
+  };
 
-  fileSystems."/tmp" =
-    {
-      device = "/dev/disk/by-label/tmp";
-      fsType = "ext4";
-    };
-
-  swapDevices =
-    [{ device = "/dev/vda2"; }];
+  swapDevices = [ { device = "/dev/vda2"; } ];
 
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
@@ -63,7 +69,10 @@ args @ { config, lib, pkgs, modulesPath, ... }:
 
   networking = {
     useDHCP = pkgs.lib.mkForce true;
-    nameservers = [ "1.1.1.1" "8.8.8.8" ];
+    nameservers = [
+      "1.1.1.1"
+      "8.8.8.8"
+    ];
     firewall.allowedTCPPorts = [ ];
   };
 

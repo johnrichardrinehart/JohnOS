@@ -1,6 +1,12 @@
-{ lib, pkgs, config, osConfig, ... }:
+{
+  lib,
+  pkgs,
+  config,
+  osConfig,
+  ...
+}:
 let
-    cfg = config.dev.johnrinehart.xmonad;
+  cfg = config.dev.johnrinehart.xmonad;
 in
 {
   options.dev.johnrinehart.xmonad = {

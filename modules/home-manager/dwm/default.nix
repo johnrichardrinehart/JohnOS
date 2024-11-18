@@ -1,10 +1,18 @@
-{ config, lib, pkgs, ... }:
-let cfg = config.dev.johnrinehart.dwm; in {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.dev.johnrinehart.dwm;
+in
+{
   options.dev.johnrinehart.dwm = {
     enable = lib.mkEnableOption "John's DWM config";
   };
 
-  config = lib.mkIf cfg.enable  {
+  config = lib.mkIf cfg.enable {
     dev.johnrinehart.xorg.enable = true;
 
     environment.systemPackages = [ pkgs.st ];

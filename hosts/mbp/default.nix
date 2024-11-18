@@ -1,4 +1,10 @@
-args @ { config, pkgs, lib, nixpkgs, ... }:
+args@{
+  config,
+  pkgs,
+  lib,
+  nixpkgs,
+  ...
+}:
 {
   # TODO: remove allowUnbroken once ZFS in linux kernel is fixed
   nixpkgs.config.allowBroken = true;
@@ -6,23 +12,27 @@ args @ { config, pkgs, lib, nixpkgs, ... }:
   # https://nixos.wiki/wiki/Linux_kernel#Booting_a_kernel_from_a_custom_source
   boot.kernelPackages = pkgs.lib.mkForce (
     let
-      latest_stable_pkg = { fetchurl, buildLinux, ... } @ args:
-        buildLinux (args // rec {
-          version = "5.16.10";
-          modDirVersion = "5.16.10";
+      latest_stable_pkg =
+        { fetchurl, buildLinux, ... }@args:
+        buildLinux (
+          args
+          // rec {
+            version = "5.16.10";
+            modDirVersion = "5.16.10";
 
-          kernelPatches = [ ];
+            kernelPatches = [ ];
 
-          src = fetchurl {
-            url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
-            sha256 = "sha256-DE1vAIGABZOFLrFVsB4Jt4tbxp16VT/Fj1rSBw+QI54=";
-          };
+            src = fetchurl {
+              url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
+              sha256 = "sha256-DE1vAIGABZOFLrFVsB4Jt4tbxp16VT/Fj1rSBw+QI54=";
+            };
 
-        } // (args.argsOverride or { }));
+          }
+          // (args.argsOverride or { })
+        );
       latest_stable = pkgs.callPackage latest_stable_pkg { };
     in
-    pkgs.recurseIntoAttrs
-      (pkgs.linuxPackagesFor latest_stable)
+    pkgs.recurseIntoAttrs (pkgs.linuxPackagesFor latest_stable)
   );
 
   # disabled by installation-cd-minimal
@@ -32,7 +42,6 @@ args @ { config, pkgs, lib, nixpkgs, ... }:
   services.xserver = {
     enable = true;
   };
-
 
   programs.nm-applet.enable = true;
 
@@ -85,16 +94,17 @@ args @ { config, pkgs, lib, nixpkgs, ... }:
     "hid_apple.iso_layout=0"
   ];
 
-  hardware.facetimehd.enable = lib.mkDefault
-    (config.nixpkgs.config.allowUnfree or false);
+  hardware.facetimehd.enable = lib.mkDefault (config.nixpkgs.config.allowUnfree or false);
 
   services.mbpfan.enable = lib.mkDefault true;
 
   # below from https://github.com/NixOS/nixos-hardware/tree/master/common/cpu/intel
-  boot.initrd.kernelModules = [ "i915" "wl" ];
+  boot.initrd.kernelModules = [
+    "i915"
+    "wl"
+  ];
 
-  hardware.cpu.intel.updateMicrocode =
-    lib.mkDefault config.hardware.enableRedistributableFirmware;
+  hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
   hardware.opengl.extraPackages = with pkgs; [
     vaapiIntel
@@ -110,20 +120,21 @@ args @ { config, pkgs, lib, nixpkgs, ... }:
 
   services.xserver.libinput.enable = lib.mkDefault true;
 
-
   # below from https://github.com/NixOS/nixos-hardware/blob/master/apple/macbook-pro/11-5/default.nix
   # Apparently this is currently only supported by ati_unfree drivers, not ati
   # hardware.opengl.driSupport32Bit = false;
 
-  services.xserver.videoDrivers = [ "modesetting" "nouveau" "ati" ];
+  services.xserver.videoDrivers = [
+    "modesetting"
+    "nouveau"
+    "ati"
+  ];
 
   services.udev.extraRules =
     # Disable XHC1 wakeup signal to avoid resume getting triggered some time
     # after suspend. Reboot required for this to take effect.
-    lib.optionalString
-      (lib.versionAtLeast config.boot.kernelPackages.kernel.version "3.13")
+    lib.optionalString (lib.versionAtLeast config.boot.kernelPackages.kernel.version "3.13")
       ''SUBSYSTEM=="pci", KERNEL=="0000:00:14.0", ATTR{power/wakeup}="disabled"'';
-
 
   imports = [
     "${nixpkgs}/nixos/modules/hardware/network/broadcom-43xx.nix"

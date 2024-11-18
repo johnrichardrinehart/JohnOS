@@ -1,4 +1,5 @@
-{ config, lib, ... }: {
+{ config, lib, ... }:
+{
   options.dev.johnrinehart.desktop = {
     enable = lib.mkEnableOption "John's Desktop settings.";
   };

@@ -1,5 +1,13 @@
-{ config, lib, options, ... }: 
-let cfg = config.dev.johnrinehart.boot.loader.systemd-boot; in {
+{
+  config,
+  lib,
+  options,
+  ...
+}:
+let
+  cfg = config.dev.johnrinehart.boot.loader.systemd-boot;
+in
+{
   options.dev.johnrinehart.boot.loader.systemd-boot = {
     enable = lib.mkEnableOption "John's system-boot config";
   };
@@ -11,4 +19,3 @@ let cfg = config.dev.johnrinehart.boot.loader.systemd-boot; in {
     };
   };
 }
-

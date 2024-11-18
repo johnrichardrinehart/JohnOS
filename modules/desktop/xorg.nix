@@ -1,5 +1,13 @@
-{ config, lib, pkgs, ... }:
-let cfg = config.dev.johnrinehart.xorg; in {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.dev.johnrinehart.xorg;
+in
+{
   options = {
     dev.johnrinehart.xorg = {
       enable = lib.mkEnableOption "John's opinionated Xorg config";

@@ -1,4 +1,4 @@
-args @ { config, pkgs, ... }:
+args@{ config, pkgs, ... }:
 {
   console.useXkbConfig = true;
 
@@ -36,7 +36,10 @@ args @ { config, pkgs, ... }:
   networking = {
     hostName = "headscale";
     useDHCP = pkgs.lib.mkForce true;
-    nameservers = [ "1.1.1.1" "8.8.8.8" ];
+    nameservers = [
+      "1.1.1.1"
+      "8.8.8.8"
+    ];
   };
 
   nixpkgs.config = {

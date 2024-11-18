@@ -1,7 +1,13 @@
-{ pkgs, lib, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 let
   cfg = config.dev.johnrinehart.i3;
-in {
+in
+{
   options.dev.johnrinehart.i3 = {
     enable = lib.mkEnableOption "John's i3 config";
   };
