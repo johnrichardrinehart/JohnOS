@@ -10,8 +10,8 @@ let
 in
 {
   imports = [
-    ./kernel_radxa.nix
-    #./kernel_6.10.nix
+    #./kernel_radxa.nix
+    ./kernel_6.10.nix
   ];
 
   options.dev.johnrinehart.rock5c = {
