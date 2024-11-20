@@ -39,6 +39,10 @@
       name = "introduce the device tree";
       patch = ./0002-feat-pull-DeviceTree-from-Radxa-linux-6.1-stan-rkr4..patch;
     }
+    {
+      name = "add the right clock table";
+      patch = ./0003-fix-pull-the-clock-initialization-from-Radxa-s-fork.patch;
+    }
   ];
 
   boot.kernelPackages = lib.mkForce pkgs.linuxRock5C;
