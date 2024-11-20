@@ -35,6 +35,10 @@
       name = "add rockchip linux defconfig";
       patch = ./0001-feat-add-rockchip_linux_defconfig.patch;
     }
+    {
+      name = "introduce the device tree";
+      patch = ./0002-feat-pull-DeviceTree-from-Radxa-linux-6.1-stan-rkr4..patch;
+    }
   ];
 
   boot.kernelPackages = lib.mkForce pkgs.linuxRock5C;

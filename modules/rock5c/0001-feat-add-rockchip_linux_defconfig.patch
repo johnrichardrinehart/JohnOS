@@ -1,7 +1,7 @@
 From 66bd4ad604af4d5012322184744fc03b4654c767 Mon Sep 17 00:00:00 2001
 From: John Rinehart <johnrichardrinehart@gmail.com>
 Date: Tue, 19 Nov 2024 22:30:57 -0800
-Subject: [PATCH] feat: add rockchip_linux_defconfig
+Subject: [PATCH 1/2] feat: add rockchip_linux_defconfig
 
 ---
  arch/arm64/configs/rockchip_linux_defconfig | 1327 +++++++++++++++++++
