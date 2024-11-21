@@ -1,7 +1,7 @@
 From adf9f18da050329ddfa58bfce7d7f40f97249406 Mon Sep 17 00:00:00 2001
 From: John Rinehart <johnrichardrinehart@gmail.com>
 Date: Tue, 19 Nov 2024 23:22:46 -0800
-Subject: [PATCH 2/3] feat: pull DeviceTree from Radxa (linux-6.1-stan-rkr4.1)
+Subject: [PATCH 2/4] feat: pull DeviceTree from Radxa (linux-6.1-stan-rkr4.1)
 
 fix: remove DTBs that won't build
 ---

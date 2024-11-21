@@ -1,7 +1,7 @@
-From cea38449bc3f2e749c7b590e1e223b2f50ac6ac2 Mon Sep 17 00:00:00 2001
+From 15d67dbc0ba93e119102a1411bd8121bd18f1d30 Mon Sep 17 00:00:00 2001
 From: John Rinehart <johnrichardrinehart@gmail.com>
 Date: Wed, 20 Nov 2024 07:53:39 -0800
-Subject: [PATCH 3/3] fix: pull the clock initialization from Radxa's fork
+Subject: [PATCH 3/4] fix: pull the clock initialization from Radxa's fork
 
 We're seeing
 ```
@@ -23,16 +23,52 @@ We're seeing
 <hangs>
 ```
 on boot.
+
+chore: fix clk-rk3188.c
+
+chore: fix clk-rv1126.c
+
+chore: fix clk-rk3399.c
+
+chore: fix clk-rk3036.c
+
+chore: fix clk-rk3128.c
+
+chore: fix clk-rk3228.c
+
+chore: fix clk-rk3288.c
+
+chore: fix clk-rk3308.c
+
+chore: fix clk-rk3328.c
+
+chore: fix clk-rk3368.c
+
+chore: fix clk-rk3568.c
+
+chore: fix clk-rv1108.c
 ---
  drivers/clk/rockchip/clk-cpu.c    |   37 +-
  drivers/clk/rockchip/clk-pll.c    | 1151 +++++++++++++++++++++++++++--
  drivers/clk/rockchip/clk-px30.c   |   24 +-
+ drivers/clk/rockchip/clk-rk3036.c |    4 +-
+ drivers/clk/rockchip/clk-rk3128.c |    4 +-
+ drivers/clk/rockchip/clk-rk3188.c |   17 +-
+ drivers/clk/rockchip/clk-rk3228.c |    4 +-
+ drivers/clk/rockchip/clk-rk3288.c |    4 +-
+ drivers/clk/rockchip/clk-rk3308.c |    4 +-
+ drivers/clk/rockchip/clk-rk3328.c |    4 +-
+ drivers/clk/rockchip/clk-rk3368.c |    6 +-
+ drivers/clk/rockchip/clk-rk3399.c |    6 +-
+ drivers/clk/rockchip/clk-rk3568.c |    4 +-
  drivers/clk/rockchip/clk-rk3588.c |  322 ++++----
+ drivers/clk/rockchip/clk-rv1108.c |    4 +-
+ drivers/clk/rockchip/clk-rv1126.c |    6 +-
  drivers/clk/rockchip/clk.c        |    9 +-
  drivers/clk/rockchip/clk.h        |   33 +-
  include/linux/clk-provider.h      |    1 +
  include/linux/clk/rockchip.h      |   18 +
- 8 files changed, 1334 insertions(+), 261 deletions(-)
+ 20 files changed, 1382 insertions(+), 280 deletions(-)
  create mode 100644 include/linux/clk/rockchip.h
 
 diff --git a/drivers/clk/rockchip/clk-cpu.c b/drivers/clk/rockchip/clk-cpu.c
@@ -1659,6 +1695,338 @@ index b58619eb412b..fabd51f38096 100644
  				     ARRAY_SIZE(px30_cpuclk_rates));
  
  	rockchip_clk_protect_critical(px30_cru_critical_clocks,
+diff --git a/drivers/clk/rockchip/clk-rk3036.c b/drivers/clk/rockchip/clk-rk3036.c
+index d644bc155ec6..4c27f008f7a8 100644
+--- a/drivers/clk/rockchip/clk-rk3036.c
++++ b/drivers/clk/rockchip/clk-rk3036.c
+@@ -438,6 +438,7 @@ static void __init rk3036_clk_init(struct device_node *np)
+ 	struct rockchip_clk_provider *ctx;
+ 	void __iomem *reg_base;
+ 	struct clk *clk;
++	struct clk **clks;
+ 
+ 	reg_base = of_iomap(np, 0);
+ 	if (!reg_base) {
+@@ -458,6 +459,7 @@ static void __init rk3036_clk_init(struct device_node *np)
+ 		iounmap(reg_base);
+ 		return;
+ 	}
++	clks = ctx->clk_data.clks;
+ 
+ 	clk = clk_register_fixed_factor(NULL, "usb480m", "xin24m", 0, 20, 1);
+ 	if (IS_ERR(clk))
+@@ -473,7 +475,7 @@ static void __init rk3036_clk_init(struct device_node *np)
+ 				      ARRAY_SIZE(rk3036_critical_clocks));
+ 
+ 	rockchip_clk_register_armclk(ctx, ARMCLK, "armclk",
+-			mux_armclk_p, ARRAY_SIZE(mux_armclk_p),
++			2, clks[PLL_APLL], clks[PLL_GPLL],
+ 			&rk3036_cpuclk_data, rk3036_cpuclk_rates,
+ 			ARRAY_SIZE(rk3036_cpuclk_rates));
+ 
+diff --git a/drivers/clk/rockchip/clk-rk3128.c b/drivers/clk/rockchip/clk-rk3128.c
+index 7c3d92af12df..19451d94b70b 100644
+--- a/drivers/clk/rockchip/clk-rk3128.c
++++ b/drivers/clk/rockchip/clk-rk3128.c
+@@ -576,6 +576,7 @@ static struct rockchip_clk_provider *__init rk3128_common_clk_init(struct device
+ 	struct rockchip_clk_provider *ctx;
+ 	unsigned long common_nr_clks;
+ 	void __iomem *reg_base;
++	struct clk **clks;
+ 
+ 	common_nr_clks = rockchip_clk_find_max_clk_id(common_clk_branches,
+ 						      ARRAY_SIZE(common_clk_branches)) + 1;
+@@ -591,6 +592,7 @@ static struct rockchip_clk_provider *__init rk3128_common_clk_init(struct device
+ 		iounmap(reg_base);
+ 		return ERR_PTR(-ENOMEM);
+ 	}
++	clks = ctx->clk_data.clks;
+ 
+ 	rockchip_clk_register_plls(ctx, rk3128_pll_clks,
+ 				   ARRAY_SIZE(rk3128_pll_clks),
+@@ -599,7 +601,7 @@ static struct rockchip_clk_provider *__init rk3128_common_clk_init(struct device
+ 				  ARRAY_SIZE(common_clk_branches));
+ 
+ 	rockchip_clk_register_armclk(ctx, ARMCLK, "armclk",
+-			mux_armclk_p, ARRAY_SIZE(mux_armclk_p),
++			2, clks[PLL_APLL], clks[PLL_GPLL_DIV2],
+ 			&rk3128_cpuclk_data, rk3128_cpuclk_rates,
+ 			ARRAY_SIZE(rk3128_cpuclk_rates));
+ 
+diff --git a/drivers/clk/rockchip/clk-rk3188.c b/drivers/clk/rockchip/clk-rk3188.c
+index 30e670c8afba..0ccda7b5c07f 100644
+--- a/drivers/clk/rockchip/clk-rk3188.c
++++ b/drivers/clk/rockchip/clk-rk3188.c
+@@ -794,12 +794,14 @@ static void __init rk3066a_clk_init(struct device_node *np)
+ {
+ 	struct rockchip_clk_provider *ctx;
+ 	unsigned long soc_nr_clks;
++	struct clk **clks;
+ 
+ 	soc_nr_clks = rockchip_clk_find_max_clk_id(rk3066a_clk_branches,
+ 						   ARRAY_SIZE(rk3066a_clk_branches)) + 1;
+ 	ctx = rk3188_common_clk_init(np, soc_nr_clks);
+ 	if (IS_ERR(ctx))
+ 		return;
++	clks = ctx->clk_data.clks;
+ 
+ 	rockchip_clk_register_plls(ctx, rk3066_pll_clks,
+ 				   ARRAY_SIZE(rk3066_pll_clks),
+@@ -807,9 +809,9 @@ static void __init rk3066a_clk_init(struct device_node *np)
+ 	rockchip_clk_register_branches(ctx, rk3066a_clk_branches,
+ 				  ARRAY_SIZE(rk3066a_clk_branches));
+ 	rockchip_clk_register_armclk(ctx, ARMCLK, "armclk",
+-			mux_armclk_p, ARRAY_SIZE(mux_armclk_p),
+-			&rk3066_cpuclk_data, rk3066_cpuclk_rates,
+-			ARRAY_SIZE(rk3066_cpuclk_rates));
++				  2, clks[PLL_APLL], clks[PLL_GPLL],
++				  &rk3188_cpuclk_data, rk3188_cpuclk_rates,
++				  ARRAY_SIZE(rk3188_cpuclk_rates));
+ 	rockchip_clk_protect_critical(rk3188_critical_clocks,
+ 				      ARRAY_SIZE(rk3188_critical_clocks));
+ 	rockchip_clk_of_add_provider(np, ctx);
+@@ -823,12 +825,14 @@ static void __init rk3188a_clk_init(struct device_node *np)
+ 	struct clk *clk1, *clk2;
+ 	unsigned long rate;
+ 	int ret;
++	struct clk **clks;
+ 
+ 	soc_nr_clks = rockchip_clk_find_max_clk_id(rk3188_clk_branches,
+ 						   ARRAY_SIZE(rk3188_clk_branches)) + 1;
+ 	ctx = rk3188_common_clk_init(np, soc_nr_clks);
+ 	if (IS_ERR(ctx))
+ 		return;
++	clks = ctx->clk_data.clks;
+ 
+ 	rockchip_clk_register_plls(ctx, rk3188_pll_clks,
+ 				   ARRAY_SIZE(rk3188_pll_clks),
+@@ -836,9 +840,10 @@ static void __init rk3188a_clk_init(struct device_node *np)
+ 	rockchip_clk_register_branches(ctx, rk3188_clk_branches,
+ 				  ARRAY_SIZE(rk3188_clk_branches));
+ 	rockchip_clk_register_armclk(ctx, ARMCLK, "armclk",
+-				  mux_armclk_p, ARRAY_SIZE(mux_armclk_p),
+-				  &rk3188_cpuclk_data, rk3188_cpuclk_rates,
+-				  ARRAY_SIZE(rk3188_cpuclk_rates));
++			2, clks[PLL_APLL], clks[PLL_GPLL],
++			&rk3066_cpuclk_data, rk3066_cpuclk_rates,
++			ARRAY_SIZE(rk3066_cpuclk_rates));
++	rockchip_clk_of_add_provider(np, ctx);
+ 
+ 	/* reparent aclk_cpu_pre from apll */
+ 	clk1 = __clk_lookup("aclk_cpu_pre");
+diff --git a/drivers/clk/rockchip/clk-rk3228.c b/drivers/clk/rockchip/clk-rk3228.c
+index 7343d2d7676b..f211adff9c17 100644
+--- a/drivers/clk/rockchip/clk-rk3228.c
++++ b/drivers/clk/rockchip/clk-rk3228.c
+@@ -684,6 +684,7 @@ static void __init rk3228_clk_init(struct device_node *np)
+ {
+ 	struct rockchip_clk_provider *ctx;
+ 	void __iomem *reg_base;
++	struct clk **clks;
+ 
+ 	reg_base = of_iomap(np, 0);
+ 	if (!reg_base) {
+@@ -697,6 +698,7 @@ static void __init rk3228_clk_init(struct device_node *np)
+ 		iounmap(reg_base);
+ 		return;
+ 	}
++	clks = ctx->clk_data.clks;
+ 
+ 	rockchip_clk_register_plls(ctx, rk3228_pll_clks,
+ 				   ARRAY_SIZE(rk3228_pll_clks),
+@@ -707,7 +709,7 @@ static void __init rk3228_clk_init(struct device_node *np)
+ 				      ARRAY_SIZE(rk3228_critical_clocks));
+ 
+ 	rockchip_clk_register_armclk(ctx, ARMCLK, "armclk",
+-			mux_armclk_p, ARRAY_SIZE(mux_armclk_p),
++			3, clks[PLL_APLL], clks[PLL_GPLL],
+ 			&rk3228_cpuclk_data, rk3228_cpuclk_rates,
+ 			ARRAY_SIZE(rk3228_cpuclk_rates));
+ 
+diff --git a/drivers/clk/rockchip/clk-rk3288.c b/drivers/clk/rockchip/clk-rk3288.c
+index baa5aebd3277..5b93984d21c0 100644
+--- a/drivers/clk/rockchip/clk-rk3288.c
++++ b/drivers/clk/rockchip/clk-rk3288.c
+@@ -932,6 +932,7 @@ static void __init rk3288_common_init(struct device_node *np,
+ 				      enum rk3288_variant soc)
+ {
+ 	struct rockchip_clk_provider *ctx;
++	struct clk **clks;
+ 
+ 	rk3288_cru_base = of_iomap(np, 0);
+ 	if (!rk3288_cru_base) {
+@@ -945,6 +946,7 @@ static void __init rk3288_common_init(struct device_node *np,
+ 		iounmap(rk3288_cru_base);
+ 		return;
+ 	}
++	clks = ctx->clk_data.clks;
+ 
+ 	rockchip_clk_register_plls(ctx, rk3288_pll_clks,
+ 				   ARRAY_SIZE(rk3288_pll_clks),
+@@ -963,7 +965,7 @@ static void __init rk3288_common_init(struct device_node *np,
+ 				      ARRAY_SIZE(rk3288_critical_clocks));
+ 
+ 	rockchip_clk_register_armclk(ctx, ARMCLK, "armclk",
+-			mux_armclk_p, ARRAY_SIZE(mux_armclk_p),
++			2, clks[PLL_APLL], clks[PLL_GPLL],
+ 			&rk3288_cpuclk_data, rk3288_cpuclk_rates,
+ 			ARRAY_SIZE(rk3288_cpuclk_rates));
+ 
+diff --git a/drivers/clk/rockchip/clk-rk3308.c b/drivers/clk/rockchip/clk-rk3308.c
+index db3396c3e6e9..d21302f6121d 100644
+--- a/drivers/clk/rockchip/clk-rk3308.c
++++ b/drivers/clk/rockchip/clk-rk3308.c
+@@ -918,12 +918,14 @@ static void __init rk3308_clk_init(struct device_node *np)
+ {
+ 	struct rockchip_clk_provider *ctx;
+ 	void __iomem *reg_base;
++	struct clk **clks;
+ 
+ 	reg_base = of_iomap(np, 0);
+ 	if (!reg_base) {
+ 		pr_err("%s: could not map cru region\n", __func__);
+ 		return;
+ 	}
++	clks = ctx->clk_data.clks;
+ 
+ 	ctx = rockchip_clk_init(np, reg_base, CLK_NR_CLKS);
+ 	if (IS_ERR(ctx)) {
+@@ -941,7 +943,7 @@ static void __init rk3308_clk_init(struct device_node *np)
+ 				      ARRAY_SIZE(rk3308_critical_clocks));
+ 
+ 	rockchip_clk_register_armclk(ctx, ARMCLK, "armclk",
+-				     mux_armclk_p, ARRAY_SIZE(mux_armclk_p),
++				     3, clks[PLL_APLL], clks[PLL_VPLL0],
+ 				     &rk3308_cpuclk_data, rk3308_cpuclk_rates,
+ 				     ARRAY_SIZE(rk3308_cpuclk_rates));
+ 
+diff --git a/drivers/clk/rockchip/clk-rk3328.c b/drivers/clk/rockchip/clk-rk3328.c
+index 267ab54937d3..1f2d46036109 100644
+--- a/drivers/clk/rockchip/clk-rk3328.c
++++ b/drivers/clk/rockchip/clk-rk3328.c
+@@ -882,6 +882,7 @@ static void __init rk3328_clk_init(struct device_node *np)
+ {
+ 	struct rockchip_clk_provider *ctx;
+ 	void __iomem *reg_base;
++	struct clk **clks;
+ 
+ 	reg_base = of_iomap(np, 0);
+ 	if (!reg_base) {
+@@ -895,6 +896,7 @@ static void __init rk3328_clk_init(struct device_node *np)
+ 		iounmap(reg_base);
+ 		return;
+ 	}
++	clks = ctx->clk_data.clks;
+ 
+ 	rockchip_clk_register_plls(ctx, rk3328_pll_clks,
+ 				   ARRAY_SIZE(rk3328_pll_clks),
+@@ -905,7 +907,7 @@ static void __init rk3328_clk_init(struct device_node *np)
+ 				      ARRAY_SIZE(rk3328_critical_clocks));
+ 
+ 	rockchip_clk_register_armclk(ctx, ARMCLK, "armclk",
+-				     mux_armclk_p, ARRAY_SIZE(mux_armclk_p),
++				     4, clks[PLL_APLL], clks[PLL_GPLL],
+ 				     &rk3328_cpuclk_data, rk3328_cpuclk_rates,
+ 				     ARRAY_SIZE(rk3328_cpuclk_rates));
+ 
+diff --git a/drivers/clk/rockchip/clk-rk3368.c b/drivers/clk/rockchip/clk-rk3368.c
+index 2c50cc2cc6db..2321a791e2f6 100644
+--- a/drivers/clk/rockchip/clk-rk3368.c
++++ b/drivers/clk/rockchip/clk-rk3368.c
+@@ -867,6 +867,7 @@ static void __init rk3368_clk_init(struct device_node *np)
+ {
+ 	struct rockchip_clk_provider *ctx;
+ 	void __iomem *reg_base;
++	struct clk **clks;
+ 
+ 	reg_base = of_iomap(np, 0);
+ 	if (!reg_base) {
+@@ -880,6 +881,7 @@ static void __init rk3368_clk_init(struct device_node *np)
+ 		iounmap(reg_base);
+ 		return;
+ 	}
++	clks = ctx->clk_data.clks;
+ 
+ 	rockchip_clk_register_plls(ctx, rk3368_pll_clks,
+ 				   ARRAY_SIZE(rk3368_pll_clks),
+@@ -890,12 +892,12 @@ static void __init rk3368_clk_init(struct device_node *np)
+ 				      ARRAY_SIZE(rk3368_critical_clocks));
+ 
+ 	rockchip_clk_register_armclk(ctx, ARMCLKB, "armclkb",
+-			mux_armclkb_p, ARRAY_SIZE(mux_armclkb_p),
++			2, clks[PLL_APLLB], clks[PLL_GPLL],
+ 			&rk3368_cpuclkb_data, rk3368_cpuclkb_rates,
+ 			ARRAY_SIZE(rk3368_cpuclkb_rates));
+ 
+ 	rockchip_clk_register_armclk(ctx, ARMCLKL, "armclkl",
+-			mux_armclkl_p, ARRAY_SIZE(mux_armclkl_p),
++			2, clks[PLL_APLLL], clks[PLL_GPLL],
+ 			&rk3368_cpuclkl_data, rk3368_cpuclkl_rates,
+ 			ARRAY_SIZE(rk3368_cpuclkl_rates));
+ 
+diff --git a/drivers/clk/rockchip/clk-rk3399.c b/drivers/clk/rockchip/clk-rk3399.c
+index 4f1a5782c230..e2b7c0899755 100644
+--- a/drivers/clk/rockchip/clk-rk3399.c
++++ b/drivers/clk/rockchip/clk-rk3399.c
+@@ -1532,6 +1532,7 @@ static void __init rk3399_clk_init(struct device_node *np)
+ {
+ 	struct rockchip_clk_provider *ctx;
+ 	void __iomem *reg_base;
++	struct clk **clks;
+ 
+ 	reg_base = of_iomap(np, 0);
+ 	if (!reg_base) {
+@@ -1545,6 +1546,7 @@ static void __init rk3399_clk_init(struct device_node *np)
+ 		iounmap(reg_base);
+ 		return;
+ 	}
++	clks = ctx->clk_data.clks;
+ 
+ 	rockchip_clk_register_plls(ctx, rk3399_pll_clks,
+ 				   ARRAY_SIZE(rk3399_pll_clks), -1);
+@@ -1553,12 +1555,12 @@ static void __init rk3399_clk_init(struct device_node *np)
+ 				  ARRAY_SIZE(rk3399_clk_branches));
+ 
+ 	rockchip_clk_register_armclk(ctx, ARMCLKL, "armclkl",
+-			mux_armclkl_p, ARRAY_SIZE(mux_armclkl_p),
++			4, clks[PLL_APLLL], clks[PLL_GPLL],
+ 			&rk3399_cpuclkl_data, rk3399_cpuclkl_rates,
+ 			ARRAY_SIZE(rk3399_cpuclkl_rates));
+ 
+ 	rockchip_clk_register_armclk(ctx, ARMCLKB, "armclkb",
+-			mux_armclkb_p, ARRAY_SIZE(mux_armclkb_p),
++			4, clks[PLL_APLLB], clks[PLL_GPLL],
+ 			&rk3399_cpuclkb_data, rk3399_cpuclkb_rates,
+ 			ARRAY_SIZE(rk3399_cpuclkb_rates));
+ 
+diff --git a/drivers/clk/rockchip/clk-rk3568.c b/drivers/clk/rockchip/clk-rk3568.c
+index 53d10b1c627b..ce35170be0d9 100644
+--- a/drivers/clk/rockchip/clk-rk3568.c
++++ b/drivers/clk/rockchip/clk-rk3568.c
+@@ -1650,6 +1650,7 @@ static void __init rk3568_clk_init(struct device_node *np)
+ {
+ 	struct rockchip_clk_provider *ctx;
+ 	void __iomem *reg_base;
++	struct clk **clks;
+ 
+ 	reg_base = of_iomap(np, 0);
+ 	if (!reg_base) {
+@@ -1663,13 +1664,14 @@ static void __init rk3568_clk_init(struct device_node *np)
+ 		iounmap(reg_base);
+ 		return;
+ 	}
++	clks = ctx->clk_data.clks;
+ 
+ 	rockchip_clk_register_plls(ctx, rk3568_pll_clks,
+ 				   ARRAY_SIZE(rk3568_pll_clks),
+ 				   RK3568_GRF_SOC_STATUS0);
+ 
+ 	rockchip_clk_register_armclk(ctx, ARMCLK, "armclk",
+-				     mux_armclk_p, ARRAY_SIZE(mux_armclk_p),
++				     2, clks[PLL_APLL], clks[PLL_GPLL],
+ 				     &rk3568_cpuclk_data, rk3568_cpuclk_rates,
+ 				     ARRAY_SIZE(rk3568_cpuclk_rates));
+ 
 diff --git a/drivers/clk/rockchip/clk-rk3588.c b/drivers/clk/rockchip/clk-rk3588.c
 index 3027379f2fdd..7f2f11680d3f 100644
 --- a/drivers/clk/rockchip/clk-rk3588.c
@@ -2462,6 +2830,72 @@ index 3027379f2fdd..7f2f11680d3f 100644
 +MODULE_DESCRIPTION("Rockchip RK3588 Clock Driver");
 +MODULE_LICENSE("GPL");
 +#endif /* MODULE */
+diff --git a/drivers/clk/rockchip/clk-rv1108.c b/drivers/clk/rockchip/clk-rv1108.c
+index 5f49af3c970a..4ba46148ac6c 100644
+--- a/drivers/clk/rockchip/clk-rv1108.c
++++ b/drivers/clk/rockchip/clk-rv1108.c
+@@ -786,6 +786,7 @@ static void __init rv1108_clk_init(struct device_node *np)
+ {
+ 	struct rockchip_clk_provider *ctx;
+ 	void __iomem *reg_base;
++	struct clk **clks;
+ 
+ 	reg_base = of_iomap(np, 0);
+ 	if (!reg_base) {
+@@ -799,6 +800,7 @@ static void __init rv1108_clk_init(struct device_node *np)
+ 		iounmap(reg_base);
+ 		return;
+ 	}
++	clks = ctx->clk_data.clks;
+ 
+ 	rockchip_clk_register_plls(ctx, rv1108_pll_clks,
+ 				   ARRAY_SIZE(rv1108_pll_clks),
+@@ -809,7 +811,7 @@ static void __init rv1108_clk_init(struct device_node *np)
+ 				      ARRAY_SIZE(rv1108_critical_clocks));
+ 
+ 	rockchip_clk_register_armclk(ctx, ARMCLK, "armclk",
+-			mux_armclk_p, ARRAY_SIZE(mux_armclk_p),
++			3, clks[PLL_APLL], clks[PLL_GPLL],
+ 			&rv1108_cpuclk_data, rv1108_cpuclk_rates,
+ 			ARRAY_SIZE(rv1108_cpuclk_rates));
+ 
+diff --git a/drivers/clk/rockchip/clk-rv1126.c b/drivers/clk/rockchip/clk-rv1126.c
+index fc19c5522490..81b5947cdd0d 100644
+--- a/drivers/clk/rockchip/clk-rv1126.c
++++ b/drivers/clk/rockchip/clk-rv1126.c
+@@ -1078,6 +1078,7 @@ static const char *const rv1126_cru_critical_clocks[] __initconst = {
+ 	"hclk_pdvdec_niu",
+ };
+ 
++static struct rockchip_clk_provider *pmucru_ctx;
+ static void __init rv1126_pmu_clk_init(struct device_node *np)
+ {
+ 	struct rockchip_clk_provider *ctx;
+@@ -1112,6 +1113,7 @@ static void __init rv1126_clk_init(struct device_node *np)
+ {
+ 	struct rockchip_clk_provider *ctx;
+ 	void __iomem *reg_base;
++	struct clk **cru_clks, **pmucru_clks;
+ 
+ 	reg_base = of_iomap(np, 0);
+ 	if (!reg_base) {
+@@ -1125,13 +1127,15 @@ static void __init rv1126_clk_init(struct device_node *np)
+ 		iounmap(reg_base);
+ 		return;
+ 	}
++	cru_clks = ctx->clk_data.clks;
++	pmucru_clks = pmucru_ctx->clk_data.clks;
+ 
+ 	rockchip_clk_register_plls(ctx, rv1126_pll_clks,
+ 				   ARRAY_SIZE(rv1126_pll_clks),
+ 				   RV1126_GRF_SOC_STATUS0);
+ 
+ 	rockchip_clk_register_armclk(ctx, ARMCLK, "armclk",
+-				     mux_armclk_p, ARRAY_SIZE(mux_armclk_p),
++				     3, cru_clks[PLL_APLL], pmucru_clks[PLL_GPLL],
+ 				     &rv1126_cpuclk_data, rv1126_cpuclk_rates,
+ 				     ARRAY_SIZE(rv1126_cpuclk_rates));
+ 
 diff --git a/drivers/clk/rockchip/clk.c b/drivers/clk/rockchip/clk.c
 index 88629a9abc9c..204563e6030f 100644
 --- a/drivers/clk/rockchip/clk.c

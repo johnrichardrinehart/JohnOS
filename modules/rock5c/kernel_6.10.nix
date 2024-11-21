@@ -1,4 +1,9 @@
 { lib, pkgs, ... }:
+let
+  listOfFiles = builtins.attrNames (lib.filterAttrs (_: v: v == "regular") (builtins.readDir ./6.10_patches));
+  listOfPatches = lib.filter (v: (builtins.match ".*\.patch" v) != null) listOfFiles;
+  patches = builtins.map (p: { name = p; patch = ./6.10_patches + /${p}; }) listOfPatches;
+in
 {
   nixpkgs.overlays = [
     (self: super: {
@@ -30,20 +35,7 @@
   ];
 
   # these are designed for v6.10
-  boot.kernelPatches = [
-    {
-      name = "add rockchip linux defconfig";
-      patch = ./0001-feat-add-rockchip_linux_defconfig.patch;
-    }
-    {
-      name = "introduce the device tree";
-      patch = ./0002-feat-pull-DeviceTree-from-Radxa-linux-6.1-stan-rkr4..patch;
-    }
-    {
-      name = "add the right clock table";
-      patch = ./0003-fix-pull-the-clock-initialization-from-Radxa-s-fork.patch;
-    }
-  ];
+  boot.kernelPatches = patches;
 
   boot.kernelPackages = lib.mkForce pkgs.linuxRock5C;
 }
