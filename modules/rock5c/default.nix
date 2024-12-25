@@ -11,7 +11,8 @@ in
 {
   imports = [
     #./kernel_radxa.nix
-    ./kernel_6.10.nix
+    #./kernel_6.10.nix
+    ./kernel_collabora.nix
   ];
 
   options.dev.johnrinehart.rock5c = {
