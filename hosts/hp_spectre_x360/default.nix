@@ -97,8 +97,6 @@ args@{ config, pkgs, ... }:
          EndSubSection
       EndSection
     '';
-
-    libinput.enable = true;
   };
 
   networking = {
@@ -214,4 +212,6 @@ args@{ config, pkgs, ... }:
   hardware = {
     bluetooth.enable = true;
   };
+
+  dev.johnrinehart.laptop.enable = true;
 }

@@ -118,7 +118,7 @@ args@{
   #     "ath3k"
   #   ];
 
-  services.xserver.libinput.enable = lib.mkDefault true;
+  dev.johnrinehart.laptop.enable = true;
 
   # below from https://github.com/NixOS/nixos-hardware/blob/master/apple/macbook-pro/11-5/default.nix
   # Apparently this is currently only supported by ati_unfree drivers, not ati

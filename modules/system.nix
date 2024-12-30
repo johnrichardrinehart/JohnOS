@@ -44,8 +44,8 @@ in
             "video"
           ]; # Enable ‘sudo’ for the user. And enable access to VBox shared folders
           shell = pkgs.zsh;
-          hashedPassword = "$6$IQcYRQaTKCrDfClQ$k7MAqJDodwnGdtpj7zXEHq9UsPDAeME5XweKRosRjA8QFfMc2k.eZoGTHc4pnHAWAxaNtYylWN85fkroQg7lj.";
           group = "john";
+          initialPassword = "john";
         };
       };
     };
@@ -67,8 +67,5 @@ in
     #     });
     #   })
     # ];
-
-    # Enable touchpad support (enabled default in most desktopManager).
-    services.libinput.enable = true;
   };
 }

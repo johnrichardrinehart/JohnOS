@@ -4,21 +4,22 @@
     ./bluetooth.nix
     ./droidcam.nix
     ./fonts.nix
+    ./gocryptfs.nix
     ./ide.nix
+    ./laptop.nix
     ./locale.nix
     ./network.nix
     ./packages.nix
-    ./ssh.nix
+    ./s3_mount.nix
     ./sound.nix
+    ./ssh.nix
     ./system.nix
     ./virtualisation.nix
-    ./s3_mount.nix
-    ./gocryptfs.nix
 
     ./bootloader
     ./desktop
-    ./rock5c
     ./home-manager
     ./kernel
+    ./rock5c
   ];
 }
