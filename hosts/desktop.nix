@@ -8,8 +8,6 @@
       {
         dev.johnrinehart = {
           sound.enable = true;
-          kernel.latest.enable = true;
-          network.enable = true;
           systemPackages.enable = true;
           xmonad.enable = true;
           bluetooth.enable = true;

@@ -27,5 +27,5 @@ in
 
   boot.kernelPatches = patches;
 
-  boot.kernelPackages = lib.mkForce pkgs.radxaLinux;
+  boot.kernelPackages = pkgs.radxaLinux;
 }

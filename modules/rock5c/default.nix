@@ -10,9 +10,9 @@ let
 in
 {
   imports = [
-    #./kernel_radxa.nix
+    ./kernel_radxa.nix
     #./kernel_6.10.nix
-    ./kernel_collabora.nix
+    #./kernel_collabora.nix
   ];
 
   options.dev.johnrinehart.rock5c = {
@@ -115,5 +115,14 @@ in
       "earlycon=uart8250,mmio32,0xfeb50000"
     ];
 
+    networking.useNetworkd = true;
+    systemd.network.enable = true;
+    systemd.network.networks."end1" = {
+	    matchConfig.Name = "end1";
+# acquire a DHCP lease on link up
+	    networkConfig.DHCP = "yes";
+# this port is not always connected and not required to be online
+	    linkConfig.RequiredForOnline = "no";
+    };
   };
 }
