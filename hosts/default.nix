@@ -9,5 +9,9 @@ lib.mapAttrs (
       ./${dir}
       ../modules
     ];
+
+    specialArgs = {
+      inherit inputs;
+    };
   }
 ) (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./.))

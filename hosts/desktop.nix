@@ -1,7 +1,6 @@
-{ ... }:
+{ inputs, ... }:
 {
   imports = [
-    ../desktop.nix
     inputs.home-manager.nixosModules.default
     ({ hardware.enableRedistributableFirmware = true; })
     (
