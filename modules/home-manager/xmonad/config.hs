@@ -39,7 +39,6 @@ import           XMonad.Hooks.ManageDocks              ( Direction2D(..)
                                                        , avoidStruts
                                                        , docks
                                                        , docksEventHook
-                                                       , checkDock
                                                        )
 import           XMonad.Hooks.ManageHelpers            ( (-?>)
                                                        , composeOne
@@ -48,7 +47,6 @@ import           XMonad.Hooks.ManageHelpers            ( (-?>)
                                                        , isDialog
                                                        , isFullscreen
                                                        , isInProperty
-                                                       , doLower
                                                        )
 import           XMonad.Hooks.UrgencyHook              ( UrgencyHook(..)
                                                        , withUrgencyHook
@@ -168,7 +166,7 @@ polybarHook dbus =
           , ppUrgent          = wrapper orange
           , ppHidden          = wrapper gray
           , ppHiddenNoWindows = wrapper red
-          , ppTitle           = wrapper purple . shorten 60
+          , ppTitle           = wrapper purple . shorten 90
           }
 
 myPolybarLogHook dbus = myLogHook <+> dynamicLogWithPP (polybarHook dbus)
@@ -177,7 +175,6 @@ myPolybarLogHook dbus = myLogHook <+> dynamicLogWithPP (polybarHook dbus)
 -- Key bindings. Add, modify or remove key bindings here.
 --
 
--- myTerminal   = "alacritty"
 myTerminal   = "kitty"
 appLauncher  = "rofi -modi drun,ssh,window -show drun -show-icons"
 windowChooser  = "rofi -modi drun,ssh,window,windowcd -show window -show-icons"
@@ -331,11 +328,11 @@ myLayout =
     . wrkLayout $ (tiled ||| Mirror tiled ||| column3 ||| full)
    where
      -- default tiling algorithm partitions the screen into two panes
-     tiled   = gapSpaced 5 $ Tall nmaster delta ratio
+     tiled   = gapSpaced 1 $ Tall nmaster delta ratio
 --     tiled   = gapSpaced 10 $ Tall nmaster delta ratio
 --      full    = gapSpaced 5 Full
      full    = gapSpaced 2 Full
-     column3 = gapSpaced 10 $ ThreeColMid 1 (3/100) (1/2)
+     column3 = gapSpaced 2 $ ThreeColMid 1 (3/100) (1/2)
 
      -- The default number of windows in the master pane
      nmaster = 1
@@ -386,7 +383,6 @@ data App
   deriving Show
 
 audacious = ClassApp "Audacious"            "audacious"
--- btm       = TitleApp "btm"                  "alacritty -t btm -e btm --color gruvbox --default_widget_type proc"
 btm        = TitleApp "btm"                  "kitty"
 calendar  = ClassApp "Gnome-calendar"       "gnome-calendar"
 eog       = NameApp  "eog"                  "eog"
@@ -415,8 +411,7 @@ myManageHook = manageApps <+> manageSpawn <+> manageScratchpads
   match :: [App] -> Query Bool
   match = anyOf . fmap isInstance
   manageApps = composeOne
-    [isInstance calendar                      -?> doCalendarFloat
-    , checkDock --> doLower
+    [ isInstance calendar                      -?> doCalendarFloat
     , match [ gimp, office ]                   -?> doFloat
     , match [ audacious
             , eog
@@ -458,13 +453,13 @@ scratchpads = scratchpadApp <$> [ audacious, btm, nautilus, scr, spotify ]
 ------------------------------------------------------------------------
 -- Workspaces
 --
-ttyWs = "sh"
+ttyWs = "tty"
 ideWs = "ide"
 commWs = "comm"
-free1Ws = "f1"
-free2Ws = "f2"
-free3Ws = "f3"
-free4Ws = "f4"
+free1Ws = "free1"
+free2Ws = "free2"
+free3Ws = "free3"
+free4Ws = "free4"
 
 myWS :: [WorkspaceId]
 myWS = [ttyWs, ideWs, commWs, free1Ws, free2Ws, free3Ws, free4Ws]
@@ -480,12 +475,15 @@ projects =
             }
   , Project { projectName      = ideWs
             , projectDirectory = "~/"
+            , projectStartHook = Just $ spawn "codium"
             }
   , Project { projectName      = commWs
             , projectDirectory = "~/"
+            , projectStartHook = Just $ do spawn "discord"
+                                           spawn "brave"
             }
   , Project { projectName      = free1Ws
-            , projectDirectory = "~/"
+            , projectDirectory = "~/workspace/cr/app"
             , projectStartHook = Nothing
             }
   , Project { projectName      = free2Ws
@@ -497,7 +495,7 @@ projects =
             , projectStartHook = Nothing
             }
   , Project { projectName      = free4Ws
-            , projectDirectory = "~"
+            , projectDirectory = "/etc/nixos/"
             , projectStartHook = Nothing
             }
   ]
@@ -528,3 +526,4 @@ myEventHook = docksEventHook <+> ewmhDesktopsEventHook <+> fullscreenEventHook
 -- See the 'XMonad.Hooks.DynamicLog' extension for examples.
 --
 myLogHook = fadeInactiveLogHook 0.9
+
