@@ -14,11 +14,11 @@ in
   ];
 
   config = lib.mkIf cfg.enable {
-		nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) (lib.optional cfg.obsidian.enable [
-			"obsidian"
-		]);
+    nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) (lib.optional cfg.obsidian [
+      "obsidian"
+    ]);
 
-    nixpkgs.config.permittedInsecurePackages = lib.mkIf cfg.obsidian [
+    nixpkgs.config.permittedInsecurePackages = lib.optionals cfg.obsidian [
       "electron-25.9.0"
     ];
 
