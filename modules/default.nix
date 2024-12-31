@@ -1,5 +1,7 @@
-{ ... }:
+{ inputs, ... }:
 {
+  nixpkgs.overlays = [ inputs.self.overlays.default ];
+
   imports = [
     ./bluetooth.nix
     ./droidcam.nix
@@ -9,8 +11,10 @@
     ./laptop.nix
     ./locale.nix
     ./network.nix
+    ./nix.nix
     ./packages.nix
     ./s3_mount.nix
+    ./sops.nix
     ./sound.nix
     ./ssh.nix
     ./system.nix

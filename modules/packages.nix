@@ -42,7 +42,6 @@ in
       #pkgs.peek # GIF/webp screen recording
       pkgs.mpv # mplayer replacement
       pkgs.simplescreenrecorder
-      pkgs.obsidian
       # shell tools
       pkgs.powerline-rs
       pkgs.oil
@@ -104,7 +103,6 @@ in
       pkgs.deluge
       pkgs.wirelesstools
       pkgs.usbutils
-      pkgs.whatsapp-for-linux
       # terminal stuff
       pkgs.zellij
     ];

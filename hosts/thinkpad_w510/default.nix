@@ -5,10 +5,6 @@
   ...
 }:
 {
-  imports = [
-    ../desktop.nix
-  ];
-
   dev.johnrinehart =
     let
       cipherMount = "/mnt/.b2-rinehartstorage";
@@ -36,6 +32,8 @@
           }
         ];
       };
+
+      desktop.enable = true;
     };
 
   networking.hostName = "thinkie";

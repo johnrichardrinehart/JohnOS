@@ -110,8 +110,6 @@
     "kvm-intel" # detected automatically
   ];
 
-  sound.enable = true;
-
   services.chrony.enable = true;
 
   services.tailscale.enable = true;

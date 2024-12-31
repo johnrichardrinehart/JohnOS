@@ -1,18 +1,16 @@
-{ ... }:
+{ lib, ... }:
 {
   imports = [
-    ../../modules/system.nix
-    ../desktop.nix
     ./framework.nix
-    (
-      { lib, ... }:
-      {
-        boot.loader.systemd-boot.enable = true;
-        boot.loader.efi.canTouchEfiVariables = true;
-        fonts.fontconfig.enable = lib.mkForce true;
-        services.sshd.enable = true;
-        virtualisation.containers.enable = true;
-      }
-    )
   ];
+
+  nixpkgs.hostPlatform = "x86_64-linux";
+
+  boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.systemd-boot.enable = true;
+  fonts.fontconfig.enable = lib.mkForce true;
+  services.sshd.enable = true;
+  virtualisation.containers.enable = true;
+
+  dev.johnrinehart.system.enable = true;
 }

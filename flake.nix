@@ -1,7 +1,6 @@
 {
   inputs = {
     nixpkgs.url = "github:johnrichardrinehart/nixpkgs?ref=rock-5c";
-    #nixpkgs.url = "git+file:///home/john/nixpkgs";
 
     flake-templates.url = "github:NixOS/templates/master";
 
@@ -28,5 +27,6 @@
 
   outputs = inputs: {
     nixosConfigurations = import ./hosts inputs;
+    overlays = import ./overlays inputs;
   };
 }

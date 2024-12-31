@@ -1,8 +1,6 @@
 args@{ config, pkgs, ... }:
 {
-  imports = [
-    ../desktop.nix
-  ];
+  dev.johnrinehart.desktop.enable = true;
 
   hardware.pulseaudio.enable = true;
   networking.interfaces.enp0s3.useDHCP = true;

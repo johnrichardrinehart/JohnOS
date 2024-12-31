@@ -1,7 +1,7 @@
 { config, lib, ... }:
 {
-  options.dev.johnrinehart.desktop = {
-    enable = lib.mkEnableOption "John's Desktop settings.";
+  options.dev.johnrinehart.home-manager = {
+    enable = lib.mkEnableOption "John's Home Manager settings.";
   };
 
   imports = [
