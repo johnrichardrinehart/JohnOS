@@ -10,32 +10,30 @@ in
       # this linux doesn't work for some reason
       linuxRock5C = pkgs.linuxPackagesFor (
         (pkgs.linux_latest.override {
-          defconfig = "rockchip_linux_defconfig";
           argsOverride =
             let
-              version = "6.11.9";
+              version = "6.13";
             in
             {
               inherit version;
-              modDirVersion = version;
+              modDirVersion = if builtins.length (builtins.splitVersion version) == 2 then (version + ".0") else version;
               src = pkgs.fetchurl {
-                url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.11.9.tar.xz";
+                url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${version}.tar.xz";
 
-                hash = "sha256-dWWKeqO9lZjJbuHlhixeHTT87XXCjYJccnoVEKbzhLQ=";
+                hash = "sha256-553Mbrhmlca6v7B8KGGRK2NdUHXGzRzQVn0eoVX4DW4=";
+                #hash = "";
               };
             };
 
           structuredExtraConfig = with lib.kernel; {
             EARLY_PRINTK = yes;
             CONFIG_DEBUG = yes;
+            CONFIG_DYNAMIC_DEBUG = yes;
           };
         })
       );
     })
   ];
-
-  # these are designed for v6.10
-  boot.kernelPatches = patches;
 
   boot.kernelPackages = lib.mkForce pkgs.linuxRock5C;
 }

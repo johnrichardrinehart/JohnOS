@@ -10,8 +10,8 @@ let
 in
 {
   imports = [
-    ./kernel_radxa.nix
-    #./kernel_6.10.nix
+    #./kernel_radxa.nix
+    ./kernel_6.13.nix
     #./kernel_collabora.nix
   ];
 
@@ -30,7 +30,7 @@ in
 
     boot.loader.grub.enable = false;
     boot.loader.generic-extlinux-compatible.enable = true;
-    system.build.firmware = pkgs.ubootRock5ModelC;
+    system.build.firmware = pkgs.ubootRock5ModelC4;
     system.build.sdImage = pkgs.callPackage (
       { ... }:
       let
@@ -77,7 +77,7 @@ in
 
           # write U-Boot
           dd \
-            if=${config.system.build.firmware}/uboot.img \
+            if=${config.system.build.firmware}/u-boot.itb \
             of=$img \
             seek=$((0x4000)) \
             oflag=sync \
