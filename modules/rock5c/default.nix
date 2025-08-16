@@ -136,16 +136,18 @@ in
       }
     ];
 
-    boot.supportedFilesystems = { "btrfs" = true; };
+    boot.supportedFilesystems = {
+      "btrfs" = true;
+    };
 
     networking.useNetworkd = true;
     systemd.network.enable = true;
     systemd.network.networks."end1" = {
-	    matchConfig.Name = "end1";
-# acquire a DHCP lease on link up
-	    networkConfig.DHCP = "yes";
-# this port is not always connected and not required to be online
-	    linkConfig.RequiredForOnline = "no";
+      matchConfig.Name = "end1";
+      # acquire a DHCP lease on link up
+      networkConfig.DHCP = "yes";
+      # this port is not always connected and not required to be online
+      linkConfig.RequiredForOnline = "no";
     };
   };
 }

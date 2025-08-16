@@ -1,55 +1,79 @@
-{ inputs, config, pkgs, lib, ... }:
+{
+  inputs,
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 let
   cfg = config.dev.johnrinehart.desktop;
 
-  xorg-xmonad = { config, lib, pkgs, ... }: let
-    cfg = config.dev.johnrinehart.desktop.xorg-xmonad;
-  in
-  {
-    options.dev.johnrinehart.desktop.xorg-xmonad = {
-      enable = lib.mkEnableOption "the Xorg with Xmonad configuration.";
-    };
+  xorg-xmonad =
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    let
+      cfg = config.dev.johnrinehart.desktop.xorg-xmonad;
+    in
+    {
+      options.dev.johnrinehart.desktop.xorg-xmonad = {
+        enable = lib.mkEnableOption "the Xorg with Xmonad configuration.";
+      };
 
-    config = lib.mkIf cfg.enable {
-      nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) (lib.optional config.dev.johnrinehart.desktop.obsidian [
-        "obsidian"
-      ]);
+      config = lib.mkIf cfg.enable {
+        nixpkgs.config.allowUnfreePredicate =
+          pkg:
+          builtins.elem (lib.getName pkg) (
+            lib.optional config.dev.johnrinehart.desktop.obsidian [ "obsidian" ]
+          );
 
-      nixpkgs.config.permittedInsecurePackages = lib.optional config.dev.johnrinehart.desktop.obsidian  [
-        "electron-25.9.0"
-      ];
+        nixpkgs.config.permittedInsecurePackages = lib.optional config.dev.johnrinehart.desktop.obsidian [
+          "electron-25.9.0"
+        ];
 
-      environment.systemPackages = lib.optional config.dev.johnrinehart.desktop.obsidian [
-        pkgs.obsidian
-      ];
+        environment.systemPackages = lib.optional config.dev.johnrinehart.desktop.obsidian [
+          pkgs.obsidian
+        ];
 
-      dev.johnrinehart = {
-        sound.enable = true;
-        systemPackages.enable = true;
-        xmonad.enable = true;
-        bluetooth.enable = true;
+        dev.johnrinehart = {
+          sound.enable = true;
+          systemPackages.enable = true;
+          xmonad.enable = true;
+          bluetooth.enable = true;
+        };
       };
     };
-  };
 
-  wl-hyprland = { config, lib, pkgs, ... }: let
-    cfg = config.dev.johnrinehart.desktop.wl-hyprland;
-  in
-  {
-    options.dev.johnrinehart.desktop.wl-hyprland = {
-      enable = lib.mkEnableOption "the Wayland with Hyprland configuration.";
-    };
+  wl-hyprland =
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    let
+      cfg = config.dev.johnrinehart.desktop.wl-hyprland;
+    in
+    {
+      options.dev.johnrinehart.desktop.wl-hyprland = {
+        enable = lib.mkEnableOption "the Wayland with Hyprland configuration.";
+      };
 
-    config = lib.mkIf cfg.enable {
+      config = lib.mkIf cfg.enable { };
     };
-  };
 
   variants = { inherit xorg-xmonad wl-hyprland; };
 in
 {
   options.dev.johnrinehart.desktop = {
     variant = lib.mkOption {
-      type = lib.types.enum [ "xorg-xmonad" "wl-hyprland" ];
+      type = lib.types.enum [
+        "xorg-xmonad"
+        "wl-hyprland"
+      ];
       default = "xorg-xmonad";
       description = lib.mkEnableOption "reasonable desktop configuration variants.";
     };

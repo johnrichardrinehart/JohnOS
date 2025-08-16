@@ -30,9 +30,7 @@ in
   options.dev.johnrinehart.gocryptfs = {
     enable = lib.mkEnableOption "gocryptfs mounts";
 
-    mounts = lib.mkOption {
-      type = lib.types.listOf gocryptfs;
-    };
+    mounts = lib.mkOption { type = lib.types.listOf gocryptfs; };
   };
 
   config = lib.mkIf cfg.enable {

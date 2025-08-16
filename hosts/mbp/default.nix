@@ -57,9 +57,7 @@ args@{
     };
   };
 
-  environment.systemPackages = [
-    pkgs.hicolor-icon-theme
-  ];
+  environment.systemPackages = [ pkgs.hicolor-icon-theme ];
 
   # rtkit is optional but recommended
   security.rtkit.enable = true;
@@ -85,14 +83,10 @@ args@{
 
   dev.johnrinehart.droidcam.enable = true;
 
-  boot.extraModulePackages = [
-    config.boot.kernelPackages.broadcom_sta
-  ];
+  boot.extraModulePackages = [ config.boot.kernelPackages.broadcom_sta ];
 
   # below from https://github.com/NixOS/nixos-hardware/blob/master/apple/default.nix
-  boot.kernelParams = [
-    "hid_apple.iso_layout=0"
-  ];
+  boot.kernelParams = [ "hid_apple.iso_layout=0" ];
 
   hardware.facetimehd.enable = lib.mkDefault (config.nixpkgs.config.allowUnfree or false);
 
@@ -136,9 +130,7 @@ args@{
     lib.optionalString (lib.versionAtLeast config.boot.kernelPackages.kernel.version "3.13")
       ''SUBSYSTEM=="pci", KERNEL=="0000:00:14.0", ATTR{power/wakeup}="disabled"'';
 
-  imports = [
-    "${nixpkgs}/nixos/modules/hardware/network/broadcom-43xx.nix"
-  ];
+  imports = [ "${nixpkgs}/nixos/modules/hardware/network/broadcom-43xx.nix" ];
 
   # below from https://github.com/NixOS/nixos-hardware/blob/master/common/pc/ssd/default.nix
   boot.kernel.sysctl = {

@@ -1,3 +1,4 @@
-{ inputs, ... }: {
-	imports = [ inputs.sops-nix.nixosModules.default ];
+{ inputs, ... }:
+{
+  imports = [ inputs.sops-nix.nixosModules.default ];
 }

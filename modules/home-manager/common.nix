@@ -174,16 +174,15 @@ in
       extraConfig = bars + colors + modules + user_modules + module_xmonad + module_pt + module_nyc_time;
     };
 
-  home.file =
-    {
-      ".config/powerline/themes/gruvbox.theme".source = ./gruvbox.theme;
-    }
-    // lib.optionalAttrs osConfig.dev.johnrinehart.i3.enable {
-      home.file."config/i3status/net-speed.sh" = {
-        source = ./net-speed.sh;
-        executable = true;
-      };
+  home.file = {
+    ".config/powerline/themes/gruvbox.theme".source = ./gruvbox.theme;
+  }
+  // lib.optionalAttrs osConfig.dev.johnrinehart.i3.enable {
+    home.file."config/i3status/net-speed.sh" = {
+      source = ./net-speed.sh;
+      executable = true;
     };
+  };
 
   home.sessionVariables.EDITOR = "vim";
 
@@ -440,7 +439,7 @@ in
               ''//table[@id="releases"]/tr[${row release_line}]/td[2]/strong/text()'';
             xpath = kernelOrgXpath release_line;
           in
-          ''curl --silent 'https://kernel.org' | xmllint -html -xpath '${xpath}' - 2>/dev/null'';
+          "curl --silent 'https://kernel.org' | xmllint -html -xpath '${xpath}' - 2>/dev/null";
       in
       {
         ssh = "kitty +kitten ssh";
@@ -449,7 +448,7 @@ in
         # latest kernel version
         lskv = fetchLatestKernelVersion "stable";
         lmkv = fetchLatestKernelVersion "mainline";
-        clv = ''uname -a | cut -f3 -d' ' | cut -f 1 -d'-' '';
+        clv = "uname -a | cut -f3 -d' ' | cut -f 1 -d'-' ";
         k = "kubectl";
         chess = "scid";
         sudo-nixos-rebuild-flake = "sudo nixos-rebuild switch --flake $HOME/code/repos/mine/nix"; # https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
@@ -514,32 +513,31 @@ in
     '';
   };
 
-  xsession =
-    {
+  xsession = {
+    enable = true;
+    # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
+    scriptPath = ".hm-xsession";
+
+    profileExtra = ''
+      eval $(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
+      export SSH_AUTH_SOCK
+    '';
+  }
+  // lib.optionalAttrs osConfig.dev.johnrinehart.xmonad.enable {
+    initExtra = extra + polybarOpts + configureKeyboards;
+
+    windowManager.xmonad = {
       enable = true;
-      # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
-      scriptPath = ".hm-xsession";
+      enableContribAndExtras = true;
 
-      profileExtra = ''
-        eval $(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
-        export SSH_AUTH_SOCK
-      '';
-    }
-    // lib.optionalAttrs osConfig.dev.johnrinehart.xmonad.enable {
-      initExtra = extra + polybarOpts + configureKeyboards;
+      extraPackages = hp: [
+        hp.dbus
+        hp.monad-logger
+      ];
 
-      windowManager.xmonad = {
-        enable = true;
-        enableContribAndExtras = true;
-
-        extraPackages = hp: [
-          hp.dbus
-          hp.monad-logger
-        ];
-
-        config = ./config.hs;
-      };
+      config = ./config.hs;
     };
+  };
 
   home.stateVersion = "24.05";
 

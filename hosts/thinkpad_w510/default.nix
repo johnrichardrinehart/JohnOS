@@ -57,22 +57,20 @@
     };
   };
 
-  boot.initrd.luks.devices."dm-0".device = lib.mkForce "/dev/disk/by-uuid/002adea0-5c10-45a8-bc8a-701a0d71577b";
+  boot.initrd.luks.devices."dm-0".device =
+    lib.mkForce "/dev/disk/by-uuid/002adea0-5c10-45a8-bc8a-701a0d71577b";
 
   networking.interfaces.wlp3s0.useDHCP = true;
 
   services.upower.enable = true;
 
-  environment.systemPackages =
-    [
-      pkgs.opensc
-      pkgs.pcsc-tools
-      pkgs.global-platform-pro
-      config.boot.kernelPackages.v4l2loopback.bin
-    ]
-    ++ [
-      pkgs.nload
-    ];
+  environment.systemPackages = [
+    pkgs.opensc
+    pkgs.pcsc-tools
+    pkgs.global-platform-pro
+    config.boot.kernelPackages.v4l2loopback.bin
+  ]
+  ++ [ pkgs.nload ];
 
   services.pcscd.enable = true;
 

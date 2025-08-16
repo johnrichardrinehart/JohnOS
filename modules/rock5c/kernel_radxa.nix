@@ -1,8 +1,15 @@
 { lib, pkgs, ... }:
 let
-  listOfFiles = builtins.attrNames (lib.filterAttrs (_: v: v == "regular") (builtins.readDir ./radxa_patches));
-  listOfPatches = builtins.trace "${builtins.toString (builtins.length listOfFiles)}" lib.filter (v: (builtins.match ".*\.patch" v) != null) listOfFiles;
-  patches = builtins.map (p: { name = p; patch = ./radxa_patches + /${p}; }) listOfPatches;
+  listOfFiles = builtins.attrNames (
+    lib.filterAttrs (_: v: v == "regular") (builtins.readDir ./radxa_patches)
+  );
+  listOfPatches = builtins.trace "${builtins.toString (builtins.length listOfFiles)}" lib.filter (
+    v: (builtins.match ".*.patch" v) != null
+  ) listOfFiles;
+  patches = builtins.map (p: {
+    name = p;
+    patch = ./radxa_patches + /${p};
+  }) listOfPatches;
 in
 {
   nixpkgs.overlays = [

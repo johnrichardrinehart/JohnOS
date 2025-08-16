@@ -168,7 +168,7 @@ args@{ config, pkgs, ... }:
   # XAUTHORITY=/home/john/.Xauthority \
   # ${pkgs.bash}/bin/sh -c "${pkgs.xorg.xrandr}/bin/xrandr --output eDP-1 --brightness 0.2" john
   #                                 '';
-  # 
+  #
   #                 };
   #                 brighten = {
   #                         event = "video/brightnessup";

@@ -12,7 +12,5 @@ in
     enable = lib.mkEnableOption "latest kernel";
   };
 
-  config = lib.mkIf cfg.enable {
-    boot.kernelPackages = pkgs.linuxPackages_latest;
-  };
+  config = lib.mkIf cfg.enable { boot.kernelPackages = pkgs.linuxPackages_latest; };
 }

@@ -37,9 +37,7 @@ in
   options.dev.johnrinehart.s3_mount = {
     enable = lib.mkEnableOption "S3 fuse mounts";
 
-    mounts = lib.mkOption {
-      type = lib.types.listOf s3mount;
-    };
+    mounts = lib.mkOption { type = lib.types.listOf s3mount; };
   };
 
   config = lib.mkIf cfg.enable {
@@ -56,7 +54,7 @@ in
           fsType = "fuse.${builtins.unsafeDiscardStringContext pkgs.s3fs}/bin/s3fs";
           #noCheck = true;
           # cf. https://unix.stackexchange.com/a/349278
-          # "_netdev" "x-systemd.after=network-online.target" 
+          # "_netdev" "x-systemd.after=network-online.target"
           options = [
             "_netdev"
             "x-systemd.automount"

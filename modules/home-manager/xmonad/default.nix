@@ -13,7 +13,5 @@ in
     enable = lib.mkEnableOption "John's xmonad config";
   };
 
-  config = lib.mkIf cfg.enable {
-    dev.johnrinehart.xorg.enable = true;
-  };
+  config = lib.mkIf cfg.enable { dev.johnrinehart.xorg.enable = true; };
 }

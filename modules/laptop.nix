@@ -7,7 +7,5 @@ in
     enable = lib.mkEnableOption "reasonable laptop settings";
   };
 
-  config = lib.mkIf cfg.enable {
-    services.libinput.enable = true;
-  };
+  config = lib.mkIf cfg.enable { services.libinput.enable = true; };
 }

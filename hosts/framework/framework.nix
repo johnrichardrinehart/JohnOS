@@ -83,9 +83,7 @@
   ## Below v4l2loopback stuff stolen from https://gist.github.com/TheSirC/93130f70cc280cdcdff89faf8d4e98ab
   # Extra kernel modules
   boot.kernelPackages = pkgs.linuxKernel.packages.linux_6_12;
-  boot.extraModulePackages = [
-    config.boot.kernelPackages.v4l2loopback
-  ];
+  boot.extraModulePackages = [ config.boot.kernelPackages.v4l2loopback ];
 
   environment.etc."modprobe.d/v4l2loopback.conf".text = ''
     options v4l2loopback video_nr=0,1,2 card_label="Virtual Video 0,Virtual Video 1,Virtual Video 2" exclusive_caps=1
