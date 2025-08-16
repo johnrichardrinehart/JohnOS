@@ -11,6 +11,8 @@ in
   options = {
     dev.johnrinehart.xorg = {
       enable = lib.mkEnableOption "John's opinionated Xorg config";
+    } // {
+      default = false;
     };
   };
 
