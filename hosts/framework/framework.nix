@@ -73,19 +73,6 @@
   # high-resolution display
 
   security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-
-    alsa.enable = false; # https://github.com/NixOS/nixpkgs/issues/157442
-    alsa.support32Bit = false; # https://github.com/NixOS/nixpkgs/issues/157442
-
-    pulse.enable = true;
-
-    # If you want to use JACK applications, uncomment this
-    jack.enable = true;
-
-    wireplumber.enable = true;
-  };
 
   # bluetooth stuff
   services.blueman.enable = true;
@@ -95,6 +82,7 @@
 
   ## Below v4l2loopback stuff stolen from https://gist.github.com/TheSirC/93130f70cc280cdcdff89faf8d4e98ab
   # Extra kernel modules
+  boot.kernelPackages = pkgs.linuxKernel.packages.linux_6_12;
   boot.extraModulePackages = [
     config.boot.kernelPackages.v4l2loopback
   ];

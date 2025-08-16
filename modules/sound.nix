@@ -13,11 +13,18 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    hardware.pulseaudio = {
+    services.pipewire = {
       enable = true;
-      support32Bit = true;
-      package = pkgs.pulseaudioFull;
-      extraConfig = "load-module module-switch-on-connect";
+
+      alsa.enable = false; # https://github.com/NixOS/nixpkgs/issues/157442
+      alsa.support32Bit = false; # https://github.com/NixOS/nixpkgs/issues/157442
+
+      pulse.enable = true;
+
+      # If you want to use JACK applications, uncomment this
+      jack.enable = true;
+
+      wireplumber.enable = true;
     };
   };
 }
