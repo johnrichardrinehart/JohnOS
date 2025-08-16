@@ -30,7 +30,7 @@ in
 
     boot.loader.grub.enable = false;
     boot.loader.generic-extlinux-compatible.enable = true;
-    system.build.firmware = pkgs.ubootRock5ModelC4;
+    system.build.firmware = pkgs.ubootRock5ModelC;
     system.build.sdImage = pkgs.callPackage (
       { ... }:
       let
@@ -104,6 +104,7 @@ in
     boot.consoleLogLevel = 7;
 
     boot.kernelPackages = pkgs.linuxPackages_latest;
+#    boot.kernelPackages = pkgs.linuxPackages_6_1;
 
     boot.kernelParams = [
       "earlyprintk"
@@ -121,18 +122,20 @@ in
       {
         name = "zram_comp";
         patch = null;
-        extraConfig = ''
-          CONFIG_ZRAM_DEF_COMP_LZORLE=m
-          CONFIG_ZRAM_DEF_COMP_LZO=m
-          CONFIG_ZRAM_MEMORY_TRACKING=y
-        '';
+        extraStructuredConfig = {
+          ZRAM = lib.kernel.module;
+          ZRAM_BACKEND_ZLO = lib.kernel.yes;
+          ZRAM_DEF_COMP_LZORLE = lib.kernel.yes;
+          ZRAM_DEF_COMP_LZO = lib.kernel.yes;
+          ZRAM_MEMORY_TRACKING = lib.kernel.yes;
+        };
       }
       {
         name = "btrfs";
         patch = null;
-        extraConfig = ''
-          CONFIG_FS_BTRFS=y
-        '';
+        extraStructuredConfig = {
+          FS_BTRFS = lib.kernel.yes;
+        };
       }
     ];
 
