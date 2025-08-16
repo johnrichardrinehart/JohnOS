@@ -176,7 +176,7 @@ in
 
   home.file =
     {
-      ".config/powerline-rs/themes/gruvbox.theme".source = ./gruvbox.theme;
+      ".config/powerline/themes/gruvbox.theme".source = ./gruvbox.theme;
     }
     // lib.optionalAttrs osConfig.dev.johnrinehart.i3.enable {
       home.file."config/i3status/net-speed.sh" = {
@@ -505,7 +505,7 @@ in
       unsetopt BEEP
 
       prompt() {
-        pwr="$(powerline-rs --modules time,ssh,cwd,perms,git,gitstage,nix-shell,root,virtualenv --theme ~/.config/powerline-rs/themes/gruvbox.theme --shell zsh $?)"
+        pwr="$(powerline --modules time,ssh,cwd,perms,git,gitstage,nix-shell,root,virtualenv --theme ~/.config/powerline/themes/gruvbox.theme --shell zsh $?)"
         PS1=$(printf "%s\n$ " "$pwr")
       }
       precmd_functions+=(prompt)
