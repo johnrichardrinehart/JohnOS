@@ -43,8 +43,7 @@ in
       pkgs.mpv # mplayer replacement
       pkgs.simplescreenrecorder
       # shell tools
-      pkgs.powerline-rs
-      pkgs.oil
+      pkgs.powerline
       pkgs.ranger
       pkgs.jump
       pkgs.tmux
@@ -79,9 +78,6 @@ in
       # archive tools
       pkgs.zip
       pkgs.unzip
-      # programming languages
-      pkgs.go_1_21
-      pkgs.gcc
       # communication tools
       pkgs.obs-studio
       # multimedia tools
@@ -94,10 +90,6 @@ in
       pkgs.libxml2 # needed for alias lkv
       # media
       pkgs.ffmpeg_7-full
-      # stuff for lunarvim :(
-      pkgs.python3
-      pkgs.python39Packages.pip
-      pkgs.hunspellDicts.en-us
       pkgs.ntfs3g
       pkgs.gparted
       pkgs.deluge

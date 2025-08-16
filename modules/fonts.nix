@@ -6,6 +6,6 @@
     pkgs.font-awesome
     pkgs.powerline-fonts
     pkgs.powerline-symbols
-    (pkgs.nerdfonts.override { fonts = [ "DroidSansMono" ]; })
+    pkgs.nerd-fonts.droid-sans-mono
   ];
 }
