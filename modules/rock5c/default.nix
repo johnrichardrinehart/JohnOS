@@ -11,7 +11,7 @@ in
 {
   imports = [
     #./kernel_radxa.nix
-    ./kernel_6.13.nix
+    #./kernel_6.13.nix
     #./kernel_collabora.nix
   ];
 
@@ -103,6 +103,8 @@ in
 
     boot.consoleLogLevel = 7;
 
+    boot.kernelPackages = pkgs.linuxPackages_latest;
+
     boot.kernelParams = [
       "earlyprintk"
       "console=ttyS0,1500000"
@@ -114,6 +116,27 @@ in
       "printk.synchronous=1"
       "earlycon=uart8250,mmio32,0xfeb50000"
     ];
+
+    boot.kernelPatches = [
+      {
+        name = "zram_comp";
+        patch = null;
+        extraConfig = ''
+          CONFIG_ZRAM_DEF_COMP_LZORLE=m
+          CONFIG_ZRAM_DEF_COMP_LZO=m
+          CONFIG_ZRAM_MEMORY_TRACKING=y
+        '';
+      }
+      {
+        name = "btrfs";
+        patch = null;
+        extraConfig = ''
+          CONFIG_FS_BTRFS=y
+        '';
+      }
+    ];
+
+    boot.supportedFilesystems = { "btrfs" = true; };
 
     networking.useNetworkd = true;
     systemd.network.enable = true;
