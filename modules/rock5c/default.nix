@@ -145,8 +145,10 @@ in
 
     networking.useNetworkd = true;
     systemd.network.enable = true;
-    systemd.network.networks."end1" = {
-      matchConfig.Name = "end1";
+    systemd.network.networks."end0" = {
+      # [Match] logically ANDs all match rules
+      #matchConfig.MACAddress = "7a:16:b7:43:6a:92";
+      matchConfig.Name = "end*";
       # acquire a DHCP lease on link up
       networkConfig.DHCP = "yes";
       # this port is not always connected and not required to be online
