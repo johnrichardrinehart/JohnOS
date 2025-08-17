@@ -106,18 +106,6 @@ in
     boot.kernelPackages = pkgs.linuxPackages_latest;
 #    boot.kernelPackages = pkgs.linuxPackages_6_1;
 
-    boot.kernelParams = [
-      "earlyprintk"
-      "console=ttyS0,1500000"
-      "console=ttyS1,1500000"
-      "console=ttyS2,1500000"
-      "console=ttyAMA0,1500000"
-      "console=tty0"
-      "console=ttyFIQ0,1500000"
-      "printk.synchronous=1"
-      "earlycon=uart8250,mmio32,0xfeb50000"
-    ];
-
     boot.kernelPatches = [
       {
         name = "zram_comp";
