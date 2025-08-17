@@ -21,6 +21,8 @@ let
     {
       options.dev.johnrinehart.desktop.xorg-xmonad = {
         enable = lib.mkEnableOption "the Xorg with Xmonad configuration.";
+      } // {
+        default = false;
       };
 
       config = lib.mkIf cfg.enable {
@@ -60,6 +62,8 @@ let
     {
       options.dev.johnrinehart.desktop.wl-hyprland = {
         enable = lib.mkEnableOption "the Wayland with Hyprland configuration.";
+      } // {
+        default = false;
       };
 
       config = lib.mkIf cfg.enable { };
@@ -69,6 +73,9 @@ let
 in
 {
   options.dev.johnrinehart.desktop = {
+    enable = lib.mkEnableOption "the Wayland with Hyprland configuration." // {
+      default = false;
+    };
     variant = lib.mkOption {
       type = lib.types.enum [
         "xorg-xmonad"
@@ -88,7 +95,7 @@ in
     wl-hyprland
   ];
 
-  config = {
+  config = lib.mkIf cfg.enable {
     dev.johnrinehart.desktop.xorg-xmonad.enable = (cfg.variant == "xorg-xmonad");
     dev.johnrinehart.desktop.wl-hyprland.enable = (cfg.variant == "wl-hyprland");
   };
