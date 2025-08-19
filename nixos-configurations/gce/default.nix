@@ -2,6 +2,18 @@ args@{ config, pkgs, ... }:
 {
   nixpkgs.hostPlatform = "x86_64-linux";
   
+  # Boot configuration
+  boot.loader.grub = {
+    enable = true;
+    device = "/dev/sda";
+  };
+  
+  # Filesystem configuration
+  fileSystems."/" = {
+    device = "/dev/sda1";
+    fsType = "ext4";
+  };
+
   console.useXkbConfig = true;
 
   programs.zsh.enable = true;
@@ -28,6 +40,9 @@ args@{ config, pkgs, ... }:
           format = "json";
         };
         server_url = "https://headscale.johnrinehart.dev.";
+        dns = {
+          base_domain = "headscale.johnrinehart.dev";
+        };
       };
       port = 80;
       address = "0.0.0.0";

@@ -6,8 +6,25 @@ args@{
 }:
 {
   nixpkgs.hostPlatform = "x86_64-linux";
+  
+  # Boot configuration
+  boot.loader.grub = {
+    enable = true;
+    device = "/dev/sda";
+  };
+  
+  # Root filesystem
+  fileSystems."/" = {
+    device = "/dev/sda1";
+    fsType = "ext4";
+  };
+  
   # TODO: remove allowUnbroken once ZFS in linux kernel is fixed
   nixpkgs.config.allowBroken = true;
+  nixpkgs.config.allowUnfree = true;
+  nixpkgs.config.permittedInsecurePackages = [
+    "broadcom-sta-6.30.223.271-57-5.16.10"
+  ];
 
   # https://nixos.wiki/wiki/Linux_kernel#Booting_a_kernel_from_a_custom_source
   boot.kernelPackages = pkgs.lib.mkForce (
@@ -36,7 +53,7 @@ args@{
   );
 
   # disabled by installation-cd-minimal
-  fonts.fontconfig.enable = pkgs.lib.mkOverride 49; # higher priority than installation-cd-minimal.nix
+  fonts.fontconfig.enable = pkgs.lib.mkOverride 49 true; # higher priority than installation-cd-minimal.nix
 
   # use xinput to discover the name of the laptop keyboard (not lsusb)
   services.xserver = {

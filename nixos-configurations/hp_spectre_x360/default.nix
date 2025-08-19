@@ -1,6 +1,13 @@
 args@{ config, pkgs, ... }:
 {
   nixpkgs.hostPlatform = "x86_64-linux";
+  
+  # Boot configuration
+  boot.loader.grub = {
+    enable = true;
+    device = "/dev/sda";
+  };
+  
   dev.johnrinehart.desktop.enable = true;
 
   boot.extraModprobeConfig = ''
@@ -24,9 +31,11 @@ args@{ config, pkgs, ... }:
   ];
 
   # add some filesystems for helping maintain state between reboots
-  fileSystems = pkgs.lib.mkForce (
-    config.lib.isoFileSystems
-    // {
+  fileSystems = pkgs.lib.mkForce {
+    "/" = {
+      device = "/dev/sda1";
+      fsType = "ext4";
+    };
       "/mnt/root" = {
         device = "/dev/mmcblk0p1";
         fsType = "ext4";
@@ -66,8 +75,7 @@ args@{ config, pkgs, ... }:
         ];
         neededForBoot = false;
       };
-    }
-  );
+    };
 
   # disabled by installation-cd-minimal
   fonts.fontconfig.enable = pkgs.lib.mkOverride 49 true;
