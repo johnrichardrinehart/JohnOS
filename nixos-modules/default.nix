@@ -19,10 +19,10 @@
     ./ssh.nix
     ./system.nix
     ./virtualisation.nix
+    ./xmonad.nix
 
     ./bootloader
     ./desktop
-    ./home-manager
     ./kernel
     ./rock5c
   ];

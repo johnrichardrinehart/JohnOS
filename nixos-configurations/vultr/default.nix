@@ -6,6 +6,7 @@ args@{
   ...
 }:
 {
+  nixpkgs.hostPlatform = "x86_64-linux";
 
   imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
 

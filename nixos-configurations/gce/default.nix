@@ -1,5 +1,7 @@
 args@{ config, pkgs, ... }:
 {
+  nixpkgs.hostPlatform = "x86_64-linux";
+  
   console.useXkbConfig = true;
 
   programs.zsh.enable = true;

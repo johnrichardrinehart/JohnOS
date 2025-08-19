@@ -7,7 +7,7 @@ lib.mapAttrs (
   lib.nixosSystem {
     modules = [
       ./${dir}
-      ../modules
+      ../nixos-modules
     ];
 
     specialArgs = { inherit inputs; };

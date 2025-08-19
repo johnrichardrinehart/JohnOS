@@ -1,5 +1,6 @@
 args@{ config, pkgs, ... }:
 {
+  nixpkgs.hostPlatform = "x86_64-linux";
   dev.johnrinehart.desktop.enable = true;
 
   hardware.pulseaudio.enable = true;

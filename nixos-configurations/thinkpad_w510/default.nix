@@ -5,6 +5,8 @@
   ...
 }:
 {
+  nixpkgs.hostPlatform = "x86_64-linux";
+
   dev.johnrinehart =
     let
       cipherMount = "/mnt/.b2-rinehartstorage";

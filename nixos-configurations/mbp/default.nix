@@ -6,6 +6,7 @@ args@{
   ...
 }:
 {
+  nixpkgs.hostPlatform = "x86_64-linux";
   # TODO: remove allowUnbroken once ZFS in linux kernel is fixed
   nixpkgs.config.allowBroken = true;
 
