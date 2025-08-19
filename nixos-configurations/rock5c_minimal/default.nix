@@ -11,4 +11,9 @@
     enable = true;
     openFilesLimit = 1048576; # 1<<20 = 2^20 = 1048576
   };
+
+  services.jellyfin = {
+    openFirewall = true;
+    enable = true;
+  };
 }
