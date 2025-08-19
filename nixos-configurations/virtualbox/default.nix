@@ -3,7 +3,7 @@ args@{ config, pkgs, ... }:
   nixpkgs.hostPlatform = "x86_64-linux";
   dev.johnrinehart.desktop.enable = true;
 
-  hardware.pulseaudio.enable = true;
+  hardware.pulseaudio.enable = false; # Conflicts with desktop PipeWire
   networking.interfaces.enp0s3.useDHCP = true;
   # Use the GRUB 2 boot loader.
   boot.loader.grub.device = "/dev/sda"; # or "nodev" for efi only

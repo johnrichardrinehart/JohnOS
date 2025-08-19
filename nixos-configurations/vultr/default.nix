@@ -49,7 +49,7 @@ args@{
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
   # Set your time zone.
-  time.timeZone = "Europe/Kiev";
+  time.timeZone = lib.mkForce "Europe/Kiev";
 
   console.useXkbConfig = true;
 
