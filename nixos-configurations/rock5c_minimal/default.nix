@@ -7,8 +7,8 @@
   dev.johnrinehart.nix.enable = true;
 
   services.deluge = {
-  web.enable = true;
-  enable = true;
-openFilesLimit = 1<<20;
+    web.enable = true;
+    enable = true;
+    openFilesLimit = 1048576; # 1<<20 = 2^20 = 1048576
+  };
 }
-

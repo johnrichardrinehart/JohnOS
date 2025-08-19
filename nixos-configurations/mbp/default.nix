@@ -2,7 +2,6 @@ args@{
   config,
   pkgs,
   lib,
-  nixpkgs,
   ...
 }:
 {
@@ -131,7 +130,7 @@ args@{
     lib.optionalString (lib.versionAtLeast config.boot.kernelPackages.kernel.version "3.13")
       ''SUBSYSTEM=="pci", KERNEL=="0000:00:14.0", ATTR{power/wakeup}="disabled"'';
 
-  imports = [ "${nixpkgs}/nixos/modules/hardware/network/broadcom-43xx.nix" ];
+  # imports = [ "${nixpkgs}/nixos/modules/hardware/network/broadcom-43xx.nix" ]; # TODO: Fix nixpkgs reference
 
   # below from https://github.com/NixOS/nixos-hardware/blob/master/common/pc/ssd/default.nix
   boot.kernel.sysctl = {
