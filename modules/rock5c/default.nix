@@ -104,25 +104,28 @@ in
     boot.consoleLogLevel = 7;
 
     boot.kernelPackages = pkgs.linuxPackages_latest;
-#    boot.kernelPackages = pkgs.linuxPackages_6_1;
 
     boot.kernelPatches = [
       {
+        name = "device-mapper";
+        patch = null;
+        structuredExtraConfig = {
+          DM_DEBUG = lib.kernel.yes;
+        };
+      }
+      {
         name = "zram_comp";
         patch = null;
-        extraStructuredConfig = {
-          ZRAM = lib.kernel.module;
-          ZRAM_BACKEND_ZLO = lib.kernel.yes;
-          ZRAM_DEF_COMP_LZORLE = lib.kernel.yes;
-          ZRAM_DEF_COMP_LZO = lib.kernel.yes;
+        structuredExtraConfig = {
           ZRAM_MEMORY_TRACKING = lib.kernel.yes;
         };
       }
       {
         name = "btrfs";
         patch = null;
-        extraStructuredConfig = {
-          FS_BTRFS = lib.kernel.yes;
+        structuredExtraConfig = {
+          BTRFS_FS = lib.kernel.yes;
+          BTRFS_DEBUG = lib.kernel.yes;
         };
       }
     ];
@@ -142,5 +145,20 @@ in
       # this port is not always connected and not required to be online
       linkConfig.RequiredForOnline = "no";
     };
+
+    # matches config from services.lvm.boot.thin.enable (I needed cache_check for the NAS configuration)
+    environment.etc."lvm/lvm.conf".text =
+      lib.concatMapStringsSep "\n"
+        (bin: "global/${bin}_executable = ${pkgs.thin-provisioning-tools}/bin/${bin}")
+        [
+          "thin_check"
+          "thin_dump"
+          "thin_repair"
+          "cache_check"
+          "cache_dump"
+          "cache_repair"
+        ];
+
+    environment.systemPackages = [ pkgs.thin-provisioning-tools ];
   };
 }
