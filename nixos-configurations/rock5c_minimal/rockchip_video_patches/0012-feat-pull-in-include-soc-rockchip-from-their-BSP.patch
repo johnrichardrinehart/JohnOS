@@ -1,0 +1,1634 @@
+From dc6ad5c995fa931a6af6f24dd35ff919be9b7d2b Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Wed, 20 Aug 2025 19:53:32 -0700
+Subject: [PATCH 12/14] feat: pull in include/soc/rockchip from their BSP
+
+---
+ include/soc/rockchip/android-version.h        |  17 +
+ include/soc/rockchip/rk3399_grf.h             |   6 +
+ include/soc/rockchip/rk_minidump.h            |  75 +++++
+ include/soc/rockchip/rkfb_dmc.h               |  11 +
+ include/soc/rockchip/rockchip-mailbox.h       |  30 ++
+ include/soc/rockchip/rockchip-system-status.h |  55 ++++
+ include/soc/rockchip/rockchip_amp.h           |  48 +++
+ include/soc/rockchip/rockchip_csu.h           |  46 +++
+ include/soc/rockchip/rockchip_dmc.h           | 131 ++++++++
+ include/soc/rockchip/rockchip_dvbm.h          | 161 +++++++++
+ include/soc/rockchip/rockchip_iommu.h         |  89 +++++
+ include/soc/rockchip/rockchip_ipa.h           |  40 +++
+ include/soc/rockchip/rockchip_opp_select.h    | 307 ++++++++++++++++++
+ include/soc/rockchip/rockchip_performance.h   |  33 ++
+ include/soc/rockchip/rockchip_rockit.h        | 192 +++++++++++
+ include/soc/rockchip/rockchip_sip.h           |  11 +
+ .../soc/rockchip/rockchip_system_monitor.h    | 229 +++++++++++++
+ 17 files changed, 1481 insertions(+)
+ create mode 100644 include/soc/rockchip/android-version.h
+ create mode 100644 include/soc/rockchip/rk_minidump.h
+ create mode 100644 include/soc/rockchip/rkfb_dmc.h
+ create mode 100644 include/soc/rockchip/rockchip-mailbox.h
+ create mode 100644 include/soc/rockchip/rockchip-system-status.h
+ create mode 100644 include/soc/rockchip/rockchip_amp.h
+ create mode 100644 include/soc/rockchip/rockchip_csu.h
+ create mode 100644 include/soc/rockchip/rockchip_dmc.h
+ create mode 100644 include/soc/rockchip/rockchip_dvbm.h
+ create mode 100644 include/soc/rockchip/rockchip_iommu.h
+ create mode 100644 include/soc/rockchip/rockchip_ipa.h
+ create mode 100644 include/soc/rockchip/rockchip_opp_select.h
+ create mode 100644 include/soc/rockchip/rockchip_performance.h
+ create mode 100644 include/soc/rockchip/rockchip_rockit.h
+ create mode 100644 include/soc/rockchip/rockchip_system_monitor.h
+
+diff --git a/include/soc/rockchip/android-version.h b/include/soc/rockchip/android-version.h
+new file mode 100644
+index 0000000000000..735efdae5aa42
+--- /dev/null
++++ b/include/soc/rockchip/android-version.h
+@@ -0,0 +1,17 @@
++/*
++ * Copyright (C) 2017 Rockchip Electronics Co., Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of version 2 of the GNU General Public License as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
++ * more details.
++ */
++
++#ifndef ANDROID_VERSION
++#define ANDROID_VERSION(a, b, c, r) \
++	(((a) << 24) + ((b) << 16) + ((c) << 8) + (r))
++#endif
+diff --git a/include/soc/rockchip/rk3399_grf.h b/include/soc/rockchip/rk3399_grf.h
+index 39cd44cec982f..f5d67d49b349f 100644
+--- a/include/soc/rockchip/rk3399_grf.h
++++ b/include/soc/rockchip/rk3399_grf.h
+@@ -14,5 +14,11 @@
+ #define RK3399_PMUGRF_OS_REG2_DDRTYPE		GENMASK(15, 13)
+ #define RK3399_PMUGRF_OS_REG2_BW_CH0		GENMASK(3, 2)
+ #define RK3399_PMUGRF_OS_REG2_BW_CH1		GENMASK(19, 18)
++#define RK3399_PMUGRF_DDRTYPE_SHIFT	13
++#define RK3399_PMUGRF_DDRTYPE_MASK	7
++#define RK3399_PMUGRF_DDRTYPE_DDR3	3
++#define RK3399_PMUGRF_DDRTYPE_LPDDR2	5
++#define RK3399_PMUGRF_DDRTYPE_LPDDR3	6
++#define RK3399_PMUGRF_DDRTYPE_LPDDR4	7
+ 
+ #endif
+diff --git a/include/soc/rockchip/rk_minidump.h b/include/soc/rockchip/rk_minidump.h
+new file mode 100644
+index 0000000000000..c9e9efd2222bf
+--- /dev/null
++++ b/include/soc/rockchip/rk_minidump.h
+@@ -0,0 +1,75 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
++ * Copyright (c) 2023 Rockchip Electronics Co., Ltd.
++ */
++
++#ifndef __RK_MINIDUMP_H
++#define __RK_MINIDUMP_H
++
++#include <linux/types.h>
++
++#define MD_MAX_NAME_LENGTH		16
++/* md_region -  Minidump table entry
++ * @name:	Entry name, Minidump will dump binary with this name.
++ * @id:		Entry ID, used only for SDI dumps.
++ * @virt_addr:  Address of the entry.
++ * @phys_addr:	Physical address of the entry to dump.
++ * @size:	Number of byte to dump from @address location
++ *		it should be 4 byte aligned.
++ */
++struct md_region {
++	char	name[MD_MAX_NAME_LENGTH];
++	u32	id;
++	u64	virt_addr;
++	u64	phys_addr;
++	u64	size;
++};
++
++#if IS_REACHABLE(CONFIG_ROCKCHIP_MINIDUMP)
++/*
++ * Register an entry in Minidump table
++ * Returns:
++ *	region number: entry position in minidump table.
++ *	Negative error number on failures.
++ */
++int rk_minidump_add_region(const struct md_region *entry);
++int rk_minidump_remove_region(const struct md_region *entry);
++/*
++ * Update registered region address in Minidump table.
++ * It does not hold any locks, so strictly serialize the region updates.
++ * Returns:
++ *	Zero: on successfully update
++ *	Negetive error number on failures.
++ */
++int rk_minidump_update_region(int regno, const struct md_region *entry);
++bool rk_minidump_enabled(void);
++void rk_minidump_update_cpu_regs(struct pt_regs *regs);
++int rk_minidump_hardlock_notify(struct notifier_block *nb, unsigned long event,
++				void *p);
++#else
++static inline int rk_minidump_add_region(const struct md_region *entry)
++{
++	/* Return quietly, if minidump is not supported */
++	return 0;
++}
++static inline int rk_minidump_remove_region(const struct md_region *entry)
++{
++	return 0;
++}
++static inline int rk_minidump_update_region(int regno, const struct md_region *entry)
++{
++	return 0;
++}
++static inline bool rk_minidump_enabled(void) { return false; }
++static inline void rk_minidump_update_cpu_regs(struct pt_regs *regs) { return; }
++static inline int rk_minidump_hardlock_notify(struct notifier_block *nb,
++					      unsigned long event, void *p)
++{
++	return 0;
++}
++#endif
++
++void rk_md_flush_dcache_area(void *addr, size_t len);
++extern bool (*md_is_ddr_address)(u64 virt_addr);
++#endif /* __RK_MINIDUMP_H */
+diff --git a/include/soc/rockchip/rkfb_dmc.h b/include/soc/rockchip/rkfb_dmc.h
+new file mode 100644
+index 0000000000000..5e82b3194dd34
+--- /dev/null
++++ b/include/soc/rockchip/rkfb_dmc.h
+@@ -0,0 +1,11 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Rockchip devfb driver will probe earlier than devfreq, so it needs to register
++ * dmc_notify after than rk3399 dmc driver.
++*/
++
++#if defined(CONFIG_LCDC_RK322X)
++int vop_register_dmc(void);
++#else
++static inline int vop_register_dmc(void) { return 0;};
++#endif
+diff --git a/include/soc/rockchip/rockchip-mailbox.h b/include/soc/rockchip/rockchip-mailbox.h
+new file mode 100644
+index 0000000000000..72de20b30d595
+--- /dev/null
++++ b/include/soc/rockchip/rockchip-mailbox.h
+@@ -0,0 +1,30 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (C) 2022 Rockchip Electronics Co., Ltd.
++ */
++
++#ifndef __SOC_ROCKCHIP_MAILBOX_H__
++#define __SOC_ROCKCHIP_MAILBOX_H__
++
++#include <linux/errno.h>
++#include <linux/types.h>
++
++struct mbox_chan;
++
++struct rockchip_mbox_msg {
++	u32 cmd;
++	u32 data;
++};
++
++#if IS_REACHABLE(CONFIG_ROCKCHIP_MBOX)
++int rockchip_mbox_read_msg(struct mbox_chan *chan,
++			   struct rockchip_mbox_msg *msg);
++#else
++static inline int rockchip_mbox_read_msg(struct mbox_chan *chan,
++					 struct rockchip_mbox_msg *msg)
++{
++	return -EOPNOTSUPP;
++}
++#endif
++
++#endif /* __SOC_ROCKCHIP_MAILBOX_H__ */
+diff --git a/include/soc/rockchip/rockchip-system-status.h b/include/soc/rockchip/rockchip-system-status.h
+new file mode 100644
+index 0000000000000..5eb53ff2f3f39
+--- /dev/null
++++ b/include/soc/rockchip/rockchip-system-status.h
+@@ -0,0 +1,55 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++/*
++ * Copyright (C) 2019, Fuzhou Rockchip Electronics Co., Ltd
++ */
++
++#ifndef __SOC_ROCKCHIP_SYSTEM_STATUS_H
++#define __SOC_ROCKCHIP_SYSTEM_STATUS_H
++
++#include <dt-bindings/soc/rockchip-system-status.h>
++
++#if IS_REACHABLE(CONFIG_ROCKCHIP_SYSTEM_MONITOR)
++int rockchip_register_system_status_notifier(struct notifier_block *nb);
++int rockchip_unregister_system_status_notifier(struct notifier_block *nb);
++void rockchip_set_system_status(unsigned long status);
++void rockchip_clear_system_status(unsigned long status);
++unsigned long rockchip_get_system_status(void);
++int rockchip_add_system_status_interface(struct device *dev);
++void rockchip_update_system_status(const char *buf);
++#else
++static inline int
++rockchip_register_system_status_notifier(struct notifier_block *nb)
++{
++	return -ENOTSUPP;
++};
++
++static inline int
++rockchip_unregister_system_status_notifier(struct notifier_block *nb)
++{
++	return -ENOTSUPP;
++};
++
++static inline void rockchip_set_system_status(unsigned long status)
++{
++};
++
++static inline void rockchip_clear_system_status(unsigned long status)
++{
++};
++
++static inline unsigned long rockchip_get_system_status(void)
++{
++	return 0;
++};
++
++static inline int rockchip_add_system_status_interface(struct device *dev)
++{
++	return -ENOTSUPP;
++};
++
++static inline void rockchip_update_system_status(const char *buf)
++{
++};
++#endif /* CONFIG_ROCKCHIP_SYSTEM_MONITOR */
++
++#endif
+diff --git a/include/soc/rockchip/rockchip_amp.h b/include/soc/rockchip/rockchip_amp.h
+new file mode 100644
+index 0000000000000..ae7d8c90a97d7
+--- /dev/null
++++ b/include/soc/rockchip/rockchip_amp.h
+@@ -0,0 +1,48 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++/*
++ * Rockchip AMP support.
++ *
++ * Copyright (c) 2023 Rockchip Electronics Co., Ltd.
++ * Author: Tony Xie <tony.xie@rock-chips.com>
++ */
++
++#ifndef _ROCKCHIP_AMP
++#define _ROCKCHIP_AMP
++
++#include <linux/irqchip/arm-gic-common.h>
++
++#if IS_REACHABLE(CONFIG_ROCKCHIP_AMP)
++void rockchip_amp_get_gic_info(u32 spis_num, enum gic_type gic_version);
++int rockchip_amp_check_amp_irq(u32 irq);
++u32 rockchip_amp_get_irq_prio(u32 irq);
++u32 rockchip_amp_get_irq_cpumask(u32 irq);
++u64 rockchip_amp_get_irq_aff(u32 irq);
++int rockchip_amp_need_init_amp_irq(u32 irq);
++#else
++static inline void rockchip_amp_get_gic_info(u32 spis_num,
++					     enum gic_type gic_version)
++{
++}
++
++static inline int rockchip_amp_check_amp_irq(u32 irq)
++{
++	return 0;
++}
++
++static inline u32 rockchip_amp_get_irq_prio(u32 irq)
++{
++	return GICD_INT_DEF_PRI;
++}
++
++static inline u32 rockchip_amp_get_irq_cpumask(u32 irq)
++{
++	return 0;
++}
++
++static inline int rockchip_amp_need_init_amp_irq(u32 irq)
++{
++	return 0;
++}
++
++#endif /* CONFIG_ROCKCHIP_AMP */
++#endif /* _ROCKCHIP_AMP */
+diff --git a/include/soc/rockchip/rockchip_csu.h b/include/soc/rockchip/rockchip_csu.h
+new file mode 100644
+index 0000000000000..be3410069600f
+--- /dev/null
++++ b/include/soc/rockchip/rockchip_csu.h
+@@ -0,0 +1,46 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++/*
++ * Copyright (c) 2023, Rockchip Electronics Co., Ltd.
++ */
++
++#ifndef __SOC_ROCKCHIP_CSU_H
++#define __SOC_ROCKCHIP_CSU_H
++
++#include <dt-bindings/soc/rockchip-csu.h>
++
++#define CSU_MAX_DIV		8
++#define CSU_DIV_MASK		0x7
++#define CSU_EN_MASK		0xefff
++
++struct csu_clk;
++
++#if IS_REACHABLE(CONFIG_ROCKCHIP_CSU)
++struct csu_clk *rockchip_csu_get(struct device *dev, const char *name);
++int rockchip_csu_enable(struct csu_clk *clk);
++int rockchip_csu_disable(struct csu_clk *clk);
++int rockchip_csu_set_div(struct csu_clk *clk, unsigned int div);
++#else
++static inline struct csu_clk *
++rockchip_csu_get(struct device *dev, const char *name)
++{
++	return ERR_PTR(-EOPNOTSUPP);
++}
++
++static inline int rockchip_csu_enable(struct csu_clk *clk)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int rockchip_csu_disable(struct csu_clk *clk)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int
++rockchip_csu_set_div(struct csu_clk *clk, unsigned int div)
++{
++	return -EOPNOTSUPP;
++}
++#endif
++
++#endif
+diff --git a/include/soc/rockchip/rockchip_dmc.h b/include/soc/rockchip/rockchip_dmc.h
+new file mode 100644
+index 0000000000000..f115cdcec291f
+--- /dev/null
++++ b/include/soc/rockchip/rockchip_dmc.h
+@@ -0,0 +1,131 @@
++/*
++ * Copyright (c) 2017, Fuzhou Rockchip Electronics Co., Ltd
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ */
++#ifndef __SOC_ROCKCHIP_DMC_H
++#define __SOC_ROCKCHIP_DMC_H
++
++#include <linux/devfreq.h>
++
++/* for lcdc_type */
++#define SCREEN_NULL		0
++#define SCREEN_RGB		1
++#define SCREEN_LVDS		2
++#define SCREEN_DUAL_LVDS	3
++#define SCREEN_MCU		4
++#define SCREEN_TVOUT		5
++#define SCREEN_HDMI		6
++#define SCREEN_MIPI		7
++#define SCREEN_DUAL_MIPI	8
++#define SCREEN_EDP		9
++#define SCREEN_TVOUT_TEST	10
++#define SCREEN_LVDS_10BIT	11
++#define SCREEN_DUAL_LVDS_10BIT	12
++#define SCREEN_DP		13
++
++#define DMCFREQ_TABLE_END	~1u
++
++struct freq_map_table {
++	unsigned int min;
++	unsigned int max;
++	unsigned long freq;
++};
++
++struct rl_map_table {
++	unsigned int pn; /* panel number */
++	unsigned int rl; /* readlatency */
++};
++
++struct dmcfreq_common_info {
++	struct device *dev;
++	struct devfreq *devfreq;
++	struct freq_map_table *vop_bw_tbl;
++	struct freq_map_table *vop_frame_bw_tbl;
++	struct rl_map_table *vop_pn_rl_tbl;
++	struct delayed_work msch_rl_work;
++	unsigned long vop_4k_rate;
++	unsigned long vop_req_rate;
++	unsigned int read_latency;
++	unsigned int auto_freq_en;
++	unsigned int stall_time_ns;
++	bool is_msch_rl_work_started;
++	int (*set_msch_readlatency)(unsigned int rl);
++};
++
++struct dmcfreq_vop_info {
++	unsigned int line_bw_mbyte;
++	unsigned int frame_bw_mbyte;
++	unsigned int plane_num;
++	unsigned int plane_num_4k;
++};
++
++#if IS_REACHABLE(CONFIG_ARM_ROCKCHIP_DMC_DEVFREQ)
++void rockchip_dmcfreq_lock(void);
++void rockchip_dmcfreq_lock_nested(void);
++void rockchip_dmcfreq_unlock(void);
++int rockchip_dmcfreq_write_trylock(void);
++void rockchip_dmcfreq_write_unlock(void);
++int rockchip_dmcfreq_wait_complete(void);
++int rockchip_dmcfreq_vop_bandwidth_init(struct dmcfreq_common_info *info);
++int rockchip_dmcfreq_vop_bandwidth_request(struct dmcfreq_vop_info *vop_info);
++void rockchip_dmcfreq_vop_bandwidth_update(struct dmcfreq_vop_info *vop_info);
++unsigned int rockchip_dmcfreq_get_stall_time_ns(void);
++#else
++static inline void rockchip_dmcfreq_lock(void)
++{
++}
++
++static inline void rockchip_dmcfreq_lock_nested(void)
++{
++}
++
++static inline void rockchip_dmcfreq_unlock(void)
++{
++}
++
++static inline int rockchip_dmcfreq_write_trylock(void)
++{
++	return 0;
++}
++
++static inline void rockchip_dmcfreq_write_unlock(void)
++{
++}
++
++static inline int rockchip_dmcfreq_wait_complete(void)
++{
++	return 0;
++}
++
++static inline int
++rockchip_dmcfreq_vop_bandwidth_request(struct dmcfreq_vop_info *vop_info)
++{
++	return 0;
++}
++
++static inline void
++rockchip_dmcfreq_vop_bandwidth_update(struct dmcfreq_vop_info *vop_info)
++{
++}
++
++static inline void
++rockchip_dmcfreq_vop_bandwidth_init(struct dmcfreq_common_info *info)
++{
++}
++
++static inline unsigned int
++rockchip_dmcfreq_get_stall_time_ns(void)
++{
++	return 0;
++}
++#endif
++
++#endif
+diff --git a/include/soc/rockchip/rockchip_dvbm.h b/include/soc/rockchip/rockchip_dvbm.h
+new file mode 100644
+index 0000000000000..dd69047a26d4e
+--- /dev/null
++++ b/include/soc/rockchip/rockchip_dvbm.h
+@@ -0,0 +1,161 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (c) 2022 Rockchip Electronics Co., Ltd.
++ */
++#ifndef __SOC_ROCKCHIP_DVBM_H
++#define __SOC_ROCKCHIP_DVBM_H
++
++#include <linux/dma-buf.h>
++#include <linux/platform_device.h>
++
++enum dvbm_port_dir {
++	DVBM_ISP_PORT,
++	DVBM_VEPU_PORT,
++};
++
++enum dvbm_cmd {
++	DVBM_ISP_CMD_BASE   = 0,
++	DVBM_ISP_SET_CFG,
++	DVBM_ISP_FRM_START,
++	DVBM_ISP_FRM_END,
++	DVBM_ISP_FRM_QUARTER,
++	DVBM_ISP_FRM_HALF,
++	DVBM_ISP_FRM_THREE_QUARTERS,
++	DVBM_ISP_CMD_BUTT,
++
++	DVBM_VEPU_CMD_BASE  = 0x10,
++	DVBM_VEPU_SET_RESYNC,
++	DVBM_VEPU_SET_CFG,
++	DVBM_VEPU_GET_ADR,
++	DVBM_VEPU_GET_FRAME_INFO,
++	DVBM_VEPU_DUMP_REGS,
++	DVBM_VEPU_CMD_BUTT,
++};
++
++enum isp_frame_status {
++	ISP_FRAME_START,
++	ISP_FRAME_ONE_QUARTER,
++	ISP_FRAME_HALF,
++	ISP_FRAME_THREE_QUARTERS,
++	ISP_FRAME_FINISH,
++};
++
++enum dvbm_cb_event {
++	DVBM_ISP_EVENT_BASE   = 0,
++	DVBM_ISP_EVENT_BUTT,
++
++	DVBM_VEPU_EVENT_BASE  = 0x10,
++	DVBM_VEPU_NOTIFY_ADDR,
++	DVBM_VEPU_NOTIFY_DUMP,
++	DVBM_VEPU_REQ_CONNECT,
++	DVBM_VEPU_NOTIFY_FRM_STR,
++	DVBM_VEPU_NOTIFY_FRM_END,
++	DVBM_VEPU_NOTIFY_FRM_INFO,
++	DVBM_VEPU_EVENT_BUTT,
++};
++
++struct dvbm_port {
++	enum dvbm_port_dir dir;
++	u32 linked;
++};
++
++struct dvbm_isp_cfg_t {
++	u32 fmt;
++	u32 timeout;
++
++	struct dmabuf *buf;
++	dma_addr_t dma_addr;
++	u32 ybuf_top;
++	u32 ybuf_bot;
++	u32 ybuf_lstd;
++	u32 ybuf_fstd;
++	u32 cbuf_top;
++	u32 cbuf_bot;
++	u32 cbuf_lstd;
++	u32 cbuf_fstd;
++};
++
++struct dvbm_isp_frm_cfg {
++	s32 frm_idx;
++	u32 ybuf_start;
++	u32 cbuf_start;
++};
++
++struct dvbm_isp_frm_info {
++	u32 frame_cnt;
++	u32 line_cnt;
++	u32 wrap_line;
++	u32 max_line_cnt;
++};
++
++struct dvbm_addr_cfg {
++	u32 ybuf_top;
++	u32 ybuf_bot;
++	u32 ybuf_sadr;
++	u32 cbuf_top;
++	u32 cbuf_bot;
++	u32 cbuf_sadr;
++	u32 frame_id;
++	u32 line_cnt;
++	u32 overflow;
++};
++
++struct dvbm_vepu_cfg {
++	u32 auto_resyn;
++	u32 ignore_vepu_cnct_ack;
++	u32 start_point_after_vepu_cnct;
++};
++
++typedef int (*dvbm_callback)(void *ctx, enum dvbm_cb_event event, void *arg);
++
++struct dvbm_cb {
++	dvbm_callback cb;
++	void *ctx;
++	int event;
++};
++
++#if IS_ENABLED(CONFIG_ROCKCHIP_DVBM)
++
++struct dvbm_port *rk_dvbm_get_port(struct platform_device *pdev,
++				   enum dvbm_port_dir dir);
++int rk_dvbm_put(struct dvbm_port *port);
++int rk_dvbm_link(struct dvbm_port *port);
++int rk_dvbm_unlink(struct dvbm_port *port);
++int rk_dvbm_set_cb(struct dvbm_port *port, struct dvbm_cb *cb);
++int rk_dvbm_ctrl(struct dvbm_port *port, enum dvbm_cmd cmd, void *arg);
++
++#else
++
++static inline struct dvbm_port *rk_dvbm_get_port(struct platform_device *pdev,
++						 enum dvbm_port_dir dir)
++{
++	return ERR_PTR(-ENODEV);
++}
++
++static inline int rk_dvbm_put(struct dvbm_port *port)
++{
++	return -ENODEV;
++}
++
++static inline int rk_dvbm_link(struct dvbm_port *port)
++{
++	return -ENODEV;
++}
++static inline int rk_dvbm_unlink(struct dvbm_port *port)
++{
++	return -ENODEV;
++}
++
++static inline int rk_dvbm_set_cb(struct dvbm_port *port, struct dvbm_cb *cb)
++{
++	return -ENODEV;
++}
++
++static inline int rk_dvbm_ctrl(struct dvbm_port *port, enum dvbm_cmd cmd, void *arg)
++{
++	return -ENODEV;
++}
++
++#endif
++
++#endif
+diff --git a/include/soc/rockchip/rockchip_iommu.h b/include/soc/rockchip/rockchip_iommu.h
+new file mode 100644
+index 0000000000000..f5cb9d96f3607
+--- /dev/null
++++ b/include/soc/rockchip/rockchip_iommu.h
+@@ -0,0 +1,89 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (c) 2021 Rockchip Electronics Co., Ltd.
++ */
++#ifndef __SOC_ROCKCHIP_IOMMU_H
++#define __SOC_ROCKCHIP_IOMMU_H
++
++struct device;
++struct iommu_domain;
++struct iommu_iotlb_gather;
++struct platform_device;
++
++/* 1. dev and pdev is iommu device.
++ * 2. store third_iommu data in dev->platform_data.
++ */
++struct third_iommu_ops_wrap {
++	int (*attach_dev)(struct iommu_domain *domain, struct device *dev);
++	void (*detach_dev)(struct iommu_domain *domain, struct device *dev);
++	int (*map)(struct iommu_domain *domain, unsigned long iova,
++		   phys_addr_t paddr, size_t size, int prot, gfp_t gfp,
++		   struct device *dev);
++	size_t (*unmap)(struct iommu_domain *domain, unsigned long iova,
++			size_t size, struct iommu_iotlb_gather *iotlb_gather,
++			struct device *dev);
++	void (*flush_iotlb_all)(struct iommu_domain *domain,
++				struct device *dev);
++	phys_addr_t (*iova_to_phys)(struct iommu_domain *domain,
++				    dma_addr_t iova, struct device *dev);
++	void (*free)(struct iommu_domain *domain, struct device *dev);
++	int (*enable)(struct device *dev);
++	int (*disable)(struct device *dev);
++	void (*shutdown)(struct platform_device *pdev);
++	int (*suspend)(struct device *dev);
++	int (*resume)(struct device *dev);
++	int (*probe)(struct platform_device *pdev);
++};
++
++#if IS_REACHABLE(CONFIG_ROCKCHIP_IOMMU)
++int rockchip_iommu_enable(struct device *dev);
++int rockchip_iommu_disable(struct device *dev);
++int rockchip_pagefault_done(struct device *master_dev);
++void __iomem *rockchip_get_iommu_base(struct device *master_dev, int idx);
++bool rockchip_iommu_is_enabled(struct device *dev);
++void rockchip_iommu_mask_irq(struct device *dev);
++void rockchip_iommu_unmask_irq(struct device *dev);
++int rockchip_iommu_force_reset(struct device *dev);
++#else
++static inline int rockchip_iommu_enable(struct device *dev)
++{
++	return -ENODEV;
++}
++static inline int rockchip_iommu_disable(struct device *dev)
++{
++	return -ENODEV;
++}
++static inline int rockchip_pagefault_done(struct device *master_dev)
++{
++	return 0;
++}
++static inline void __iomem *rockchip_get_iommu_base(struct device *master_dev, int idx)
++{
++	return NULL;
++}
++static inline bool rockchip_iommu_is_enabled(struct device *dev)
++{
++	return false;
++}
++static inline void rockchip_iommu_mask_irq(struct device *dev)
++{
++}
++static inline void rockchip_iommu_unmask_irq(struct device *dev)
++{
++}
++static inline int rockchip_iommu_force_reset(struct device *dev)
++{
++	return -ENODEV;
++}
++#endif
++
++#if IS_ENABLED(CONFIG_ROCKCHIP_MPP_AV1DEC)
++struct third_iommu_ops_wrap *av1d_iommu_get_ops(void);
++#else
++static inline struct third_iommu_ops_wrap *av1d_iommu_get_ops(void)
++{
++	return NULL;
++}
++#endif
++
++#endif
+diff --git a/include/soc/rockchip/rockchip_ipa.h b/include/soc/rockchip/rockchip_ipa.h
+new file mode 100644
+index 0000000000000..cb333f463c7b7
+--- /dev/null
++++ b/include/soc/rockchip/rockchip_ipa.h
+@@ -0,0 +1,40 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (c) 2018 Fuzhou Rockchip Electronics Co., Ltd
++ */
++#ifndef __SOC_ROCKCHIP_IPA_H
++#define __SOC_ROCKCHIP_IPA_H
++
++struct ipa_power_model_data {
++	u32 static_coefficient;
++	u32 dynamic_coefficient;
++	s32 ts[4];			/* temperature scaling factor */
++	struct thermal_zone_device *tz;
++	u32 leakage;
++	u32 ref_leakage;
++	u32 lkg_range[2];		/* min leakage and max leakage */
++	s32 ls[3];			/* leakage scaling factor */
++};
++
++#if IS_ENABLED(CONFIG_ROCKCHIP_IPA)
++struct ipa_power_model_data *rockchip_ipa_power_model_init(struct device *dev,
++							   char *lkg_name);
++unsigned long
++rockchip_ipa_get_static_power(struct ipa_power_model_data *model_data,
++			      unsigned long voltage_mv);
++#else
++static inline struct ipa_power_model_data *
++rockchip_ipa_power_model_init(struct device *dev, char *lkg_name)
++{
++	return ERR_PTR(-ENOTSUPP);
++};
++
++static inline unsigned long
++rockchip_ipa_get_static_power(struct ipa_power_model_data *data,
++			      unsigned long voltage_mv)
++{
++	return 0;
++}
++#endif /* CONFIG_ROCKCHIP_IPA */
++
++#endif
+diff --git a/include/soc/rockchip/rockchip_opp_select.h b/include/soc/rockchip/rockchip_opp_select.h
+new file mode 100644
+index 0000000000000..e11c4cccd4bba
+--- /dev/null
++++ b/include/soc/rockchip/rockchip_opp_select.h
+@@ -0,0 +1,307 @@
++/*
++ * Copyright (c) 2017 Fuzhou Rockchip Electronics Co., Ltd
++ *
++ * SPDX-License-Identifier: GPL-2.0+
++ */
++#ifndef __SOC_ROCKCHIP_OPP_SELECT_H
++#define __SOC_ROCKCHIP_OPP_SELECT_H
++
++#include <linux/pm_opp.h>
++
++#define VOLT_RM_TABLE_END	~1
++
++/*
++ * [0]:      set intermediate rate
++ *           [1]: scaling up rate or scaling down rate
++ * [1]:      add length for pvtpll
++ *           [2:5]: length
++ * [2]:      use low length for pvtpll
++ * [3:5]:    reserved
++ */
++#define OPP_RATE_MASK		0x3f
++
++/* Set intermediate rate */
++#define OPP_INTERMEDIATE_RATE	BIT(0)
++#define OPP_SCALING_UP_RATE	BIT(1)
++#define OPP_SCALING_UP_INTER	(OPP_INTERMEDIATE_RATE | OPP_SCALING_UP_RATE)
++#define OPP_SCALING_DOWN_INTER	OPP_INTERMEDIATE_RATE
++
++/* Add length for pvtpll */
++#define OPP_ADD_LENGTH		BIT(1)
++#define OPP_LENGTH_MASK		0xf
++#define OPP_LENGTH_SHIFT	2
++
++/* Use low length for pvtpll */
++#define OPP_LENGTH_LOW		BIT(2)
++
++struct rockchip_opp_info;
++
++struct volt_rm_table {
++	int volt;
++	int rm;
++};
++
++struct rockchip_opp_data {
++	config_clks_t config_clks;
++	config_regulators_t config_regulators;
++
++	int (*get_soc_info)(struct device *dev, struct device_node *np,
++			    int *bin, int *process);
++	int (*set_soc_info)(struct device *dev, struct device_node *np,
++			    struct rockchip_opp_info *info);
++	int (*set_read_margin)(struct device *dev,
++			       struct rockchip_opp_info *info,
++			       u32 rm);
++};
++
++struct pvtpll_opp_table {
++	unsigned long rate;
++	unsigned long u_volt;
++	unsigned long u_volt_min;
++	unsigned long u_volt_max;
++	unsigned long u_volt_mem;
++	unsigned long u_volt_mem_min;
++	unsigned long u_volt_mem_max;
++};
++
++/**
++ * struct rockchip_opp_info - Rockchip opp info structure
++ * @dev:		The device.
++ * @dvfs_mutex:		Mutex to protect changing volage and scmi clock rate.
++ * @data:		Device-specific opp data.
++ * @opp_table:		Temporary opp table only used when enable pvtpll calibration.
++ * @pvtpll_avg_offset:	Register offset of pvtm value.
++ * @pvtpll_min_rate:	Minimum frequency which needs calibration.
++ * @pvtpll_volt_step:	Voltage step of pvtpll calibration.
++ * @volt_rm_tbl:	Pointer to voltage to memory read margin conversion table.
++ * @grf:		General Register Files regmap.
++ * @dsu_grf:		DSU General Register Files regmap.
++ * @cci_grf:		CCI General Register Files regmap.
++ * @clocks:		Pvtpll clocks.
++ * @nclocks:		Number of pvtpll clock.
++ * @intermediate_threshold_freq: The frequency threshold of intermediate rate.
++ * @low_rm:		The read margin threshold of intermediate rate.
++ * @current_rm:		Current memory read margin.
++ * @target_rm:		Target memory read margin.
++ * @is_runtime_active:	Marks if device's pd is power on.
++ * @opp_token:		Integer replacement for opp_table.
++ * @scale:		Frequency scale.
++ * @bin:		Soc version.
++ * @process:		Process version.
++ * @volt_sel:		Speed grade.
++ * @supported_hw:	Array of version number to support.
++ * @clk:		Device's clock handle.
++ * @is_scmi_clk:	Marks if device's clock is scmi clock.
++ * @regulators:		Supply regulators.
++ * @regulator_count:	Number of power supply regulators.
++ * @init_freq:		Set the initial frequency when init opp table.
++ * @is_rate_volt_checked: Marks if device has checked initial rate and voltage.
++ * @pvtpll_clk_id:      Device's clock id.
++ * @pvtpll_smc:		Marks if smc call of pvtpll is available.
++ * @pvtpll_low_temp:    Marks if device has low temperature pvtpll config.
++ */
++struct rockchip_opp_info {
++	struct device *dev;
++	struct mutex dvfs_mutex;
++	const struct rockchip_opp_data *data;
++	struct pvtpll_opp_table *opp_table;
++	struct regmap *pvtpll_base;
++	unsigned int pvtpll_avg_offset;
++	unsigned int pvtpll_min_rate;
++	unsigned int pvtpll_volt_step;
++
++	struct volt_rm_table *volt_rm_tbl;
++	struct regmap *grf;
++	union {
++		struct regmap *dsu_grf;
++		struct regmap *cci_grf;
++	};
++	struct clk_bulk_data *clocks;
++	int nclocks;
++	unsigned long intermediate_threshold_freq;
++	u32 low_rm;
++	u32 current_rm;
++	u32 target_rm;
++	bool is_runtime_active;
++
++	int opp_token;
++	int scale;
++	int bin;
++	int process;
++	int volt_sel;
++	u32 supported_hw[2];
++
++	struct clk *clk;
++	bool is_scmi_clk;
++	struct regulator **regulators;
++	int regulator_count;
++	unsigned int init_freq;
++	bool is_rate_volt_checked;
++
++	u32 pvtpll_clk_id;
++	bool pvtpll_smc;
++	bool pvtpll_low_temp;
++};
++
++#if IS_ENABLED(CONFIG_ROCKCHIP_OPP)
++int rockchip_of_get_leakage(struct device *dev, char *lkg_name, int *leakage);
++int rockchip_nvmem_cell_read_u8(struct device_node *np, const char *cell_id,
++				u8 *val);
++int rockchip_nvmem_cell_read_u16(struct device_node *np, const char *cell_id,
++				 u16 *val);
++void rockchip_get_opp_data(const struct of_device_id *matches,
++			   struct rockchip_opp_info *info);
++void rockchip_opp_dvfs_lock(struct rockchip_opp_info *info);
++void rockchip_opp_dvfs_unlock(struct rockchip_opp_info *info);
++int rockchip_init_opp_info(struct device *dev, struct rockchip_opp_info *info,
++			   char *clk_name, char *reg_name);
++void rockchip_uninit_opp_info(struct device *dev, struct rockchip_opp_info *info);
++int rockchip_adjust_opp_table(struct device *dev, struct rockchip_opp_info *info);
++int rockchip_get_read_margin(struct device *dev,
++			     struct rockchip_opp_info *info,
++			     unsigned long volt, u32 *target_rm);
++int rockchip_set_read_margin(struct device *dev,
++			     struct rockchip_opp_info *info, u32 rm,
++			     bool is_set_rm);
++int rockchip_set_intermediate_rate(struct device *dev,
++				   struct rockchip_opp_info *info,
++				   struct clk *clk, unsigned long old_freq,
++				   unsigned long new_freq, bool is_scaling_up,
++				   bool is_set_clk);
++int rockchip_opp_set_low_length(struct device *dev, struct device_node *np,
++				struct rockchip_opp_info *opp_info);
++int rockchip_opp_config_regulators(struct device *dev,
++				     struct dev_pm_opp *old_opp,
++				     struct dev_pm_opp *new_opp,
++				     struct regulator **regulators,
++				     unsigned int count,
++				     struct rockchip_opp_info *info);
++int rockchip_opp_config_clks(struct device *dev, struct opp_table *opp_table,
++			     struct dev_pm_opp *opp, void *data,
++			     bool scaling_down, struct rockchip_opp_info *info);
++int rockchip_opp_check_rate_volt(struct device *dev, struct rockchip_opp_info *info);
++int rockchip_init_opp_table(struct device *dev, struct rockchip_opp_info *info,
++			    char *clk_name, char *reg_name);
++void rockchip_uninit_opp_table(struct device *dev,
++			       struct rockchip_opp_info *info);
++#else
++static inline int rockchip_of_get_leakage(struct device *dev, char *lkg_name,
++					  int *leakage)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int rockchip_nvmem_cell_read_u8(struct device_node *np,
++					      const char *cell_id, u8 *val)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int rockchip_nvmem_cell_read_u16(struct device_node *np,
++					       const char *cell_id, u16 *val)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline void rockchip_get_opp_data(const struct of_device_id *matches,
++					 struct rockchip_opp_info *info)
++{
++}
++
++static inline void rockchip_opp_dvfs_lock(struct rockchip_opp_info *info)
++{
++}
++
++static inline void rockchip_opp_dvfs_unlock(struct rockchip_opp_info *info)
++{
++}
++
++static inline int
++rockchip_init_opp_info(struct device *dev, struct rockchip_opp_info *info,
++		       char *clk_name, char *reg_name)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline void
++rockchip_uninit_opp_info(struct device *dev, struct rockchip_opp_info *info)
++{
++}
++
++static inline int
++rockchip_adjust_opp_table(struct device *dev, struct rockchip_opp_info *info)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int rockchip_get_read_margin(struct device *dev,
++					   struct rockchip_opp_info *info,
++					   unsigned long volt, u32 *target_rm)
++{
++	return -EOPNOTSUPP;
++}
++static inline int rockchip_set_read_margin(struct device *dev,
++					   struct rockchip_opp_info *info,
++					   u32 rm, bool is_set_rm)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int
++rockchip_set_intermediate_rate(struct device *dev,
++			       struct rockchip_opp_info *opp_info,
++			       struct clk *clk, unsigned long old_freq,
++			       unsigned long new_freq, bool is_scaling_up,
++			       bool is_set_clk)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int
++rockchip_opp_set_low_length(struct device *dev, struct device_node *np,
++			    struct rockchip_opp_info *opp_info)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int
++rockchip_opp_config_regulators(struct device *dev,
++			       struct dev_pm_opp *old_opp,
++			       struct dev_pm_opp *new_opp,
++			       struct regulator **regulators,
++			       unsigned int count,
++			       struct rockchip_opp_info *info)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int rockchip_opp_config_clks(struct device *dev,
++					   struct opp_table *opp_table,
++					   struct dev_pm_opp *opp, void *data,
++					   bool scaling_down,
++					   struct rockchip_opp_info *info)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int rockchip_opp_check_rate_volt(struct device *dev,
++					       struct rockchip_opp_info *info)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline int
++rockchip_init_opp_table(struct device *dev, struct rockchip_opp_info *info,
++			char *clk_name, char *reg_name)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline void rockchip_uninit_opp_table(struct device *dev,
++					     struct rockchip_opp_info *info)
++{
++}
++
++#endif /* CONFIG_ROCKCHIP_OPP */
++
++#endif
+diff --git a/include/soc/rockchip/rockchip_performance.h b/include/soc/rockchip/rockchip_performance.h
+new file mode 100644
+index 0000000000000..c214ccbfce66e
+--- /dev/null
++++ b/include/soc/rockchip/rockchip_performance.h
+@@ -0,0 +1,33 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (c) 2022 Rockchip Electronics Co., Ltd.
++ */
++#ifndef __SOC_ROCKCHIP_PERFORMANCE_H
++#define __SOC_ROCKCHIP_PERFORMANCE_H
++
++enum {
++	ROCKCHIP_PERFORMANCE_LOW = 0,
++	ROCKCHIP_PERFORMANCE_NORMAL,
++	ROCKCHIP_PERFORMANCE_HIGH
++};
++
++#ifdef CONFIG_ROCKCHIP_PERFORMANCE
++extern int rockchip_perf_get_level(void);
++extern struct cpumask *rockchip_perf_get_cpul_mask(void);
++extern struct cpumask *rockchip_perf_get_cpub_mask(void);
++extern int rockchip_perf_select_rt_cpu(int prev_cpu, struct cpumask *lowest_mask);
++extern bool rockchip_perf_misfit_rt(int cpu);
++extern void rockchip_perf_uclamp_sync_util_min_rt_default(void);
++#else
++static inline int rockchip_perf_get_level(void) { return ROCKCHIP_PERFORMANCE_NORMAL; }
++static inline struct cpumask *rockchip_perf_get_cpul_mask(void) { return NULL; };
++static inline struct cpumask *rockchip_perf_get_cpub_mask(void) { return NULL; };
++static inline int rockchip_perf_select_rt_cpu(int prev_cpu, struct cpumask *lowest_mask)
++{
++	return prev_cpu;
++}
++static inline bool rockchip_perf_misfit_rt(int cpu) { return false; }
++static inline void rockchip_perf_uclamp_sync_util_min_rt_default(void) {}
++#endif
++
++#endif
+diff --git a/include/soc/rockchip/rockchip_rockit.h b/include/soc/rockchip/rockchip_rockit.h
+new file mode 100644
+index 0000000000000..4f0ff242a7adc
+--- /dev/null
++++ b/include/soc/rockchip/rockchip_rockit.h
+@@ -0,0 +1,192 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (c) 2021 Rockchip Electronics Co., Ltd.
++ */
++#ifndef __SOC_ROCKCHIP_ROCKIT_H
++#define __SOC_ROCKCHIP_ROCKIT_H
++
++#include <linux/dma-buf.h>
++#include <linux/rk-isp2-config.h>
++
++#define ROCKIT_BUF_NUM_MAX	5
++#define ROCKIT_ISP_NUM_MAX	3
++#define ROCKIT_STREAM_NUM_MAX	12
++
++#define ROCKIT_VICAP_NUM_MAX	6
++
++enum {
++	RKISP_NORMAL_ONLINE,
++	RKISP_NORMAL_OFFLINE,
++	RKISP_FAST_ONLINE,
++	RKISP_FAST_OFFLINE,
++};
++
++enum function_cmd {
++	ROCKIT_BUF_QUE,
++	ROCKIT_MPIBUF_DONE
++};
++
++struct rkisp_stream_cfg {
++	struct rkisp_rockit_buffer *rkisp_buff[ROCKIT_BUF_NUM_MAX];
++	int buff_id[ROCKIT_BUF_NUM_MAX];
++	void *node;
++	int fps_cnt;
++	int dst_fps;
++	int cur_fps;
++	u64 old_time;
++	bool is_discard;
++	struct mutex freebuf_lock;
++};
++
++struct ISP_VIDEO_FRAMES {
++	u32	pMbBlk;
++	u32	u32Width;
++	u32	u32Height;
++	u32	u32VirWidth;
++	u32	u32VirHeight;
++	u32	enField;
++	u32	enPixelFormat;
++	u32	enVideoFormat;
++	u32	enCompressMode;
++	u32	enDynamicRange;
++	u32	enColorGamut;
++	u32	u32TimeRef;
++	u64	u64PTS;
++
++	u64	u64PrivateData;
++	u32	u32FrameFlag;     /* FRAME_FLAG_E, can be OR operation. */
++	u8	ispEncCnt;
++};
++
++struct rkisp_dev_cfg {
++	char *isp_name;
++	void *isp_dev;
++	struct rkisp_stream_cfg rkisp_stream_cfg[ROCKIT_STREAM_NUM_MAX];
++};
++
++struct rockit_cfg {
++	bool is_alloc;
++	bool is_empty;
++	bool is_qbuf;
++	bool is_color;
++	char *current_name;
++	dma_addr_t dma_addr;
++	int *buff_id;
++	int mpi_id;
++	int isp_num;
++	u32 nick_id;
++	u32 event;
++	u32 y_offset;
++	u32 u_offset;
++	u32 v_offset;
++	u32 vir_width;
++	void *node;
++	void *mpibuf;
++	void *vvi_dev[ROCKIT_ISP_NUM_MAX];
++	struct dma_buf *buf;
++	struct ISP_VIDEO_FRAMES frame;
++	struct rkisp_dev_cfg rkisp_dev_cfg[ROCKIT_ISP_NUM_MAX];
++	int (*rkisp_rockit_mpibuf_done)(struct rockit_cfg *rockit_isp_cfg);
++};
++
++struct rkcif_stream_cfg {
++	struct rkcif_rockit_buffer *rkcif_buff[ROCKIT_BUF_NUM_MAX];
++	int buff_id[ROCKIT_BUF_NUM_MAX];
++	void *node;
++	int fps_cnt;
++	int dst_fps;
++	int cur_fps;
++	u64 old_time;
++	bool is_discard;
++};
++
++struct rkcif_dev_cfg {
++	const char *cif_name;
++	void *cif_dev;
++	struct rkcif_stream_cfg rkcif_stream_cfg[ROCKIT_STREAM_NUM_MAX];
++};
++
++struct rockit_rkcif_cfg {
++	bool is_alloc;
++	bool is_empty;
++	bool is_qbuf;
++	const char *cur_name;
++	int *buff_id;
++	int mpi_id;
++	u32 nick_id;
++	u32 event;
++	int cif_num;
++	void *node;
++	void *mpibuf;
++	void *vvi_dev[ROCKIT_VICAP_NUM_MAX];
++	struct dma_buf *buf;
++	struct ISP_VIDEO_FRAMES frame;
++	struct rkcif_dev_cfg rkcif_dev_cfg[ROCKIT_VICAP_NUM_MAX];
++	int (*rkcif_rockit_mpibuf_done)(struct rockit_rkcif_cfg *rockit_cif_cfg);
++};
++
++#if IS_ENABLED(CONFIG_VIDEO_ROCKCHIP_ISP_VERSION_V32) || IS_ENABLED(CONFIG_VIDEO_ROCKCHIP_ISP_VERSION_V33)
++
++void *rkisp_rockit_function_register(void *function, int cmd);
++int rkisp_rockit_get_ispdev(char **name);
++int rkisp_rockit_get_isp_mode(const char *name);
++int rkisp_rockit_buf_queue(struct rockit_cfg *input_rockit_cfg);
++int rkisp_rockit_pause_stream(struct rockit_cfg *input_rockit_cfg);
++int rkisp_rockit_resume_stream(struct rockit_cfg *input_rockit_cfg);
++int rkisp_rockit_config_stream(struct rockit_cfg *input_rockit_cfg,
++				int width, int height, int wrap_line);
++int rkisp_rockit_get_tb_stream_info(struct rockit_cfg *input_rockit_cfg,
++				    struct rkisp_tb_stream_info *info);
++int rkisp_rockit_free_tb_stream_buf(struct rockit_cfg *input_rockit_cfg);
++int rkisp_rockit_free_stream_buf(struct rockit_cfg *input_rockit_cfg);
++
++void *rkcif_rockit_function_register(void *function, int cmd);
++int rkcif_rockit_get_cifdev(char **name);
++int rkcif_rockit_buf_queue(struct rockit_rkcif_cfg *input_rockit_cfg);
++int rkcif_rockit_config_stream(struct rockit_rkcif_cfg *input_rockit_cfg,
++				int width, int height, int v4l2_fmt);
++int rkcif_rockit_resume_stream(struct rockit_rkcif_cfg *input_rockit_cfg);
++int rkcif_rockit_pause_stream(struct rockit_rkcif_cfg *input_rockit_cfg);
++
++#else
++
++static inline void *rkisp_rockit_function_register(void *function, int cmd) { return NULL; }
++static inline int rkisp_rockit_get_ispdev(char **name) { return -EINVAL; }
++static inline int rkisp_rockit_get_isp_mode(const char *name) { return -EINVAL; }
++static inline int rkisp_rockit_buf_queue(struct rockit_cfg *input_rockit_cfg)
++{
++	return -EINVAL;
++}
++static inline int rkisp_rockit_pause_stream(struct rockit_cfg *input_rockit_cfg)
++{
++	return -EINVAL;
++}
++static inline int rkisp_rockit_resume_stream(struct rockit_cfg *input_rockit_cfg)
++{
++	return -EINVAL;
++}
++static inline int rkisp_rockit_config_stream(struct rockit_cfg *input_rockit_cfg,
++					     int width, int height, int wrap_line)
++{
++	return -EINVAL;
++}
++
++static inline int rkisp_rockit_get_tb_stream_info(struct rockit_cfg *input_rockit_cfg,
++						  struct rkisp_tb_stream_info *info)
++{
++	return -EINVAL;
++}
++
++static inline int rkisp_rockit_free_tb_stream_buf(struct rockit_cfg *input_rockit_cfg)
++{
++	return -EINVAL;
++}
++
++static inline int rkisp_rockit_free_stream_buf(struct rockit_cfg *input_rockit_cfg)
++{
++	return -EINVAL;
++}
++
++#endif
++
++#endif
+diff --git a/include/soc/rockchip/rockchip_sip.h b/include/soc/rockchip/rockchip_sip.h
+index 501ad1fedb201..7e9e77f065cc1 100644
+--- a/include/soc/rockchip/rockchip_sip.h
++++ b/include/soc/rockchip/rockchip_sip.h
+@@ -19,5 +19,16 @@
+ #define ROCKCHIP_SIP_CONFIG_DRAM_CLR_IRQ	0x06
+ #define ROCKCHIP_SIP_CONFIG_DRAM_SET_PARAM	0x07
+ #define ROCKCHIP_SIP_CONFIG_DRAM_SET_ODT_PD	0x08
++#define ROCKCHIP_SIP_CONFIG_DRAM_GET_VERSION	0x08
++#define ROCKCHIP_SIP_CONFIG_DRAM_POST_SET_RATE	0x09
++#define ROCKCHIP_SIP_CONFIG_DRAM_SET_MSCH_RL	0x0a
++#define ROCKCHIP_SIP_CONFIG_DRAM_DEBUG		0x0b
++#define ROCKCHIP_SIP_CONFIG_MCU_START		0x0c
++#define ROCKCHIP_SIP_CONFIG_DRAM_ECC		0x0d
++#define ROCKCHIP_SIP_CONFIG_DRAM_GET_FREQ_INFO	0x0e
++#define ROCKCHIP_SIP_CONFIG_DRAM_ADDRMAP_GET	0x10
++#define ROCKCHIP_SIP_CONFIG_DRAM_GET_STALL_TIME	0x11
++#define ROCKCHIP_SIP_CONFIG_DRAM_ECC_POISON	0x12
++#define ROCKCHIP_SIP_CONFIG_DRAM_TREFI_UPD	0x13
+ 
+ #endif
+diff --git a/include/soc/rockchip/rockchip_system_monitor.h b/include/soc/rockchip/rockchip_system_monitor.h
+new file mode 100644
+index 0000000000000..6ee14d5d8d5fc
+--- /dev/null
++++ b/include/soc/rockchip/rockchip_system_monitor.h
+@@ -0,0 +1,229 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++/*
++ * Copyright (C) 2019, Fuzhou Rockchip Electronics Co., Ltd
++ */
++
++#ifndef __SOC_ROCKCHIP_SYSTEM_MONITOR_H
++#define __SOC_ROCKCHIP_SYSTEM_MONITOR_H
++
++#include <linux/pm_opp.h>
++#include <linux/pm_qos.h>
++#include <linux/regulator/consumer.h>
++
++enum monitor_dev_type {
++	MONITOR_TYPE_CPU = 0,	/* CPU */
++	MONITOR_TYPE_DEV,	/* GPU, NPU, DMC, and so on */
++};
++
++enum system_monitor_event_type {
++	SYSTEM_MONITOR_CHANGE_TEMP = 0,
++};
++
++struct system_monitor_event_data {
++	int temp;
++};
++
++struct volt_adjust_table {
++	unsigned int min;	/* Minimum frequency in MHz */
++	unsigned int max;	/* Maximum frequency in MHz */
++	int volt;		/* Voltage in microvolt */
++};
++
++struct temp_freq_table {
++	int temp;		/* millicelsius */
++	unsigned int freq;	/* KHz */
++};
++
++/**
++ * struct temp_opp_table - System monitor device OPP description structure
++ * @rate:		Frequency in hertz
++ * @volt:		Target voltage in microvolt
++ * @mem_volt:		Target voltage for memory in microvolt
++ * @low_temp_volt:	Target voltage when low temperature, in microvolt
++ * @low_temp_mem_volt:	Target voltage for memory when low temperature,
++ *			in microvolt
++ * @max_volt:		Maximum voltage in microvolt
++ * @max_mem_volt:	Maximum voltage for memory in microvolt
++ */
++struct temp_opp_table {
++	unsigned long rate;
++	unsigned long volt;
++	unsigned long mem_volt;
++	unsigned long low_temp_volt;
++	unsigned long low_temp_mem_volt;
++	unsigned long max_volt;
++	unsigned long max_mem_volt;
++};
++
++/**
++ * struct monitor_dev_info - structure for a system monitor device
++ * @dev:		Device registered by system monitor
++ * @low_temp_adjust_table:	Voltage margin for different OPPs when lowe
++ *				temperature
++ * @opp_table:		Frequency and voltage information of device
++ * @devp:		Device-specific system monitor profile
++ * @node:		Node in monitor_dev_list
++ * @high_limit_table:	Limit maximum frequency at different temperature,
++ *			but the frequency is also changed by thermal framework.
++ * @max_temp_freq_req:	CPU maximum frequency constraint changed according
++ *			to temperature.
++ * @min_sta_freq_req:   CPU minimum frequency constraint changed according
++ *			to system status.
++ * @max_sta_freq_req:   CPU maximum frequency constraint changed according
++ *			to system status.
++ * @dev_max_freq_req:	Devices maximum frequency constraint changed according
++ *			to temperature.
++ * @early_reg:		Supply regulator during kernel startup.
++ * @low_limit:		Limit maximum frequency when low temperature, in Hz
++ * @high_limit:		Limit maximum frequency when high temperature, in Hz
++ * @max_volt:		Maximum voltage in microvolt
++ * @low_temp_min_volt:	Minimum voltage of OPPs when low temperature, in
++ *			microvolt
++ * @high_temp_max_volt:	Maximum voltage when high temperature, in microvolt
++ * @video_4k_freq:	Maximum frequency when paly 4k video, in KHz
++ * @reboot_freq:	Limit maximum and minimum frequency when reboot, in KHz
++ * @status_min_limit:	Minimum frequency of some status frequency, in KHz
++ * @status_max_limit:	Minimum frequency of all status frequency, in KHz
++ * @early_min_volt:	Minimum voltage during kernel startup.
++ * @low_temp:		Low temperature trip point, in millicelsius
++ * @high_temp:		High temperature trip point, in millicelsius
++ * @temp_hysteresis:	A low hysteresis value on low_temp, in millicelsius
++ * @is_low_temp:	True if current temperature less than low_temp
++ * @is_high_temp:	True if current temperature greater than high_temp
++ * @is_low_temp_enabled:	True if device node contains low temperature
++ *				configuration
++ */
++struct monitor_dev_info {
++	struct device *dev;
++	struct volt_adjust_table *low_temp_adjust_table;
++	struct temp_opp_table *opp_table;
++	struct monitor_dev_profile *devp;
++	struct list_head node;
++	struct temp_freq_table *high_limit_table;
++	struct freq_qos_request max_temp_freq_req;
++	struct freq_qos_request min_sta_freq_req;
++	struct freq_qos_request max_sta_freq_req;
++	struct dev_pm_qos_request dev_max_freq_req;
++	struct regulator *early_reg[2];
++	unsigned long low_limit;
++	unsigned long high_limit;
++	unsigned long max_volt;
++	unsigned long low_temp_min_volt;
++	unsigned long high_temp_max_volt;
++	unsigned int early_suspend_freq;
++	unsigned int video_4k_freq;
++	unsigned int reboot_freq;
++	unsigned int status_min_limit;
++	unsigned int status_max_limit;
++	unsigned int early_min_volt[2];
++	int low_temp;
++	int high_temp;
++	int temp_hysteresis;
++	bool is_low_temp;
++	bool is_high_temp;
++	bool is_low_temp_enabled;
++};
++
++struct monitor_dev_profile {
++	enum monitor_dev_type type;
++	void *data;
++	int (*low_temp_adjust)(struct monitor_dev_info *info, bool is_low);
++	int (*high_temp_adjust)(struct monitor_dev_info *info, bool is_low);
++	int (*check_rate_volt)(struct monitor_dev_info *info);
++	struct cpumask allowed_cpus;
++	struct rockchip_opp_info *opp_info;
++};
++
++#if IS_REACHABLE(CONFIG_ROCKCHIP_SYSTEM_MONITOR)
++struct monitor_dev_info *
++rockchip_system_monitor_register(struct device *dev,
++				 struct monitor_dev_profile *devp);
++void rockchip_system_monitor_unregister(struct monitor_dev_info *info);
++int rockchip_monitor_cpu_low_temp_adjust(struct monitor_dev_info *info,
++					 bool is_low);
++int rockchip_monitor_cpu_high_temp_adjust(struct monitor_dev_info *info,
++					  bool is_high);
++int rockchip_monitor_check_rate_volt(struct monitor_dev_info *info);
++int rockchip_monitor_dev_low_temp_adjust(struct monitor_dev_info *info,
++					 bool is_low);
++int rockchip_monitor_dev_high_temp_adjust(struct monitor_dev_info *info,
++					  bool is_high);
++int rockchip_monitor_suspend_low_temp_adjust(int cpu);
++int rockchip_system_monitor_register_notifier(struct notifier_block *nb);
++void rockchip_system_monitor_unregister_notifier(struct notifier_block *nb);
++#else
++static inline struct monitor_dev_info *
++rockchip_system_monitor_register(struct device *dev,
++				 struct monitor_dev_profile *devp)
++{
++	return ERR_PTR(-ENOTSUPP);
++};
++
++static inline void
++rockchip_system_monitor_unregister(struct monitor_dev_info *info)
++{
++}
++
++static inline int
++rockchip_monitor_cpu_low_temp_adjust(struct monitor_dev_info *info, bool is_low)
++{
++	return 0;
++};
++
++static inline int
++rockchip_monitor_cpu_high_temp_adjust(struct monitor_dev_info *info,
++				      bool is_high)
++{
++	return 0;
++};
++
++static inline int
++rockchip_monitor_check_rate_volt(struct monitor_dev_info *info)
++{
++	return 0;
++}
++
++static inline int
++rockchip_monitor_dev_low_temp_adjust(struct monitor_dev_info *info, bool is_low)
++{
++	return 0;
++};
++
++static inline int
++rockchip_monitor_dev_high_temp_adjust(struct monitor_dev_info *info,
++				      bool is_high)
++{
++	return 0;
++};
++
++static inline int rockchip_monitor_suspend_low_temp_adjust(int cpu)
++{
++	return 0;
++};
++
++static inline int
++rockchip_system_monitor_register_notifier(struct notifier_block *nb)
++{
++	return 0;
++};
++
++static inline void
++rockchip_system_monitor_unregister_notifier(struct notifier_block *nb)
++{
++};
++#endif /* CONFIG_ROCKCHIP_SYSTEM_MONITOR */
++
++#ifdef CONFIG_ROCKCHIP_EARLYSUSPEND
++void rockchip_request_early_suspend(void);
++void rockchip_request_late_resume(void);
++#else
++static inline void rockchip_request_early_suspend(void)
++{
++}
++
++static inline void rockchip_request_late_resume(void)
++{
++}
++#endif
++
++#endif
+-- 
+2.42.0
+

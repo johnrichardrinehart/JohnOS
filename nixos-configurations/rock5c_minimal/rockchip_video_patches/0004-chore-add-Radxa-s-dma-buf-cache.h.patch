@@ -1,0 +1,51 @@
+From a835badddee6a8c40554bacef71ada1670f26de6 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Wed, 20 Aug 2025 08:02:43 -0700
+Subject: [PATCH 04/14] chore: add Radxa's dma-buf-cache.h
+
+---
+ include/linux/dma-buf-cache.h | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+ create mode 100644 include/linux/dma-buf-cache.h
+
+diff --git a/include/linux/dma-buf-cache.h b/include/linux/dma-buf-cache.h
+new file mode 100644
+index 0000000000000..0cf3ec91fe6d1
+--- /dev/null
++++ b/include/linux/dma-buf-cache.h
+@@ -0,0 +1,32 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++/*
++ * Copyright (c) 2021 Rockchip Electronics Co., Ltd.
++ */
++#ifndef _LINUX_DMA_BUF_CACHE_H
++#define _LINUX_DMA_BUF_CACHE_H
++
++#include <linux/dma-buf.h>
++
++extern void dma_buf_cache_detach(struct dma_buf *dmabuf,
++				 struct dma_buf_attachment *attach);
++
++extern void dma_buf_cache_unmap_attachment(struct dma_buf_attachment *attach,
++					   struct sg_table *sg_table,
++					   enum dma_data_direction direction);
++
++extern struct dma_buf_attachment *
++dma_buf_cache_attach(struct dma_buf *dmabuf, struct device *dev);
++
++extern struct sg_table *
++dma_buf_cache_map_attachment(struct dma_buf_attachment *attach,
++			     enum dma_data_direction direction);
++
++#ifdef CONFIG_DMABUF_CACHE
++/* Replace dma-buf apis to cached apis */
++#define dma_buf_attach dma_buf_cache_attach
++#define dma_buf_detach dma_buf_cache_detach
++#define dma_buf_map_attachment dma_buf_cache_map_attachment
++#define dma_buf_unmap_attachment dma_buf_cache_unmap_attachment
++#endif
++
++#endif /* _LINUX_DMA_BUF_CACHE_H */
+-- 
+2.42.0
+

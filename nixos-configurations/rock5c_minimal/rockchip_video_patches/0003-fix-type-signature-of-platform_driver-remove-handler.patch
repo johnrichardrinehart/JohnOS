@@ -1,0 +1,774 @@
+From c9cd0f98a6321ab91ee37fc3bd9b8f3ecfbbc4f8 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Wed, 20 Aug 2025 04:19:59 -0700
+Subject: [PATCH 03/14] fix: type signature of platform_driver remove handler
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+fix: hrtimer_init → hrtimer_setup
+fix: wrap MODULE_IMPORT_NS arg with quotes
+fix: MAX_ORDER → MAX_PAGE_ORDER (5e0a760b44417f7cadd79de2204d6247109558a0)
+fix: add GFP_KERNEL to iommu_map_sg (f2b2c051be6262edc3c6fce50d3d4f01b59ba228)
+fix: remove vma arg from get_user_pages_remote (ca5e863233e8f6acd1792fd85d6bc2729a1b2c10)
+fix: remove THIS_MODULE from class_create (1aaba11da9aa7d7d6b52a74d45b31cac118295a1)
+---
+ drivers/video/rockchip/dvbm/rockchip_dvbm.c |  4 +---
+ drivers/video/rockchip/iep/iep_drv.c        |  6 ++----
+ drivers/video/rockchip/mpp/mpp_av1dec.c     |  4 +---
+ drivers/video/rockchip/mpp/mpp_iep2.c       |  6 ++----
+ drivers/video/rockchip/mpp/mpp_jpgdec.c     |  4 +---
+ drivers/video/rockchip/mpp/mpp_jpgenc.c     |  3 +--
+ drivers/video/rockchip/mpp/mpp_rkvdec.c     |  6 ++----
+ drivers/video/rockchip/mpp/mpp_rkvdec2.c    | 10 ++++------
+ drivers/video/rockchip/mpp/mpp_rkvenc.c     |  6 ++----
+ drivers/video/rockchip/mpp/mpp_rkvenc2.c    | 10 ++++------
+ drivers/video/rockchip/mpp/mpp_service.c    |  8 +++-----
+ drivers/video/rockchip/mpp/mpp_vdpp.c       |  4 +---
+ drivers/video/rockchip/mpp/mpp_vdpu1.c      |  4 +---
+ drivers/video/rockchip/mpp/mpp_vdpu2.c      |  4 +---
+ drivers/video/rockchip/mpp/mpp_vepu1.c      |  4 +---
+ drivers/video/rockchip/mpp/mpp_vepu2.c      |  4 +---
+ drivers/video/rockchip/rga/rga_drv.c        |  3 +--
+ drivers/video/rockchip/rga/rga_mmu_info.c   |  3 +--
+ drivers/video/rockchip/rga2/rga2_drv.c      |  3 +--
+ drivers/video/rockchip/rga2/rga2_mmu_info.c |  2 +-
+ drivers/video/rockchip/rga3/rga_dma_buf.c   |  9 +++++++--
+ drivers/video/rockchip/rga3/rga_drv.c       | 11 ++++-------
+ drivers/video/rockchip/rga3/rga_iommu.c     |  8 ++++----
+ drivers/video/rockchip/rga3/rga_mm.c        | 14 +++++++-------
+ drivers/video/rockchip/rve/rve_drv.c        |  8 ++------
+ drivers/video/rockchip/vtunnel/rkvtunnel.c  |  4 +---
+ 26 files changed, 57 insertions(+), 95 deletions(-)
+
+diff --git a/drivers/video/rockchip/dvbm/rockchip_dvbm.c b/drivers/video/rockchip/dvbm/rockchip_dvbm.c
+index 2e40a7e78e78b..3e99ec4fda36b 100644
+--- a/drivers/video/rockchip/dvbm/rockchip_dvbm.c
++++ b/drivers/video/rockchip/dvbm/rockchip_dvbm.c
+@@ -704,7 +704,7 @@ static int rk_dvbm_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-static int rk_dvbm_remove(struct platform_device *pdev)
++static void rk_dvbm_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 
+@@ -714,8 +714,6 @@ static int rk_dvbm_remove(struct platform_device *pdev)
+ 		pm_runtime_put(dev);
+ 	}
+ 	pm_runtime_disable(dev);
+-
+-	return 0;
+ }
+ 
+ static const struct of_device_id rk_dvbm_dt_ids[] = {
+diff --git a/drivers/video/rockchip/iep/iep_drv.c b/drivers/video/rockchip/iep/iep_drv.c
+index 783cdee17112c..d3027989c5b4b 100644
+--- a/drivers/video/rockchip/iep/iep_drv.c
++++ b/drivers/video/rockchip/iep/iep_drv.c
+@@ -1071,7 +1071,7 @@ static int iep_drv_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-static int iep_drv_remove(struct platform_device *pdev)
++static void iep_drv_remove(struct platform_device *pdev)
+ {
+ 	struct iep_drvdata *data = platform_get_drvdata(pdev);
+ 
+@@ -1086,8 +1086,6 @@ static int iep_drv_remove(struct platform_device *pdev)
+ #ifdef IEP_CLK_ENABLE
+ 	pm_runtime_disable(data->dev);
+ #endif
+-
+-	return 0;
+ }
+ 
+ #if defined(CONFIG_OF)
+@@ -1210,7 +1208,7 @@ module_exit(iep_exit);
+ MODULE_AUTHOR("ljf@rock-chips.com");
+ MODULE_DESCRIPTION("Driver for iep device");
+ MODULE_LICENSE("GPL");
+-MODULE_IMPORT_NS(DMA_BUF);
++MODULE_IMPORT_NS("DMA_BUF");
+ 
+ #ifdef IEP_TEST_CASE
+ 
+diff --git a/drivers/video/rockchip/mpp/mpp_av1dec.c b/drivers/video/rockchip/mpp/mpp_av1dec.c
+index 33fdc776be302..43d49ea14f90c 100644
+--- a/drivers/video/rockchip/mpp/mpp_av1dec.c
++++ b/drivers/video/rockchip/mpp/mpp_av1dec.c
+@@ -1039,7 +1039,7 @@ static int av1dec_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-static int av1dec_remove(struct platform_device *pdev)
++static void av1dec_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct mpp_dev *mpp = platform_get_drvdata(pdev);
+@@ -1047,8 +1047,6 @@ static int av1dec_remove(struct platform_device *pdev)
+ 	dev_info(dev, "remove device\n");
+ 	mpp_dev_remove(mpp);
+ 	av1dec_procfs_remove(mpp);
+-
+-	return 0;
+ }
+ 
+ struct platform_driver rockchip_av1dec_driver = {
+diff --git a/drivers/video/rockchip/mpp/mpp_iep2.c b/drivers/video/rockchip/mpp/mpp_iep2.c
+index 8a90b3bfa7ff4..245bedc97355d 100644
+--- a/drivers/video/rockchip/mpp/mpp_iep2.c
++++ b/drivers/video/rockchip/mpp/mpp_iep2.c
+@@ -860,7 +860,7 @@ static void iep2_iommu_handle_work(struct work_struct *work_s)
+ 	page_iova = round_down(iep->fault_iova, AUX_PAGE_SIZE);
+ 	ret = iommu_map(mpp->iommu_info->domain, page_iova,
+ 			page_to_phys(iep->aux_page), AUX_PAGE_SIZE,
+-			IOMMU_READ);
++			IOMMU_READ, GFP_KERNEL);
+ 	if (ret)
+ 		mpp_err("iommu_map iova %lx error.\n", page_iova);
+ 	else
+@@ -1137,7 +1137,7 @@ static int iep2_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static int iep2_remove(struct platform_device *pdev)
++static void iep2_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct mpp_dev *mpp = dev_get_drvdata(dev);
+@@ -1148,8 +1148,6 @@ static int iep2_remove(struct platform_device *pdev)
+ 	dev_info(dev, "remove device\n");
+ 	mpp_dev_remove(mpp);
+ 	iep2_procfs_remove(mpp);
+-
+-	return 0;
+ }
+ 
+ struct platform_driver rockchip_iep2_driver = {
+diff --git a/drivers/video/rockchip/mpp/mpp_jpgdec.c b/drivers/video/rockchip/mpp/mpp_jpgdec.c
+index 732126e83c75b..ccbaabbcf2a62 100644
+--- a/drivers/video/rockchip/mpp/mpp_jpgdec.c
++++ b/drivers/video/rockchip/mpp/mpp_jpgdec.c
+@@ -635,7 +635,7 @@ static int jpgdec_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static int jpgdec_remove(struct platform_device *pdev)
++static void jpgdec_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct mpp_dev *mpp = dev_get_drvdata(dev);
+@@ -643,8 +643,6 @@ static int jpgdec_remove(struct platform_device *pdev)
+ 	dev_info(dev, "remove device\n");
+ 	mpp_dev_remove(mpp);
+ 	jpgdec_procfs_remove(mpp);
+-
+-	return 0;
+ }
+ 
+ struct platform_driver rockchip_jpgdec_driver = {
+diff --git a/drivers/video/rockchip/mpp/mpp_jpgenc.c b/drivers/video/rockchip/mpp/mpp_jpgenc.c
+index 922f962a4a433..f587cff8bf44e 100644
+--- a/drivers/video/rockchip/mpp/mpp_jpgenc.c
++++ b/drivers/video/rockchip/mpp/mpp_jpgenc.c
+@@ -628,7 +628,7 @@ static int jpgenc_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static int jpgenc_remove(struct platform_device *pdev)
++static void jpgenc_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct mpp_dev *mpp = dev_get_drvdata(dev);
+@@ -636,7 +636,6 @@ static int jpgenc_remove(struct platform_device *pdev)
+ 	dev_info(dev, "remove device\n");
+ 	mpp_dev_remove(mpp);
+ 	jpgenc_procfs_remove(mpp);
+-	return 0;
+ }
+ 
+ struct platform_driver rockchip_jpgenc_driver = {
+diff --git a/drivers/video/rockchip/mpp/mpp_rkvdec.c b/drivers/video/rockchip/mpp/mpp_rkvdec.c
+index 89214c2c7e5b3..05a1ae02ab7b8 100644
+--- a/drivers/video/rockchip/mpp/mpp_rkvdec.c
++++ b/drivers/video/rockchip/mpp/mpp_rkvdec.c
+@@ -1214,7 +1214,7 @@ static int rkvdec_3328_iommu_hdl(struct iommu_domain *iommu,
+ 		page_iova = round_down(iova, IOMMU_PAGE_SIZE);
+ 		ret = iommu_map(mpp->iommu_info->domain, page_iova,
+ 				page_to_phys(dec->aux_page), IOMMU_PAGE_SIZE,
+-				IOMMU_READ | IOMMU_WRITE);
++				IOMMU_READ | IOMMU_WRITE, GFP_KERNEL);
+ 		if (!ret)
+ 			dec->aux_iova = page_iova;
+ 	}
+@@ -1903,7 +1903,7 @@ static int rkvdec_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static int rkvdec_remove(struct platform_device *pdev)
++static void rkvdec_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct mpp_dev *mpp = platform_get_drvdata(pdev);
+@@ -1911,8 +1911,6 @@ static int rkvdec_remove(struct platform_device *pdev)
+ 	dev_info(dev, "remove device\n");
+ 	mpp_dev_remove(mpp);
+ 	rkvdec_procfs_remove(mpp);
+-
+-	return 0;
+ }
+ 
+ struct platform_driver rockchip_rkvdec_driver = {
+diff --git a/drivers/video/rockchip/mpp/mpp_rkvdec2.c b/drivers/video/rockchip/mpp/mpp_rkvdec2.c
+index 2168851006161..1b0a18b5c674f 100644
+--- a/drivers/video/rockchip/mpp/mpp_rkvdec2.c
++++ b/drivers/video/rockchip/mpp/mpp_rkvdec2.c
+@@ -1768,7 +1768,7 @@ static int rkvdec2_alloc_rcbbuf(struct platform_device *pdev, struct rkvdec2_dev
+ 	sram_size = rcb_size < sram_size ? rcb_size : sram_size;
+ 	/* iova map to sram */
+ 	domain = dec->mpp.iommu_info->domain;
+-	ret = iommu_map(domain, iova, sram_start, sram_size, IOMMU_READ | IOMMU_WRITE);
++	ret = iommu_map(domain, iova, sram_start, sram_size, IOMMU_READ | IOMMU_WRITE, GFP_KERNEL);
+ 	if (ret) {
+ 		dev_err(dev, "sram iommu_map error.\n");
+ 		return ret;
+@@ -1786,7 +1786,7 @@ static int rkvdec2_alloc_rcbbuf(struct platform_device *pdev, struct rkvdec2_dev
+ 		}
+ 		/* iova map to dma */
+ 		ret = iommu_map(domain, iova + sram_size, page_to_phys(page),
+-				page_size, IOMMU_READ | IOMMU_WRITE);
++				page_size, IOMMU_READ | IOMMU_WRITE, GFP_KERNEL);
+ 		if (ret) {
+ 			dev_err(dev, "page iommu_map error.\n");
+ 			__free_pages(page, get_order(page_size));
+@@ -2008,7 +2008,7 @@ static int rkvdec2_free_rcbbuf(struct platform_device *pdev, struct rkvdec2_dev
+ 
+ 	if (dec->rcb_page) {
+ 		size_t page_size = PAGE_ALIGN(dec->rcb_size - dec->sram_size);
+-		int order = min(get_order(page_size), MAX_ORDER);
++		int order = min(get_order(page_size), MAX_PAGE_ORDER);
+ 
+ 		__free_pages(dec->rcb_page, order);
+ 	}
+@@ -2020,7 +2020,7 @@ static int rkvdec2_free_rcbbuf(struct platform_device *pdev, struct rkvdec2_dev
+ 	return 0;
+ }
+ 
+-static int rkvdec2_remove(struct platform_device *pdev)
++static void rkvdec2_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 
+@@ -2041,8 +2041,6 @@ static int rkvdec2_remove(struct platform_device *pdev)
+ 		rkvdec2_procfs_remove(mpp);
+ 		rkvdec2_link_remove(mpp, dec->link_dec);
+ 	}
+-
+-	return 0;
+ }
+ 
+ static void rkvdec2_shutdown(struct platform_device *pdev)
+diff --git a/drivers/video/rockchip/mpp/mpp_rkvenc.c b/drivers/video/rockchip/mpp/mpp_rkvenc.c
+index 5ab7441b178f7..edd5fbdf43b45 100644
+--- a/drivers/video/rockchip/mpp/mpp_rkvenc.c
++++ b/drivers/video/rockchip/mpp/mpp_rkvenc.c
+@@ -1103,7 +1103,7 @@ static void rkvenc_iommu_handle_work(struct work_struct *work_s)
+ 	page_iova = round_down(enc->fault_iova, SZ_4K);
+ 	ret = iommu_map(mpp->iommu_info->domain, page_iova,
+ 			page_to_phys(enc->aux_page), IOMMU_PAGE_SIZE,
+-			IOMMU_READ | IOMMU_WRITE);
++			IOMMU_READ | IOMMU_WRITE, GFP_KERNEL);
+ 	if (ret)
+ 		mpp_err("iommu_map iova %lx error.\n", page_iova);
+ 	else
+@@ -1442,7 +1442,7 @@ static int rkvenc_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-static int rkvenc_remove(struct platform_device *pdev)
++static void rkvenc_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct mpp_dev *mpp = dev_get_drvdata(dev);
+@@ -1450,8 +1450,6 @@ static int rkvenc_remove(struct platform_device *pdev)
+ 	dev_info(dev, "remove device\n");
+ 	mpp_dev_remove(mpp);
+ 	rkvenc_procfs_remove(mpp);
+-
+-	return 0;
+ }
+ 
+ struct platform_driver rockchip_rkvenc_driver = {
+diff --git a/drivers/video/rockchip/mpp/mpp_rkvenc2.c b/drivers/video/rockchip/mpp/mpp_rkvenc2.c
+index 7098e338803fa..0f28e287fb9e4 100644
+--- a/drivers/video/rockchip/mpp/mpp_rkvenc2.c
++++ b/drivers/video/rockchip/mpp/mpp_rkvenc2.c
+@@ -2697,7 +2697,7 @@ static int rkvenc2_alloc_rcbbuf(struct platform_device *pdev, struct rkvenc_dev
+ 	sram_size = sram_used < sram_size ? sram_used : sram_size;
+ 	/* iova map to sram */
+ 	domain = enc->mpp.iommu_info->domain;
+-	ret = iommu_map(domain, iova, sram_start, sram_size, IOMMU_READ | IOMMU_WRITE);
++	ret = iommu_map(domain, iova, sram_start, sram_size, IOMMU_READ | IOMMU_WRITE, GFP_KERNEL);
+ 	if (ret) {
+ 		dev_err(dev, "sram iommu_map error.\n");
+ 		return ret;
+@@ -2715,7 +2715,7 @@ static int rkvenc2_alloc_rcbbuf(struct platform_device *pdev, struct rkvenc_dev
+ 		}
+ 		/* iova map to dma */
+ 		ret = iommu_map(domain, iova + sram_size, page_to_phys(page),
+-				page_size, IOMMU_READ | IOMMU_WRITE);
++				page_size, IOMMU_READ | IOMMU_WRITE, GFP_KERNEL);
+ 		if (ret) {
+ 			dev_err(dev, "page iommu_map error.\n");
+ 			__free_pages(page, get_order(page_size));
+@@ -2912,7 +2912,7 @@ static int rkvenc2_free_rcbbuf(struct platform_device *pdev, struct rkvenc_dev *
+ 
+ 	if (enc->rcb_page) {
+ 		size_t page_size = PAGE_ALIGN(enc->sram_used - enc->sram_size);
+-		int order = min(get_order(page_size), MAX_ORDER);
++		int order = min(get_order(page_size), MAX_PAGE_ORDER);
+ 
+ 		__free_pages(enc->rcb_page, order);
+ 	}
+@@ -2924,7 +2924,7 @@ static int rkvenc2_free_rcbbuf(struct platform_device *pdev, struct rkvenc_dev *
+ 	return 0;
+ }
+ 
+-static int rkvenc_remove(struct platform_device *pdev)
++static void rkvenc_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct device_node *np = dev->of_node;
+@@ -2954,8 +2954,6 @@ static int rkvenc_remove(struct platform_device *pdev)
+ 		mpp_dev_remove(mpp);
+ 		rkvenc_procfs_remove(mpp);
+ 	}
+-
+-	return 0;
+ }
+ 
+ static void rkvenc_shutdown(struct platform_device *pdev)
+diff --git a/drivers/video/rockchip/mpp/mpp_service.c b/drivers/video/rockchip/mpp/mpp_service.c
+index 882002e20097b..0aaf2f0b00c38 100644
+--- a/drivers/video/rockchip/mpp/mpp_service.c
++++ b/drivers/video/rockchip/mpp/mpp_service.c
+@@ -399,7 +399,7 @@ static int mpp_service_probe(struct platform_device *pdev)
+ 	atomic_set(&srv->shutdown_request, 0);
+ 	platform_set_drvdata(pdev, srv);
+ 
+-	srv->cls = class_create(THIS_MODULE, MPP_CLASS_NAME);
++	srv->cls = class_create(MPP_CLASS_NAME);
+ 	if (PTR_ERR_OR_ZERO(srv->cls))
+ 		return PTR_ERR(srv->cls);
+ 
+@@ -479,7 +479,7 @@ static int mpp_service_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-static int mpp_service_remove(struct platform_device *pdev)
++static void mpp_service_remove(struct platform_device *pdev)
+ {
+ 	struct mpp_taskqueue *queue;
+ 	struct device *dev = &pdev->dev;
+@@ -504,8 +504,6 @@ static int mpp_service_remove(struct platform_device *pdev)
+ 	mpp_remove_service(srv);
+ 	class_destroy(srv->cls);
+ 	mpp_procfs_remove(srv);
+-
+-	return 0;
+ }
+ 
+ static const struct of_device_id mpp_dt_ids[] = {
+@@ -526,7 +524,7 @@ static struct platform_driver mpp_service_driver = {
+ 
+ module_platform_driver(mpp_service_driver);
+ 
+-MODULE_IMPORT_NS(DMA_BUF);
++MODULE_IMPORT_NS("DMA_BUF");
+ MODULE_LICENSE("Dual MIT/GPL");
+ MODULE_VERSION(MPP_VERSION);
+ MODULE_AUTHOR("Ding Wei leo.ding@rock-chips.com");
+diff --git a/drivers/video/rockchip/mpp/mpp_vdpp.c b/drivers/video/rockchip/mpp/mpp_vdpp.c
+index 5c48c5de73097..17f82cd67cf09 100644
+--- a/drivers/video/rockchip/mpp/mpp_vdpp.c
++++ b/drivers/video/rockchip/mpp/mpp_vdpp.c
+@@ -803,7 +803,7 @@ static int vdpp_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static int vdpp_remove(struct platform_device *pdev)
++static void vdpp_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct mpp_dev *mpp = platform_get_drvdata(pdev);
+@@ -811,8 +811,6 @@ static int vdpp_remove(struct platform_device *pdev)
+ 	dev_info(dev, "remove device\n");
+ 	mpp_dev_remove(mpp);
+ 	vdpp_procfs_remove(mpp);
+-
+-	return 0;
+ }
+ 
+ struct platform_driver rockchip_vdpp_driver = {
+diff --git a/drivers/video/rockchip/mpp/mpp_vdpu1.c b/drivers/video/rockchip/mpp/mpp_vdpu1.c
+index 5109bde2c2366..c760d984bc788 100644
+--- a/drivers/video/rockchip/mpp/mpp_vdpu1.c
++++ b/drivers/video/rockchip/mpp/mpp_vdpu1.c
+@@ -948,7 +948,7 @@ static int vdpu_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static int vdpu_remove(struct platform_device *pdev)
++static void vdpu_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct mpp_dev *mpp = dev_get_drvdata(dev);
+@@ -956,8 +956,6 @@ static int vdpu_remove(struct platform_device *pdev)
+ 	dev_info(dev, "remove device\n");
+ 	mpp_dev_remove(mpp);
+ 	vdpu_procfs_remove(mpp);
+-
+-	return 0;
+ }
+ 
+ struct platform_driver rockchip_vdpu1_driver = {
+diff --git a/drivers/video/rockchip/mpp/mpp_vdpu2.c b/drivers/video/rockchip/mpp/mpp_vdpu2.c
+index 3d6cd244b04b8..70e66e2bc1c14 100644
+--- a/drivers/video/rockchip/mpp/mpp_vdpu2.c
++++ b/drivers/video/rockchip/mpp/mpp_vdpu2.c
+@@ -784,7 +784,7 @@ static int vdpu_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static int vdpu_remove(struct platform_device *pdev)
++static void vdpu_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct mpp_dev *mpp = dev_get_drvdata(dev);
+@@ -792,8 +792,6 @@ static int vdpu_remove(struct platform_device *pdev)
+ 	dev_info(dev, "remove device\n");
+ 	mpp_dev_remove(mpp);
+ 	vdpu_procfs_remove(mpp);
+-
+-	return 0;
+ }
+ 
+ struct platform_driver rockchip_vdpu2_driver = {
+diff --git a/drivers/video/rockchip/mpp/mpp_vepu1.c b/drivers/video/rockchip/mpp/mpp_vepu1.c
+index 59b4f9ffc5423..a225855513e8e 100644
+--- a/drivers/video/rockchip/mpp/mpp_vepu1.c
++++ b/drivers/video/rockchip/mpp/mpp_vepu1.c
+@@ -771,7 +771,7 @@ static int vepu_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static int vepu_remove(struct platform_device *pdev)
++static void vepu_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct mpp_dev *mpp = dev_get_drvdata(dev);
+@@ -779,8 +779,6 @@ static int vepu_remove(struct platform_device *pdev)
+ 	dev_info(dev, "remove device\n");
+ 	mpp_dev_remove(mpp);
+ 	vepu_procfs_remove(mpp);
+-
+-	return 0;
+ }
+ 
+ struct platform_driver rockchip_vepu1_driver = {
+diff --git a/drivers/video/rockchip/mpp/mpp_vepu2.c b/drivers/video/rockchip/mpp/mpp_vepu2.c
+index d92609ef25eaa..c5bd88219ecf6 100644
+--- a/drivers/video/rockchip/mpp/mpp_vepu2.c
++++ b/drivers/video/rockchip/mpp/mpp_vepu2.c
+@@ -1224,7 +1224,7 @@ static int vepu_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-static int vepu_remove(struct platform_device *pdev)
++static void vepu_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct device_node *np = dev->of_node;
+@@ -1256,8 +1256,6 @@ static int vepu_remove(struct platform_device *pdev)
+ 		mpp_dev_remove(mpp);
+ 		vepu_procfs_remove(mpp);
+ 	}
+-
+-	return 0;
+ }
+ 
+ static void vepu_shutdown(struct platform_device *pdev)
+diff --git a/drivers/video/rockchip/rga/rga_drv.c b/drivers/video/rockchip/rga/rga_drv.c
+index 40061ff82497f..f0e465fb67327 100644
+--- a/drivers/video/rockchip/rga/rga_drv.c
++++ b/drivers/video/rockchip/rga/rga_drv.c
+@@ -1917,7 +1917,7 @@ static int rga_drv_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-static int rga_drv_remove(struct platform_device *pdev)
++static void rga_drv_remove(struct platform_device *pdev)
+ {
+ 	struct rga_drvdata *data = platform_get_drvdata(pdev);
+ 	DBG("%s [%d]\n",__FUNCTION__,__LINE__);
+@@ -1940,7 +1940,6 @@ static int rga_drv_remove(struct platform_device *pdev)
+ 	//clk_put(data->pd_rga);
+ 
+ 	//kfree(data);
+-	return 0;
+ }
+ 
+ static struct platform_driver rga_driver = {
+diff --git a/drivers/video/rockchip/rga/rga_mmu_info.c b/drivers/video/rockchip/rga/rga_mmu_info.c
+index 9dcffa50a1e22..46e88fc6f5883 100644
+--- a/drivers/video/rockchip/rga/rga_mmu_info.c
++++ b/drivers/video/rockchip/rga/rga_mmu_info.c
+@@ -79,8 +79,7 @@ static long rga_get_user_pages(struct page **pages, unsigned long Memory,
+ 					     NULL, NULL);
+ 	#else
+ 		return get_user_pages_remote(current_mm, Memory << PAGE_SHIFT,
+-					     pageCount, writeFlag ? FOLL_WRITE : 0, pages,
+-					     NULL, NULL);
++					     pageCount, writeFlag ? FOLL_WRITE : 0, pages, NULL);
+ 	#endif
+ }
+ 
+diff --git a/drivers/video/rockchip/rga2/rga2_drv.c b/drivers/video/rockchip/rga2/rga2_drv.c
+index 87d185257b720..d8d016bc7e8ba 100644
+--- a/drivers/video/rockchip/rga2/rga2_drv.c
++++ b/drivers/video/rockchip/rga2/rga2_drv.c
+@@ -1870,7 +1870,7 @@ static int rga2_drv_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-static int rga2_drv_remove(struct platform_device *pdev)
++static void rga2_drv_remove(struct platform_device *pdev)
+ {
+ 	struct rga2_drvdata_t *data = platform_get_drvdata(pdev);
+ 	DBG("%s [%d]\n",__FUNCTION__,__LINE__);
+@@ -1892,7 +1892,6 @@ static int rga2_drv_remove(struct platform_device *pdev)
+ #endif
+ 
+ 	//kfree(data);
+-	return 0;
+ }
+ 
+ static struct platform_driver rga2_driver = {
+diff --git a/drivers/video/rockchip/rga2/rga2_mmu_info.c b/drivers/video/rockchip/rga2/rga2_mmu_info.c
+index a01ba08e6ff89..82208b8b4f7c7 100644
+--- a/drivers/video/rockchip/rga2/rga2_mmu_info.c
++++ b/drivers/video/rockchip/rga2/rga2_mmu_info.c
+@@ -938,7 +938,7 @@ static int rga2_MapUserMemory(struct page **pages, uint32_t *pageTable,
+ 				       pageCount, writeFlag, pages, NULL, NULL);
+ #else
+ 	result = get_user_pages_remote(current->mm, Memory << PAGE_SHIFT,
+-				       pageCount, writeFlag, pages, NULL, NULL);
++				       pageCount, writeFlag, pages, NULL);
+ #endif
+ 
+ 	if (result > 0 && result >= pageCount) {
+diff --git a/drivers/video/rockchip/rga3/rga_dma_buf.c b/drivers/video/rockchip/rga3/rga_dma_buf.c
+index e72470e5c5f5d..bb93afa1640c7 100644
+--- a/drivers/video/rockchip/rga3/rga_dma_buf.c
++++ b/drivers/video/rockchip/rga3/rga_dma_buf.c
+@@ -298,7 +298,7 @@ int rga_iommu_map_sgt(struct sg_table *sgt, size_t size,
+ 	}
+ 
+ 	map_size = iommu_map_sg(domain, iova, sgt->sgl, sgt->orig_nents,
+-				rga_dma_info_to_prot(DMA_BIDIRECTIONAL));
++				rga_dma_info_to_prot(DMA_BIDIRECTIONAL), GFP_KERNEL);
+ 	if (map_size < align_size) {
+ 		rga_err("iommu can not map sgt to iova");
+ 		rga_iommu_dma_free_iova(domain, iova, align_size);
+@@ -342,8 +342,13 @@ int rga_iommu_map(phys_addr_t paddr, size_t size,
+ 		return -ENOMEM;
+ 	}
+ 
++	/*
++		2671:ssize_t iommu_map_sg(struct iommu_domain *domain, unsigned long iova,
++		2672-		    struct scatterlist *sg, unsigned int nents, int prot,
++		2673-		    gfp_t gfp)
++	*/
+ 	ret = iommu_map(domain, iova, paddr, align_size,
+-			rga_dma_info_to_prot(DMA_BIDIRECTIONAL));
++			rga_dma_info_to_prot(DMA_BIDIRECTIONAL), GFP_KERNEL);
+ 	if (ret) {
+ 		rga_err("iommu can not map phys_addr to iova");
+ 		rga_iommu_dma_free_iova(domain, iova, align_size);
+diff --git a/drivers/video/rockchip/rga3/rga_drv.c b/drivers/video/rockchip/rga3/rga_drv.c
+index fc96dc198ac5c..e1ed70ed9b3e8 100644
+--- a/drivers/video/rockchip/rga3/rga_drv.c
++++ b/drivers/video/rockchip/rga3/rga_drv.c
+@@ -351,9 +351,8 @@ static enum hrtimer_restart hrtimer_handler(struct hrtimer *timer)
+ static void rga_init_timer(void)
+ {
+ 	kt = ktime_set(0, RGA_TIMER_INTERVAL_NS);
+-	hrtimer_init(&timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+ 
+-	timer.function = hrtimer_handler;
++	hrtimer_setup(&timer, hrtimer_handler, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+ 
+ 	hrtimer_start(&timer, kt, HRTIMER_MODE_REL);
+ }
+@@ -1458,7 +1457,7 @@ static int rga_drv_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-static int rga_drv_remove(struct platform_device *pdev)
++static void rga_drv_remove(struct platform_device *pdev)
+ {
+ 	struct rga_scheduler_t *scheduler = NULL;
+ 
+@@ -1475,8 +1474,6 @@ static int rga_drv_remove(struct platform_device *pdev)
+ #endif /* #ifndef RGA_DISABLE_PM */
+ 
+ 	up_write(&rga_drvdata->rwsem);
+-
+-	return 0;
+ }
+ 
+ static void rga_drv_shutdown(struct platform_device *pdev)
+@@ -1628,6 +1625,6 @@ MODULE_AUTHOR("putin.li@rock-chips.com");
+ MODULE_DESCRIPTION("Driver for rga device");
+ MODULE_LICENSE("GPL");
+ #ifdef MODULE_IMPORT_NS
+-MODULE_IMPORT_NS(DMA_BUF);
+-MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
++MODULE_IMPORT_NS("DMA_BUF");
++MODULE_IMPORT_NS("VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver");
+ #endif
+diff --git a/drivers/video/rockchip/rga3/rga_iommu.c b/drivers/video/rockchip/rga3/rga_iommu.c
+index 3ba0d58b2c206..f1f16d459495b 100644
+--- a/drivers/video/rockchip/rga3/rga_iommu.c
++++ b/drivers/video/rockchip/rga3/rga_iommu.c
+@@ -168,9 +168,9 @@ struct rga_mmu_base *rga_mmu_base_init(size_t size)
+ 	 * size * channel_num * address_size
+ 	 */
+ 	order = get_order(size * 3 * sizeof(*mmu_base->buf_virtual));
+-	if (order >= MAX_ORDER) {
++	if (order >= MAX_PAGE_ORDER) {
+ 		pr_err("Can not alloc pages with order[%d] for mmu_page_table, max_order = %d\n",
+-		       order, MAX_ORDER);
++		       order, MAX_PAGE_ORDER);
+ 		goto err_free_mmu_base;
+ 	}
+ 
+@@ -182,9 +182,9 @@ struct rga_mmu_base *rga_mmu_base_init(size_t size)
+ 	mmu_base->buf_order = order;
+ 
+ 	order = get_order(size * sizeof(*mmu_base->pages));
+-	if (order >= MAX_ORDER) {
++	if (order >= MAX_PAGE_ORDER) {
+ 		pr_err("Can not alloc pages with order[%d] for mmu_base->pages, max_order = %d\n",
+-		       order, MAX_ORDER);
++		       order, MAX_PAGE_ORDER);
+ 		goto err_free_buf_virtual;
+ 	}
+ 
+diff --git a/drivers/video/rockchip/rga3/rga_mm.c b/drivers/video/rockchip/rga3/rga_mm.c
+index c5de4127dfb08..5c7528efda7ce 100644
+--- a/drivers/video/rockchip/rga3/rga_mm.c
++++ b/drivers/video/rockchip/rga3/rga_mm.c
+@@ -135,7 +135,7 @@ static int rga_get_user_pages(struct page **pages, unsigned long Memory,
+ 				       pageCount, writeFlag ? FOLL_WRITE : 0, pages, NULL, NULL);
+ #else
+ 	result = get_user_pages_remote(current_mm, Memory << PAGE_SHIFT,
+-				       pageCount, writeFlag ? FOLL_WRITE : 0, pages, NULL, NULL);
++				       pageCount, writeFlag ? FOLL_WRITE : 0, pages, NULL);
+ #endif
+ 
+ 	if (result > 0 && result >= pageCount) {
+@@ -256,9 +256,9 @@ static int rga_alloc_virt_addr(struct rga_virt_addr **virt_addr_p,
+ 
+ 	/* alloc pages and page_table */
+ 	order = get_order(count * sizeof(struct page *));
+-	if (order >= MAX_ORDER) {
++	if (order >= MAX_PAGE_ORDER) {
+ 		rga_err("Can not alloc pages with order[%d] for viraddr pages, max_order = %d\n",
+-			order, MAX_ORDER);
++			order, MAX_PAGE_ORDER);
+ 		return -ENOMEM;
+ 	}
+ 
+@@ -1213,9 +1213,9 @@ static int rga_mm_set_mmu_base(struct rga_job *job,
+ 
+ 		if (job->flags & RGA_JOB_USE_HANDLE) {
+ 			order = get_order(page_count * sizeof(uint32_t *));
+-			if (order >= MAX_ORDER) {
++			if (order >= MAX_PAGE_ORDER) {
+ 				rga_job_err(job, "Can not alloc pages with order[%d] for page_table, max_order = %d\n",
+-					order, MAX_ORDER);
++					order, MAX_PAGE_ORDER);
+ 				return -ENOMEM;
+ 			}
+ 
+@@ -1278,9 +1278,9 @@ static int rga_mm_set_mmu_base(struct rga_job *job,
+ 
+ 		if (job->flags & RGA_JOB_USE_HANDLE) {
+ 			order = get_order(page_count * sizeof(uint32_t *));
+-			if (order >= MAX_ORDER) {
++			if (order >= MAX_PAGE_ORDER) {
+ 				rga_job_err(job, "Can not alloc pages with order[%d] for page_table, max_order = %d\n",
+-					order, MAX_ORDER);
++					order, MAX_PAGE_ORDER);
+ 				return -ENOMEM;
+ 			}
+ 
+diff --git a/drivers/video/rockchip/rve/rve_drv.c b/drivers/video/rockchip/rve/rve_drv.c
+index b4b460437b655..bf41265541b33 100644
+--- a/drivers/video/rockchip/rve/rve_drv.c
++++ b/drivers/video/rockchip/rve/rve_drv.c
+@@ -95,9 +95,7 @@ static void rve_init_timer(void)
+ {
+ 	kt = ktime_set(0, RVE_LOAD_INTERVAL);
+ 
+-	hrtimer_init(&timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+-
+-	timer.function = hrtimer_handler;
++	hrtimer_setup(&timer, hrtimer_handler, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+ 
+ 	hrtimer_start(&timer, kt, HRTIMER_MODE_REL);
+ }
+@@ -786,14 +784,12 @@ static int rve_drv_probe(struct platform_device *pdev)
+ #endif //RVE_PD_AWAYS_ON
+ }
+ 
+-static int rve_drv_remove(struct platform_device *pdev)
++static void rve_drv_remove(struct platform_device *pdev)
+ {
+ 	device_init_wakeup(&pdev->dev, false);
+ #ifndef RVE_PD_AWAYS_ON
+ 	pm_runtime_disable(&pdev->dev);
+ #endif //RVE_PD_AWAYS_ON
+-
+-	return 0;
+ }
+ 
+ static struct platform_driver rve_driver = {
+diff --git a/drivers/video/rockchip/vtunnel/rkvtunnel.c b/drivers/video/rockchip/vtunnel/rkvtunnel.c
+index b188928e20844..f74e91f79022c 100644
+--- a/drivers/video/rockchip/vtunnel/rkvtunnel.c
++++ b/drivers/video/rockchip/vtunnel/rkvtunnel.c
+@@ -1500,7 +1500,7 @@ static int rkvt_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static int rkvt_remove(struct platform_device *pdev)
++static void rkvt_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct rkvt_dev *vdev = platform_get_drvdata(pdev);
+@@ -1510,8 +1510,6 @@ static int rkvt_remove(struct platform_device *pdev)
+ 	idr_destroy(&vdev->inst_idr);
+ 	debugfs_remove_recursive(vdev->debug_root);
+ 	misc_deregister(&vdev->mdev);
+-
+-	return 0;
+ }
+ 
+ static const struct of_device_id rk_vt_match[] = {
+-- 
+2.42.0
+

@@ -1,0 +1,39 @@
+From 01eb1bf6040eb8b09802a1031b381e7ddff64a7b Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Wed, 20 Aug 2025 19:21:17 -0700
+Subject: [PATCH 10/14] fix: fd.file no longer exists (as of 1da91ea87aefe and
+ 88a2f6468d013)
+
+---
+ drivers/video/rockchip/mpp/mpp_common.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/video/rockchip/mpp/mpp_common.c b/drivers/video/rockchip/mpp/mpp_common.c
+index ab02cea09f170..8d246a97bd9af 100644
+--- a/drivers/video/rockchip/mpp/mpp_common.c
++++ b/drivers/video/rockchip/mpp/mpp_common.c
+@@ -1555,7 +1555,7 @@ static int mpp_collect_msgs(struct list_head *head, struct mpp_session *session,
+ 			goto session_switch_done;
+ 
+ 		f = fdget(bat_msg.fd);
+-		if (!f.file) {
++		if (fd_empty(f)) {
+ 			int ret = -EBADF;
+ 
+ 			mpp_err("fd %d get session failed\n", bat_msg.fd);
+@@ -1576,10 +1576,10 @@ static int mpp_collect_msgs(struct list_head *head, struct mpp_session *session,
+ 		}
+ 
+ 		/* switch session */
+-		session = f.file->private_data;
++		session = fd_file(f)->private_data;
+ 		msgs = get_task_msgs(session);
+ 
+-		if (f.file->private_data == session)
++		if (fd_file(f)->private_data == session)
+ 			msgs->ext_fd = bat_msg.fd;
+ 
+ 		msgs->f = f;
+-- 
+2.42.0
+

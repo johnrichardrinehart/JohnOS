@@ -1,0 +1,37 @@
+From eaf87808812b3349499d22b984a4e6ee6bedf6ab Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Tue, 19 Aug 2025 23:02:05 -0700
+Subject: [PATCH 02/14] chore: $(srctree)/$(src) for $(src)
+
+---
+ drivers/video/rockchip/rga3/Makefile | 2 +-
+ drivers/video/rockchip/rve/Makefile  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/rockchip/rga3/Makefile b/drivers/video/rockchip/rga3/Makefile
+index 11f401de2ae0b..ccc68c7990dda 100644
+--- a/drivers/video/rockchip/rga3/Makefile
++++ b/drivers/video/rockchip/rga3/Makefile
+@@ -1,6 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ 
+-ccflags-y += -I$(srctree)/$(src)/include
++ccflags-y += -I$(src)/include
+ 
+ rga3-y	:= rga_drv.o rga_common.o rga3_reg_info.o rga_iommu.o rga_dma_buf.o rga_job.o rga_hw_config.o rga2_reg_info.o rga_policy.o rga_mm.o
+ rga3-$(CONFIG_ROCKCHIP_RGA_ASYNC) += rga_fence.o
+diff --git a/drivers/video/rockchip/rve/Makefile b/drivers/video/rockchip/rve/Makefile
+index e475b77175100..8e154bc784baf 100644
+--- a/drivers/video/rockchip/rve/Makefile
++++ b/drivers/video/rockchip/rve/Makefile
+@@ -1,6 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0
+ 
+-ccflags-y += -I$(srctree)/$(src)/include
++ccflags-y += -I$(src)/include
+ 
+ rve-y	:= rve_drv.o rve_job.o rve_reg.o
+ rve-$(CONFIG_ROCKCHIP_RVE_DEBUGGER) += rve_debugger.o
+-- 
+2.42.0
+

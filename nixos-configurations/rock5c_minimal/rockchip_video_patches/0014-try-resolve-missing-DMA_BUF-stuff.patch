@@ -1,0 +1,108 @@
+From d656839c57254df030f184b80473e4efb86aa4dd Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Thu, 21 Aug 2025 09:42:11 -0700
+Subject: [PATCH 14/14] try: resolve missing DMA_BUF stuff
+
+try: resolve __pte_offset_map_lock undefined
+
+Claude provided these changes in response to me dumping the failed build
+logs:
+```
+linux> ERROR: modpost: module rga uses symbol dma_buf_vmap from namespace DMA_BUF, but does not import it.
+linux> ERROR: modpost: "__pte_offset_map_lock" [drivers/video/rockchip/rga/rga.ko] undefined!
+linux> ERROR: modpost: module rga uses symbol dma_buf_attach from namespace DMA_BUF, but does not import it.
+linux> ERROR: modpost: module rga uses symbol dma_buf_map_attachment from namespace DMA_BUF, but does not import it.
+linux> ERROR: modpost: module rga uses symbol dma_buf_unmap_attachment from namespace DMA_BUF, but does not import it.
+linux> ERROR: modpost: module rga uses symbol dma_buf_get from namespace DMA_BUF, but does not import it.
+linux> ERROR: modpost: module rga uses symbol dma_buf_put from namespace DMA_BUF, but does not import it.
+linux> ERROR: modpost: module rga uses symbol dma_buf_vunmap from namespace DMA_BUF, but does not import it.
+linux> ERROR: modpost: module rga uses symbol dma_buf_detach from namespace DMA_BUF, but does not import it.
+linux> make[2]: *** [../scripts/Makefile.modpost:147: Module.symvers] Error 1
+linux> make[1]: *** [/build/linux-6.16/Makefile:1953: modpost] Error 2
+linux> make: *** [/build/linux-6.16/Makefile:248: __sub-make] Error 2
+note: keeping build directory '/tmp/nix-build-linux-6.16.drv-3/build'
+error: builder for '/nix/store/xv77f7idbkwhfkwj9zkmkwzqmvr5grlc-linux-6.16.drv' failed with exit code 2;
+       last 25 log lines:
+       >   CC [M]  drivers/comedi/drivers/amplc_pc236_common.o
+       >   CC [M]  drivers/comedi/drivers/das08.o
+       >   LD [M]  drivers/comedi/drivers/ni_routing.o
+       > /nix/store/ll82pfjsgww6cmi7mazcpsbv4b1szd9b-binutils-2.44/bin/ld: warning: -z relro ignored
+       >   CC [M]  drivers/comedi/drivers/tests/comedi_example_test.o
+       >   CC [M]  drivers/comedi/drivers/tests/ni_routes_test.o
+       >   AR      built-in.a
+       >   AR      vmlinux.a
+       >   LD      vmlinux.o
+       > /nix/store/ll82pfjsgww6cmi7mazcpsbv4b1szd9b-binutils-2.44/bin/ld: warning: -z relro ignored
+       >   OBJCOPY modules.builtin.modinfo
+       >   GEN     modules.builtin
+       >   MODPOST Module.symvers
+       > ERROR: modpost: module rga uses symbol dma_buf_vmap from namespace DMA_BUF, but does not import it.
+       > ERROR: modpost: "__pte_offset_map_lock" [drivers/video/rockchip/rga/rga.ko] undefined!
+       > ERROR: modpost: module rga uses symbol dma_buf_attach from namespace DMA_BUF, but does not import it.
+       > ERROR: modpost: module rga uses symbol dma_buf_map_attachment from namespace DMA_BUF, but does not import it.
+       > ERROR: modpost: module rga uses symbol dma_buf_unmap_attachment from namespace DMA_BUF, but does not import it.
+       > ERROR: modpost: module rga uses symbol dma_buf_get from namespace DMA_BUF, but does not import it.
+       > ERROR: modpost: module rga uses symbol dma_buf_put from namespace DMA_BUF, but does not import it.
+       > ERROR: modpost: module rga uses symbol dma_buf_vunmap from namespace DMA_BUF, but does not import it.
+       > ERROR: modpost: module rga uses symbol dma_buf_detach from namespace DMA_BUF, but does not import it.
+       > make[2]: *** [../scripts/Makefile.modpost:147: Module.symvers] Error 1
+       > make[1]: *** [/build/linux-6.16/Makefile:1953: modpost] Error 2
+       > make: *** [/build/linux-6.16/Makefile:248: __sub-make] Error 2
+```
+---
+ drivers/video/rockchip/rga/rga_drv.c      |  1 +
+ drivers/video/rockchip/rga/rga_mmu_info.c | 27 +++++++++--------------
+ 2 files changed, 12 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/video/rockchip/rga/rga_drv.c b/drivers/video/rockchip/rga/rga_drv.c
+index f0e465fb67327..8fc64be0546cc 100644
+--- a/drivers/video/rockchip/rga/rga_drv.c
++++ b/drivers/video/rockchip/rga/rga_drv.c
+@@ -2571,3 +2571,4 @@ module_exit(rga_exit);
+ MODULE_AUTHOR("zsq@rock-chips.com");
+ MODULE_DESCRIPTION("Driver for rga device");
+ MODULE_LICENSE("GPL");
++MODULE_IMPORT_NS("DMA_BUF");
+diff --git a/drivers/video/rockchip/rga/rga_mmu_info.c b/drivers/video/rockchip/rga/rga_mmu_info.c
+index 46e88fc6f5883..c17b3e4237b90 100644
+--- a/drivers/video/rockchip/rga/rga_mmu_info.c
++++ b/drivers/video/rockchip/rga/rga_mmu_info.c
+@@ -451,24 +451,19 @@ static int rga_MapUserMemory(struct page **pages,
+ #else
+ 						pud = pud_offset(pgd, (Memory + i) << PAGE_SHIFT);
+ #endif
+-                        if (pud)
++                        if (!pud)
+                         {
+-                            pmd_t * pmd = pmd_offset(pud, (Memory + i) << PAGE_SHIFT);
+-                            if (pmd)
+-                            {
+-                                pte = pte_offset_map_lock(current->mm, pmd, (Memory + i) << PAGE_SHIFT, &ptl);
+-                                if (!pte)
+-                                {
+-                                    pte_unmap_unlock(pte, ptl);
+-                                    break;
+-                                }
+-                            }
+-                            else
+-                            {
+-                                break;
+-                            }
++                            break;
++                        }
++                        
++                        pmd_t * pmd = pmd_offset(pud, (Memory + i) << PAGE_SHIFT);
++                        if (!pmd)
++                        {
++                            break;
+                         }
+-                        else
++                        
++                        pte = pte_offset_map_lock(current->mm, pmd, (Memory + i) << PAGE_SHIFT, &ptl);
++                        if (!pte)
+                         {
+                             break;
+                         }
+-- 
+2.42.0
+

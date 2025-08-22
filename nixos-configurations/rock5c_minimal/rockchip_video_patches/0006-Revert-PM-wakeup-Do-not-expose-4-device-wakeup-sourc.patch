@@ -1,0 +1,116 @@
+From 10c011c24a14bb16099f4a90c9a0f4fe5058639f Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Wed, 20 Aug 2025 11:26:00 -0700
+Subject: [PATCH 06/14] Revert "PM: wakeup: Do not expose 4 device wakeup
+ source APIs"
+
+This reverts commit 142ba31d8b4aff086c4f080bd97d437232922177.
+---
+ drivers/base/power/wakeup.c | 12 ++++++++----
+ include/linux/pm_wakeup.h   | 15 +++++++++++++++
+ 2 files changed, 23 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/base/power/wakeup.c b/drivers/base/power/wakeup.c
+index d1283ff1080bb..0f610aedb3f12 100644
+--- a/drivers/base/power/wakeup.c
++++ b/drivers/base/power/wakeup.c
+@@ -77,7 +77,7 @@ static DEFINE_IDA(wakeup_ida);
+  * wakeup_source_create - Create a struct wakeup_source object.
+  * @name: Name of the new wakeup source.
+  */
+-static struct wakeup_source *wakeup_source_create(const char *name)
++struct wakeup_source *wakeup_source_create(const char *name)
+ {
+ 	struct wakeup_source *ws;
+ 	const char *ws_name;
+@@ -106,6 +106,7 @@ static struct wakeup_source *wakeup_source_create(const char *name)
+ err_ws:
+ 	return NULL;
+ }
++EXPORT_SYMBOL_GPL(wakeup_source_create);
+ 
+ /*
+  * Record wakeup_source statistics being deleted into a dummy wakeup_source.
+@@ -148,7 +149,7 @@ static void wakeup_source_free(struct wakeup_source *ws)
+  *
+  * Use only for wakeup source objects created with wakeup_source_create().
+  */
+-static void wakeup_source_destroy(struct wakeup_source *ws)
++void wakeup_source_destroy(struct wakeup_source *ws)
+ {
+ 	if (!ws)
+ 		return;
+@@ -157,12 +158,13 @@ static void wakeup_source_destroy(struct wakeup_source *ws)
+ 	wakeup_source_record(ws);
+ 	wakeup_source_free(ws);
+ }
++EXPORT_SYMBOL_GPL(wakeup_source_destroy);
+ 
+ /**
+  * wakeup_source_add - Add given object to the list of wakeup sources.
+  * @ws: Wakeup source object to add to the list.
+  */
+-static void wakeup_source_add(struct wakeup_source *ws)
++void wakeup_source_add(struct wakeup_source *ws)
+ {
+ 	unsigned long flags;
+ 
+@@ -177,12 +179,13 @@ static void wakeup_source_add(struct wakeup_source *ws)
+ 	list_add_rcu(&ws->entry, &wakeup_sources);
+ 	raw_spin_unlock_irqrestore(&events_lock, flags);
+ }
++EXPORT_SYMBOL_GPL(wakeup_source_add);
+ 
+ /**
+  * wakeup_source_remove - Remove given object from the wakeup sources list.
+  * @ws: Wakeup source object to remove from the list.
+  */
+-static void wakeup_source_remove(struct wakeup_source *ws)
++void wakeup_source_remove(struct wakeup_source *ws)
+ {
+ 	unsigned long flags;
+ 
+@@ -201,6 +204,7 @@ static void wakeup_source_remove(struct wakeup_source *ws)
+ 	 */
+ 	ws->timer.function = NULL;
+ }
++EXPORT_SYMBOL_GPL(wakeup_source_remove);
+ 
+ /**
+  * wakeup_source_register - Create wakeup source and add it to the list.
+diff --git a/include/linux/pm_wakeup.h b/include/linux/pm_wakeup.h
+index c838b4a30f876..51e0e8dd5f9e5 100644
+--- a/include/linux/pm_wakeup.h
++++ b/include/linux/pm_wakeup.h
+@@ -95,6 +95,10 @@ static inline void device_set_wakeup_path(struct device *dev)
+ }
+ 
+ /* drivers/base/power/wakeup.c */
++extern struct wakeup_source *wakeup_source_create(const char *name);
++extern void wakeup_source_destroy(struct wakeup_source *ws);
++extern void wakeup_source_add(struct wakeup_source *ws);
++extern void wakeup_source_remove(struct wakeup_source *ws);
+ extern struct wakeup_source *wakeup_source_register(struct device *dev,
+ 						    const char *name);
+ extern void wakeup_source_unregister(struct wakeup_source *ws);
+@@ -125,6 +129,17 @@ static inline bool device_can_wakeup(struct device *dev)
+ 	return dev->power.can_wakeup;
+ }
+ 
++static inline struct wakeup_source *wakeup_source_create(const char *name)
++{
++	return NULL;
++}
++
++static inline void wakeup_source_destroy(struct wakeup_source *ws) {}
++
++static inline void wakeup_source_add(struct wakeup_source *ws) {}
++
++static inline void wakeup_source_remove(struct wakeup_source *ws) {}
++
+ static inline struct wakeup_source *wakeup_source_register(struct device *dev,
+ 							   const char *name)
+ {
+-- 
+2.42.0
+
