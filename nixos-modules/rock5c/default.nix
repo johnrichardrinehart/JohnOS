@@ -103,7 +103,14 @@ in
 
     boot.consoleLogLevel = 7;
 
-    boot.kernelPackages = pkgs.linuxPackages_latest;
+#    boot.kernelPackages = pkgs.linuxPackages_latest;
+#    boot.kernelPackages = pkgs.linuxPackagesFor (
+#        pkgs.linuxKernel.kernels.linux_6_16.override {
+#          argsOverride = {
+#            modDirVersion = "6.16.1";
+#          };
+#      }
+#    );
 
     boot.kernelPatches = [
       {
