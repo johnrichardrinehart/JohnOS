@@ -1,4 +1,4 @@
-{ lib, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 {
   nixpkgs.hostPlatform = "aarch64-linux";
   networking.hostName = "rock5c-minimal";
@@ -10,7 +10,7 @@
     argsOverride = rec {
       src = builtins.fetchGit {
 	url = "git@github.com:johnrichardrinehart/linux";
-        rev = "43f039345502d7bde53c32e37be702635c9914e2";
+        rev = "39162db30263f4931671c06a9aeb6f5a20026d43";
         ref = "jrinehart/rockchip-video";
         shallow = true;
       };
@@ -41,10 +41,11 @@
           name = "rockchip-video";
           patch = null;
           structuredExtraConfig = {
-            ROCKCHIP_MULTI_RGA = lib.kernel.yes;
+            ROCKCHIP_MPP_SERVICE = lib.kernel.module; # consider changing to module
+            ROCKCHIP_MULTI_RGA = lib.kernel.module; # consider changing to module
+            ROCKCHIP_MPP_PROC_FS = lib.kernel.yes;
             ROCKCHIP_RVE = lib.kernel.yes;
             IEP = lib.kernel.yes;
-            ROCKCHIP_MPP_SERVICE = lib.kernel.yes;
             ROCKCHIP_DVBM = lib.kernel.yes;
             ROCKCHIP_VIDEO_TUNNEL = lib.kernel.yes;
             ROCKCHIP_MPP_OSAL = lib.kernel.yes;
@@ -118,4 +119,23 @@
     openFirewall = true;
     enable = true;
   };
+
+  hardware.firmware = [ (pkgs.callPackage ./mali_csffw.nix {}) ];
+  users.groups.video.members = [ config.services.jellyfin.user ];
+
+  services.udev.extraRules = ''
+    KERNEL=="mpp_service", MODE="0660", GROUP="video"
+    KERNEL=="rga", MODE="0660", GROUP="video"
+    KERNEL=="system", MODE="0666", GROUP="video"
+    KERNEL=="system-dma32", MODE="0666", GROUP="video"
+    KERNEL=="system-uncached", MODE="0666", GROUP="video"
+    KERNEL=="system-uncached-dma32", MODE="0666", GROUP="video" RUN+="${pkgs.toybox}/bin/chmod a+rw /dev/dma_heap"
+  '';
+
+  environment.systemPackages = [
+    pkgs.vim
+    pkgs.git
+    pkgs.tmux
+  ];
 }
+
