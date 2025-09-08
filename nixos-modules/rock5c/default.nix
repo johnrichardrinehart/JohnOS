@@ -13,10 +13,14 @@ in
     #./kernel_radxa.nix
     #./kernel_6.13.nix
     #./kernel_collabora.nix
+    ./kernel_minimal.nix
   ];
 
   options.dev.johnrinehart.rock5c = {
     enable = lib.mkEnableOption "radxa rock5c hardware stuff";
+    useMinimalKernel = lib.mkEnableOption "use minimal kernel configuration" // {
+      default = false;
+    };
   };
 
   config = lib.mkIf cfg.enable {

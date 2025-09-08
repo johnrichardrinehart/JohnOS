@@ -3,27 +3,11 @@
   nixpkgs.hostPlatform = "aarch64-linux";
   networking.hostName = "rock5c-minimal";
   dev.johnrinehart.rock5c.enable = true;
+  dev.johnrinehart.rock5c.useMinimalKernel = true;
   dev.johnrinehart.system.enable = true;
   dev.johnrinehart.nix.enable = true;
 
-  boot.kernelPackages = pkgs.linuxPackagesFor (pkgs.linux_6_16.override {
-    argsOverride = rec {
-      src = builtins.fetchGit {
-	url = "git@github.com:johnrichardrinehart/linux";
-        rev = "39162db30263f4931671c06a9aeb6f5a20026d43";
-        ref = "jrinehart/rockchip-video";
-        shallow = true;
-      };
-      #src = pkgs.fetchFromGitHub {
-      #      owner = "johnrichardrinehart";
-      #      repo = "linux";
-      #      rev = "a9420e8a177c30c25e50be9d88950d34336a79b3";
-      #      sha256 = "sha256-qKE2lUd9cuCs4EnjKaI1vvde922XayJ3LNW1vaaNc5Y=";
-      #};
-      version = "6.16.1";
-      modDirVersion = "6.16.1";
-      };
-  });
+  # Kernel configuration now handled by dev.johnrinehart.rock5c.useMinimalKernel
 
   # try to add hw-acceleration for the rk3588 (cf.
   # https://jellyfin.org/docs/general/post-install/transcoding/hardware-acceleration/rockchip/)
