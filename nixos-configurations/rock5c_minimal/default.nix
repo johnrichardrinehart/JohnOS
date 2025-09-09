@@ -121,5 +121,17 @@
     pkgs.git
     pkgs.tmux
   ];
+
+
+  boot.kernelModules = [ "dm_cache" ];
+
+  fileSystems."nas" = {
+    mountPoint = "/mnt/nas";
+    neededForBoot = false;
+    fsType = "btrfs";
+    device = "/dev/mapper/nas-storage";
+  };
+
+  networking.networkmanager.enable = true;
 }
 
