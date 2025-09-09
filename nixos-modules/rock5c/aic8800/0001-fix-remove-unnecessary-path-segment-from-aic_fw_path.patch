@@ -1,0 +1,26 @@
+From a394e7aac70bfff1a3bea30b0994324bdce0bf52 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Tue, 9 Sep 2025 08:40:19 -0700
+Subject: [PATCH] fix: remove unnecessary path segment from aic_fw_path
+
+---
+ src/USB/driver_fw/drivers/aic8800/aic8800_fdrv/rwnx_platform.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/src/USB/driver_fw/drivers/aic8800/aic8800_fdrv/rwnx_platform.c b/src/USB/driver_fw/drivers/aic8800/aic8800_fdrv/rwnx_platform.c
+index 32b207b..f27f316 100644
+--- a/src/USB/driver_fw/drivers/aic8800/aic8800_fdrv/rwnx_platform.c
++++ b/src/USB/driver_fw/drivers/aic8800/aic8800_fdrv/rwnx_platform.c
+@@ -1599,9 +1599,6 @@ static int rwnx_plat_patch_load(struct rwnx_hw *rwnx_hw)
+ 
+     if(rwnx_hw->usbdev->chipid == PRODUCT_ID_AIC8800DC ||
+         rwnx_hw->usbdev->chipid == PRODUCT_ID_AIC8800DW){
+-#ifndef ANDROID_PLATFORM
+-        sprintf(aic_fw_path, "%s/%s", aic_fw_path, "aic8800DC");
+-#endif
+         AICWFDBG(LOGINFO, "testmode=%d\n", testmode);
+         if (chip_sub_id == 0) {
+             if (testmode == FW_NORMAL_MODE) {
+-- 
+2.50.1
+

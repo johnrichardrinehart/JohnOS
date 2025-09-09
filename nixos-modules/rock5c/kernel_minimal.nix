@@ -40,7 +40,7 @@ in
           };
           version = "6.16.1";
           modDirVersion = "6.16.1";
-#          modDirVersion = "6.16.1-00021-g39162db30263";
+          #          modDirVersion = "6.16.1-00021-g39162db30263";
           configfile = ./rock5c_minimal.config;
           config = readConfig ./rock5c_minimal.config;
         };

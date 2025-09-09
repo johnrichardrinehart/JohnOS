@@ -14,6 +14,7 @@ in
     #./kernel_6.13.nix
     #./kernel_collabora.nix
     ./kernel_minimal.nix
+    ./aic8800/module.nix
   ];
 
   options.dev.johnrinehart.rock5c = {
@@ -24,6 +25,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+
     nixpkgs.hostPlatform = "aarch64-linux";
     fileSystems = {
       "/" = {
@@ -107,14 +109,14 @@ in
 
     boot.consoleLogLevel = 7;
 
-#    boot.kernelPackages = pkgs.linuxPackages_latest;
-#    boot.kernelPackages = pkgs.linuxPackagesFor (
-#        pkgs.linuxKernel.kernels.linux_6_16.override {
-#          argsOverride = {
-#            modDirVersion = "6.16.1";
-#          };
-#      }
-#    );
+    #    boot.kernelPackages = pkgs.linuxPackages_latest;
+    #    boot.kernelPackages = pkgs.linuxPackagesFor (
+    #        pkgs.linuxKernel.kernels.linux_6_16.override {
+    #          argsOverride = {
+    #            modDirVersion = "6.16.1";
+    #          };
+    #      }
+    #    );
 
     boot.kernelPatches = [
       {
