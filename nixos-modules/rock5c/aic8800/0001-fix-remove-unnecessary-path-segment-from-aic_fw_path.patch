@@ -1,12 +1,28 @@
-From a394e7aac70bfff1a3bea30b0994324bdce0bf52 Mon Sep 17 00:00:00 2001
+From b530ede0abdb3b7fc4821af7252b95231e44905d Mon Sep 17 00:00:00 2001
 From: John Rinehart <johnrichardrinehart@gmail.com>
-Date: Tue, 9 Sep 2025 08:40:19 -0700
+Date: Tue, 9 Sep 2025 19:04:18 -0700
 Subject: [PATCH] fix: remove unnecessary path segment from aic_fw_path
 
 ---
- src/USB/driver_fw/drivers/aic8800/aic8800_fdrv/rwnx_platform.c | 3 ---
- 1 file changed, 3 deletions(-)
+ .../drivers/aic8800/aic8800_fdrv/aicwf_compat_8800d80.c       | 4 ----
+ .../driver_fw/drivers/aic8800/aic8800_fdrv/rwnx_platform.c    | 3 ---
+ 2 files changed, 7 deletions(-)
 
+diff --git a/src/USB/driver_fw/drivers/aic8800/aic8800_fdrv/aicwf_compat_8800d80.c b/src/USB/driver_fw/drivers/aic8800/aic8800_fdrv/aicwf_compat_8800d80.c
+index 3a9ca06..3c5ad47 100644
+--- a/src/USB/driver_fw/drivers/aic8800/aic8800_fdrv/aicwf_compat_8800d80.c
++++ b/src/USB/driver_fw/drivers/aic8800/aic8800_fdrv/aicwf_compat_8800d80.c
+@@ -38,10 +38,6 @@ int	rwnx_plat_userconfig_load_8800d80(struct rwnx_hw *rwnx_hw){
+     u32 *dst=NULL;
+     char *filename = FW_USERCONFIG_NAME_8800D80;
+ 
+-#ifndef ANDROID_PLATFORM
+-            sprintf(aic_fw_path, "%s/%s", aic_fw_path, "aic8800D80");
+-#endif
+-
+     AICWFDBG(LOGINFO, "userconfig file path:%s \r\n", filename);
+ 
+     /* load file */
 diff --git a/src/USB/driver_fw/drivers/aic8800/aic8800_fdrv/rwnx_platform.c b/src/USB/driver_fw/drivers/aic8800/aic8800_fdrv/rwnx_platform.c
 index 32b207b..f27f316 100644
 --- a/src/USB/driver_fw/drivers/aic8800/aic8800_fdrv/rwnx_platform.c

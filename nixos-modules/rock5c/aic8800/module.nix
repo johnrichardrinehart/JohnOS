@@ -15,8 +15,9 @@ in
     })
   ];
 
+  # It appears that the below aren't necessary. Maybe because of USB enumeration.
   boot.kernelModules = [
-    "aic_bt_usb"
+    "aic_btusb"
     "aic_load_fw"
     "aic8800_fdrv"
   ];
