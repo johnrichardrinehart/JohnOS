@@ -51,6 +51,7 @@
     pkgs.vim
     pkgs.git
     pkgs.tmux
+    pkgs.thin-provisioning-tools # for cache_check
   ];
 
   boot.kernelModules = [ "dm_cache" ];
@@ -79,6 +80,33 @@
 
   boot.supportedFilesystems = {
     "btrfs" = true;
+  };
+
+  # matches config from services.lvm.boot.thin.enable (I needed cache_check
+  # for the NAS configuration)
+  environment.etc."lvm/lvm.conf".text =
+    lib.concatMapStringsSep "\n"
+      (bin: "global/${bin}_executable = ${pkgs.thin-provisioning-tools}/bin/${bin}")
+      [
+        "thin_check"
+        "thin_dump"
+        "thin_repair"
+        "cache_check"
+        "cache_dump"
+        "cache_repair"
+      ];
+
+  networking.useNetworkd = true;
+  systemd.network.enable = true;
+  systemd.network.wait-online.enable = false;
+  systemd.network.networks."end0" = {
+    # [Match] logically ANDs all match rules
+    #matchConfig.MACAddress = "7a:16:b7:43:6a:92";
+    matchConfig.Name = "end*";
+    # acquire a DHCP lease on link up
+    networkConfig.DHCP = "yes";
+    # this port is not always connected and not required to be online
+    linkConfig.RequiredForOnline = "no";
   };
 
   networking.networkmanager.enable = true;
