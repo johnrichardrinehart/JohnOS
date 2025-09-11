@@ -10,9 +10,6 @@ let
 in
 {
   imports = [
-    #./kernel_radxa.nix
-    #./kernel_6.13.nix
-    #./kernel_collabora.nix
     ./kernel_minimal.nix
     ./aic8800/module.nix
   ];
@@ -22,21 +19,19 @@ in
     useMinimalKernel = lib.mkEnableOption "use minimal kernel configuration" // {
       default = false;
     };
+    enableVPU = lib.mkEnableOption "the Radxa 5C VPU" // {
+      default = false;
+    };
   };
 
   config = lib.mkIf cfg.enable {
-
     nixpkgs.hostPlatform = "aarch64-linux";
-    fileSystems = {
-      "/" = {
-        device = "/dev/disk/by-label/NIXOS_SD";
-        fsType = "ext4";
-      };
-    };
+
+    system.build.firmware = pkgs.ubootRock5ModelC;
 
     boot.loader.grub.enable = false;
     boot.loader.generic-extlinux-compatible.enable = true;
-    system.build.firmware = pkgs.ubootRock5ModelC;
+
     system.build.sdImage = pkgs.callPackage (
       { ... }:
       let
@@ -106,17 +101,6 @@ in
         '';
       }
     ) { };
-
-    boot.consoleLogLevel = 7;
-
-    #    boot.kernelPackages = pkgs.linuxPackages_latest;
-    #    boot.kernelPackages = pkgs.linuxPackagesFor (
-    #        pkgs.linuxKernel.kernels.linux_6_16.override {
-    #          argsOverride = {
-    #            modDirVersion = "6.16.1";
-    #          };
-    #      }
-    #    );
 
     boot.kernelPatches = [
       {
