@@ -149,6 +149,7 @@ in
 
     networking.useNetworkd = true;
     systemd.network.enable = true;
+    systemd.network.wait-online.enable = false;
     systemd.network.networks."end0" = {
       # [Match] logically ANDs all match rules
       #matchConfig.MACAddress = "7a:16:b7:43:6a:92";

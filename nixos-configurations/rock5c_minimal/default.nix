@@ -130,6 +130,7 @@
     neededForBoot = false;
     fsType = "btrfs";
     device = "/dev/mapper/nas-storage";
+    options = [ "nofail" "x-systemd.device-timeout=10s" ]; # takes about 5s, usually
   };
 
   networking.networkmanager.enable = true;
