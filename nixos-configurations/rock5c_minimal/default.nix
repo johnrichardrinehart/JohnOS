@@ -66,5 +66,20 @@
     ]; # takes about 5s, usually
   };
 
+  boot.kernelPatches = [
+    {
+      name = "btrfs";
+      patch = null;
+      structuredExtraConfig = {
+        BTRFS_FS = lib.kernel.yes;
+        BTRFS_DEBUG = lib.kernel.yes;
+      };
+    }
+  ];
+
+  boot.supportedFilesystems = {
+    "btrfs" = true;
+  };
+
   networking.networkmanager.enable = true;
 }

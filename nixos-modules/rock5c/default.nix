@@ -117,19 +117,7 @@ in
           ZRAM_MEMORY_TRACKING = lib.kernel.yes;
         };
       }
-      {
-        name = "btrfs";
-        patch = null;
-        structuredExtraConfig = {
-          BTRFS_FS = lib.kernel.yes;
-          BTRFS_DEBUG = lib.kernel.yes;
-        };
-      }
     ];
-
-    boot.supportedFilesystems = {
-      "btrfs" = true;
-    };
 
     networking.useNetworkd = true;
     systemd.network.enable = true;
