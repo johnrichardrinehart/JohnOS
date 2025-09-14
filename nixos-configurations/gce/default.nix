@@ -1,13 +1,13 @@
 args@{ config, pkgs, ... }:
 {
   nixpkgs.hostPlatform = "x86_64-linux";
-  
+
   # Boot configuration
   boot.loader.grub = {
     enable = true;
     device = "/dev/sda";
   };
-  
+
   # Filesystem configuration
   fileSystems."/" = {
     device = "/dev/sda1";

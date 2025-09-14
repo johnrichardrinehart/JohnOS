@@ -1,13 +1,13 @@
 args@{ config, pkgs, ... }:
 {
   nixpkgs.hostPlatform = "x86_64-linux";
-  
+
   # Boot configuration
   boot.loader.grub = {
     enable = true;
     device = "/dev/sda";
   };
-  
+
   dev.johnrinehart.desktop.enable = true;
 
   boot.extraModprobeConfig = ''
@@ -36,46 +36,46 @@ args@{ config, pkgs, ... }:
       device = "/dev/sda1";
       fsType = "ext4";
     };
-      "/mnt/root" = {
-        device = "/dev/mmcblk0p1";
-        fsType = "ext4";
-        neededForBoot = false;
-      };
-      "/var/lib/docker" = {
-        fsType = "ext4";
-        device = "/mnt/root/var-lib-docker";
-        options = [
-          "defaults,bind"
-          "x-systemd.requires=/mnt/root"
-        ];
-      };
-      "/var/lib/bluetooth" = {
-        fsType = "overlay";
-        device = "overlay";
-        options = [
-          "lowerdir=/var/lib/bluetooth"
-          "upperdir=/mnt/root/var-lib-bluetooth"
-          "workdir=/mnt/root/.var-lib-bluetooth"
-          "x-systemd.requires=/mnt/root"
-          "x-systemd.requires=/var/lib/bluetooth"
-          "nofail"
-        ];
-        neededForBoot = false;
-      };
-      "/home" = {
-        fsType = "overlay";
-        device = "overlay";
-        options = [
-          "lowerdir=/home"
-          "upperdir=/mnt/root/home"
-          "workdir=/mnt/root/.home"
-          "x-systemd.requires=/mnt/root"
-          "x-systemd.requires=/home"
-          "nofail"
-        ];
-        neededForBoot = false;
-      };
+    "/mnt/root" = {
+      device = "/dev/mmcblk0p1";
+      fsType = "ext4";
+      neededForBoot = false;
     };
+    "/var/lib/docker" = {
+      fsType = "ext4";
+      device = "/mnt/root/var-lib-docker";
+      options = [
+        "defaults,bind"
+        "x-systemd.requires=/mnt/root"
+      ];
+    };
+    "/var/lib/bluetooth" = {
+      fsType = "overlay";
+      device = "overlay";
+      options = [
+        "lowerdir=/var/lib/bluetooth"
+        "upperdir=/mnt/root/var-lib-bluetooth"
+        "workdir=/mnt/root/.var-lib-bluetooth"
+        "x-systemd.requires=/mnt/root"
+        "x-systemd.requires=/var/lib/bluetooth"
+        "nofail"
+      ];
+      neededForBoot = false;
+    };
+    "/home" = {
+      fsType = "overlay";
+      device = "overlay";
+      options = [
+        "lowerdir=/home"
+        "upperdir=/mnt/root/home"
+        "workdir=/mnt/root/.home"
+        "x-systemd.requires=/mnt/root"
+        "x-systemd.requires=/home"
+        "nofail"
+      ];
+      neededForBoot = false;
+    };
+  };
 
   # disabled by installation-cd-minimal
   fonts.fontconfig.enable = pkgs.lib.mkOverride 49 true;

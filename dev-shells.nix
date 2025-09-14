@@ -7,7 +7,7 @@
       nixos-rebuild
       git
     ];
-    
+
     shellHook = ''
       echo "JohnOS development environment"
     '';

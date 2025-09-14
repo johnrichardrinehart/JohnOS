@@ -25,20 +25,21 @@
     };
   };
 
-  outputs = inputs: 
+  outputs =
+    inputs:
     let
       system = "x86_64-linux";
       pkgs = inputs.nixpkgs.legacyPackages.${system};
     in
     {
       nixosConfigurations = import ./nixos-configurations inputs;
-      
+
       homeConfigurations = import ./home-configurations inputs;
-      
+
       packages.${system} = import ./packages { inherit pkgs; };
-      
+
       devShells.${system} = import ./dev-shells.nix { inherit pkgs; };
-      
+
       overlays = import ./overlays inputs;
     };
 }

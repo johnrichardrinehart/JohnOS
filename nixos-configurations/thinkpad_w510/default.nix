@@ -12,7 +12,7 @@
     enable = true;
     device = "/dev/sda";
   };
-  
+
   # Root filesystem already defined below, removing duplicate
 
   dev.johnrinehart = {

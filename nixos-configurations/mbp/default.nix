@@ -6,19 +6,19 @@ args@{
 }:
 {
   nixpkgs.hostPlatform = "x86_64-linux";
-  
+
   # Boot configuration
   boot.loader.grub = {
     enable = true;
     device = "/dev/sda";
   };
-  
+
   # Root filesystem
   fileSystems."/" = {
     device = "/dev/sda1";
     fsType = "ext4";
   };
-  
+
   # TODO: remove allowUnbroken once ZFS in linux kernel is fixed
   nixpkgs.config.allowBroken = true;
   nixpkgs.config.allowUnfree = true;
