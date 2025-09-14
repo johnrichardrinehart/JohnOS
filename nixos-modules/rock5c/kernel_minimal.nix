@@ -46,7 +46,7 @@ in
       })
     ];
 
-    boot.kernelPackages = pkgs.linuxPackagesFor pkgs.linux_rock5c_minimal;
+    boot.kernelPackages = pkgs.linuxPackagesFor pkgs.linuxKernel.kernels.linux_6_16;
 
     # try to add hw-acceleration for the rk3588 (cf.
     # https://jellyfin.org/docs/general/post-install/transcoding/hardware-acceleration/rockchip/)
@@ -61,7 +61,7 @@ in
               ROCKCHIP_MULTI_RGA = lib.kernel.module; # consider changing to module
               ROCKCHIP_MPP_PROC_FS = lib.kernel.yes;
               ROCKCHIP_RVE = lib.kernel.yes;
-              IEP = lib.kernel.yes;
+              IEP = lib.kernel.yes; # this creates /proc/iep which currently SEGFAULTs on read. It's possible that other stuff is busted, too, around these graphics drivers since I don't know what the hell I'm doing. So, I'm going to point to the upstream kernel, for now.
               ROCKCHIP_DVBM = lib.kernel.yes;
               ROCKCHIP_VIDEO_TUNNEL = lib.kernel.yes;
               ROCKCHIP_MPP_OSAL = lib.kernel.yes;
