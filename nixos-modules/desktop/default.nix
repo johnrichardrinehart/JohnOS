@@ -66,7 +66,9 @@ let
         default = false;
       };
 
-      config = lib.mkIf cfg.enable { };
+      config = lib.mkIf cfg.enable {
+        programs.hyprland.enable = true;
+      };
     };
 
   variants = { inherit xorg-xmonad wl-hyprland; };
