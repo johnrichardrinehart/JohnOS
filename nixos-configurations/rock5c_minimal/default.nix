@@ -11,6 +11,7 @@
   dev.johnrinehart.rock5c.useMinimalKernel = true;
   dev.johnrinehart.system.enable = true;
   dev.johnrinehart.nix.enable = true;
+  dev.johnrinehart.desktop.wl-hyprland.enable = true;
 
   boot.consoleLogLevel = 7;
 
