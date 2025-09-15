@@ -119,11 +119,6 @@ in
           ZRAM_MEMORY_TRACKING = lib.kernel.yes;
         };
       }
-      # cf. https://github.com/radxa/kernel/commit/d35989ed644b9d67de09849779e5147f4332df55
-      {
-        name = "enable-hdmi-cec";
-        patch = ./0001-feat-enable-CEC-for-Rock-5C.patch;
-      }
     ];
   };
 }
