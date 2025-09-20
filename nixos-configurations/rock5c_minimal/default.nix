@@ -5,6 +5,30 @@
   ...
 }:
 {
+  # just for passing literal values to imported modules
+  system.build.literals = {
+    secondsToWaitForNAS = 10;
+  };
+
+  imports = [
+    ./swap.nix
+    ./tmpfs.nix
+  ];
+
+  nixpkgs.overlays = [
+    (final: prev: {
+      hm = prev.hm.overrideAttrs {
+        src = prev.fetchFromGitHub {
+          owner = "johnrichardrinehart";
+          repo = "HM";
+          rev = "f3947be0720bfd9ce3312478d64cd35a619c5eae";
+          hash = "sha256-kY7YE+S1NJs9yjUnVKjZ8jbIJm/nv/s0DNmNZej66b8=";
+        };
+        patches = [ ];
+      };
+    })
+  ];
+
   nixpkgs.hostPlatform = "aarch64-linux";
   networking.hostName = "rock5c-minimal";
   dev.johnrinehart.rock5c.enable = true;
@@ -64,7 +88,7 @@
     device = "/dev/mapper/nas-storage";
     options = [
       "nofail"
-      "x-systemd.device-timeout=10s"
+      "x-systemd.device-timeout=${builtins.toString config.system.build.literals.secondsToWaitForNAS}s"
     ]; # takes about 5s, usually
   };
 
