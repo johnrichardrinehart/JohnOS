@@ -176,12 +176,6 @@ in
 
   home.file = {
     ".config/powerline/themes/gruvbox.theme".source = ./gruvbox.theme;
-  }
-  // lib.optionalAttrs osConfig.dev.johnrinehart.i3.enable {
-    home.file."config/i3status/net-speed.sh" = {
-      source = ./net-speed.sh;
-      executable = true;
-    };
   };
 
   home.sessionVariables.EDITOR = "vim";
@@ -214,73 +208,6 @@ in
   };
 
   programs.gpg.enable = true;
-
-  programs.i3status = lib.optionalAttrs osConfig.dev.johnrinehart.i3.enable {
-    enable = true;
-    enableDefault = false;
-
-    general = {
-      output_format = "i3bar";
-      colors = false;
-      interval = 5;
-    };
-
-    modules = {
-      "ethernet enp0s3" = {
-        position = 1;
-        settings = {
-          format_up = "I: %ip";
-        };
-      };
-      "load" = {
-        position = 2;
-        settings = {
-          format = "%5min";
-        };
-      };
-      "disk /" = {
-        position = 3;
-        settings = {
-          format = "%free/%total";
-        };
-      };
-      "memory" = {
-        position = 4;
-        settings = {
-          format = "%used/%total";
-          threshold_degraded = "10%";
-          format_degraded = "MEMORY: %free";
-        };
-      };
-      "tztime local" = {
-        position = 5;
-        settings = {
-          format = "(L) %Y-%m-%d %H:%M:%S";
-        };
-      };
-      "tztime nyc" = {
-        position = 6;
-        settings = {
-          format = "(NYC) %Y-%m-%d %H:%M:%S %Z";
-          timezone = "America/New_York";
-        };
-      };
-      "battery 0" = {
-        position = 7;
-        settings = {
-          format = "%status %percentage %remaining %emptytime";
-          format_down = "No battery";
-          status_chr = "⚡ CHR";
-          status_bat = "🔋 BAT";
-          status_unk = "? UNK";
-          status_full = "☻ FULL";
-          path = "/sys/class/power_supply/BAT%d/uevent";
-          low_threshold = 10;
-        };
-      };
-    };
-
-  };
 
   programs.kitty = {
     enable = true;
@@ -466,7 +393,7 @@ in
       theme = "agnoster";
     };
 
-    initExtra = ''
+    initContent = ''
       export BGIMG="${../../static/ocean.jpg}"
       if [ ! -f $BGIMG ]; then
         curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
@@ -504,7 +431,8 @@ in
       unsetopt BEEP
 
       prompt() {
-        pwr="$(powerline --modules time,ssh,cwd,perms,git,gitstage,nix-shell,root,virtualenv --theme ~/.config/powerline/themes/gruvbox.theme --shell zsh $?)"
+        #pwr="$(powerline --modules time,ssh,cwd,perms,git,gitstage,nix-shell,root,virtualenv --theme ~/.config/powerline/themes/gruvbox.theme shell left)"
+        pwr="$(powerline shell left)"
         PS1=$(printf "%s\n$ " "$pwr")
       }
       precmd_functions+=(prompt)
@@ -535,7 +463,7 @@ in
         hp.monad-logger
       ];
 
-      config = ./config.hs;
+      config = ./xmonad/config.hs;
     };
   };
 

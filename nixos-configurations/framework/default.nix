@@ -11,4 +11,6 @@
   virtualisation.containers.enable = true;
 
   dev.johnrinehart.system.enable = true;
+ 
+  dev.johnrinehart.desktop.enable = true;
 }

@@ -7,11 +7,19 @@
   pkgs,
   options,
   modulesPath,
+  inputs,
   ...
 }:
 {
-  dev.johnrinehart.droidcam.enable = true;
+  imports = [
+    inputs.nixos-hardware.nixosModules.framework-11th-gen-intel
+  ];
+#  dev.johnrinehart.droidcam.enable = true;
 
+
+  nix.settings = {
+    extra-experimental-features = "nix-command flakes";
+  };
   boot.supportedFilesystems = [
     "ntfs"
     "exfat"
@@ -19,6 +27,7 @@
     "btrfs"
     "ext"
   ];
+
   boot.initrd.availableKernelModules = [
     "xhci_pci"
     "thunderbolt"
@@ -27,6 +36,7 @@
     "usb_storage"
     "sd_mod"
   ];
+
   boot.initrd.kernelModules = [ ];
 
   boot.resumeDevice = "/dev/disk/by-uuid/960b1823-195e-4044-8c86-8407b1f25d92";
@@ -70,6 +80,7 @@
 
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  hardware.enableRedistributableFirmware = true;
   # high-resolution display
 
   security.rtkit.enable = true;
@@ -82,15 +93,16 @@
 
   ## Below v4l2loopback stuff stolen from https://gist.github.com/TheSirC/93130f70cc280cdcdff89faf8d4e98ab
   # Extra kernel modules
-  boot.kernelPackages = pkgs.linuxKernel.packages.linux_6_12;
-  boot.extraModulePackages = [ config.boot.kernelPackages.v4l2loopback ];
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  environment.etc."modprobe.d/v4l2loopback.conf".text = ''
-    options v4l2loopback video_nr=0,1,2 card_label="Virtual Video 0,Virtual Video 1,Virtual Video 2" exclusive_caps=1
-  '';
-  environment.etc."modules-load.d/v4l2loopback.conf".text = ''
-    v4l2loopback
-  '';
+#  boot.extraModulePackages = [ config.boot.kernelPackages.v4l2loopback ];
+#
+#  environment.etc."modprobe.d/v4l2loopback.conf".text = ''
+#    options v4l2loopback video_nr=0,1,2 card_label="Virtual Video 0,Virtual Video 1,Virtual Video 2" exclusive_caps=1
+#  '';
+#  environment.etc."modules-load.d/v4l2loopback.conf".text = ''
+#    v4l2loopback
+#  '';
 
   boot.kernelModules = [
     "kvm-intel" # detected automatically
@@ -105,6 +117,7 @@
 
   programs.noisetorch.enable = true;
 
+  networking.networkmanager.enable = true;
   systemd.services.NetworkManager-wait-online.enable = false;
 
   services.upower = {

@@ -41,6 +41,7 @@ let
         ];
 
         dev.johnrinehart = {
+          xorg.enable = true;
           sound.enable = true;
           systemPackages.enable = true;
           xmonad.enable = true;
@@ -89,6 +90,7 @@ in
   };
 
   imports = [
+    ../../home-configurations/home-manager
     inputs.home-manager.nixosModules.default
     ./xorg.nix
     xorg-xmonad
