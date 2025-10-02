@@ -15,6 +15,19 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Xmonad configuration can be added here
+    services.displayManager.enable = true;
+
+    services.xserver.windowManager = {
+      xmonad = {
+        enable = true;
+        config = builtins.readFile ../home-configurations/home-manager/xmonad/config.hs;
+        enableContribAndExtras = true;
+        extraPackages = haskellPackages: [
+          haskellPackages.dbus
+          haskellPackages.List
+          haskellPackages.monad-logger
+        ];
+      };
+    };
   };
 }

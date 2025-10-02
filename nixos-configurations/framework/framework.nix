@@ -7,10 +7,15 @@
   pkgs,
   options,
   modulesPath,
+  inputs,
   ...
 }:
 {
-  dev.johnrinehart.droidcam.enable = true;
+  imports =  [
+    inputs.nixos-hardware.nixosModules.framework-11th-gen-intel
+  ];
+
+  dev.johnrinehart.droidcam.enable = false;
 
   boot.supportedFilesystems = [
     "ntfs"
@@ -70,6 +75,8 @@
 
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  hardware.enableRedistributableFirmware = true;
+#  hardware.cpu.intel.updateMicrocode = false;
   # high-resolution display
 
   security.rtkit.enable = true;
@@ -82,7 +89,7 @@
 
   ## Below v4l2loopback stuff stolen from https://gist.github.com/TheSirC/93130f70cc280cdcdff89faf8d4e98ab
   # Extra kernel modules
-  boot.kernelPackages = pkgs.linuxKernel.packages.linux_6_12;
+  boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.extraModulePackages = [ config.boot.kernelPackages.v4l2loopback ];
 
   environment.etc."modprobe.d/v4l2loopback.conf".text = ''

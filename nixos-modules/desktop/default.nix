@@ -37,11 +37,12 @@ let
           "electron-25.9.0"
         ];
 
-        environment.systemPackages = lib.optional config.dev.johnrinehart.desktop.obsidian [
+        environment.systemPackages = [ pkgs.kitty ] ++ lib.optional config.dev.johnrinehart.desktop.obsidian [
           pkgs.obsidian
         ];
 
         dev.johnrinehart = {
+          xorg.enable = true;
           sound.enable = true;
           systemPackages.enable = true;
           xmonad.enable = true;
@@ -100,6 +101,7 @@ in
   ];
 
   config = lib.mkIf cfg.enable {
+    networking.networkmanager.enable = true;
     dev.johnrinehart.desktop.xorg-xmonad.enable = (cfg.variant == "xorg-xmonad");
     dev.johnrinehart.desktop.wl-hyprland.enable = (cfg.variant == "wl-hyprland");
   };
