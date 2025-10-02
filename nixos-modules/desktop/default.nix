@@ -94,6 +94,7 @@ in
   };
 
   imports = [
+    ../../home-configurations/home-manager
     inputs.home-manager.nixosModules.default
     ./xorg.nix
     xorg-xmonad
