@@ -5,7 +5,7 @@
     flake-templates.url = "github:NixOS/templates/master";
 
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.05";
+      url = "github:nix-community/home-manager/master";
       flake = true;
       inputs.nixpkgs.follows = "nixpkgs";
     };
