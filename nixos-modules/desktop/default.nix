@@ -37,7 +37,10 @@ let
           "electron-25.9.0"
         ];
 
-        environment.systemPackages = [ pkgs.kitty ] ++ lib.optional config.dev.johnrinehart.desktop.obsidian [
+        environment.systemPackages = [
+          pkgs.kitty
+        ]
+        ++ lib.optional config.dev.johnrinehart.desktop.obsidian [
           pkgs.obsidian
         ];
 

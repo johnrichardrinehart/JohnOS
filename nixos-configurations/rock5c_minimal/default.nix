@@ -109,7 +109,10 @@
     # this port is not always connected and not required to be online
     linkConfig.RequiredForOnline = "no";
     # TODO: check if nofail and timeout are needed for RequiredForOnline
-    options = [ "nofail" "x-systemd.device-timeout=10s" ]; # takes about 5s, usually
+    options = [
+      "nofail"
+      "x-systemd.device-timeout=10s"
+    ]; # takes about 5s, usually
   };
 
   networking.networkmanager.enable = true;
