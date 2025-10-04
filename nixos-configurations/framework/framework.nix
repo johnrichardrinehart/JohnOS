@@ -19,6 +19,7 @@
 
   nix.settings = {
     extra-experimental-features = "nix-command flakes";
+    trusted-users = [ "john" ];
   };
 
   boot.supportedFilesystems = [
