@@ -25,6 +25,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    dev.johnrinehart.rock5c.aic8800.enable = true;
+
     nixpkgs.hostPlatform = "aarch64-linux";
 
     system.build.firmware = pkgs.ubootRock5ModelC;

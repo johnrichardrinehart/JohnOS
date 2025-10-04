@@ -1,26 +1,38 @@
-{ pkgs, config, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 let
   aic8800Src = (import ./src.nix) { inherit (pkgs) fetchFromGitHub; };
+  cfg = config.dev.johnrinehart.rock5c.aic8800;
 in
 {
-  boot.extraModprobeConfig = ''
-    options aic_load_fw aic_fw_path="${aic8800Src}/src/USB/driver_fw/fw/aic8800D80"
-  '';
+  options.dev.johnrinehart.rock5c.aic8800 = {
+    enable = lib.mkEnableOption "aic8800 driver";
+  };
 
-  nixpkgs.overlays = [
-    (final: prev: {
-      aic8800 = prev.callPackage ./aic8800.nix {
-        inherit (config.boot.kernelPackages) kernel kernelModuleMakeFlags;
-      };
-    })
-  ];
+  config = lib.mkIf cfg.enable {
+    boot.extraModprobeConfig = ''
+      options aic_load_fw aic_fw_path="${aic8800Src}/src/USB/driver_fw/fw/aic8800D80"
+    '';
 
-  # It appears that the below aren't necessary. Maybe because of USB enumeration.
-  boot.kernelModules = [
-    "aic_btusb"
-    "aic_load_fw"
-    "aic8800_fdrv"
-  ];
+    nixpkgs.overlays = [
+      (final: prev: {
+        aic8800 = prev.callPackage ./aic8800.nix {
+          inherit (config.boot.kernelPackages) kernel kernelModuleMakeFlags;
+        };
+      })
+    ];
 
-  boot.extraModulePackages = [ pkgs.aic8800 ];
+    # It appears that the below aren't necessary. Maybe because of USB enumeration.
+    boot.kernelModules = [
+      "aic_btusb"
+      "aic_load_fw"
+      "aic8800_fdrv"
+    ];
+
+    boot.extraModulePackages = [ pkgs.aic8800 ];
+  };
 }
