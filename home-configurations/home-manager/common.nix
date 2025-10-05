@@ -5,17 +5,6 @@
   ...
 }:
 let
-  extra = ''
-    ${pkgs.feh}/bin/feh --bg-fill ${../../static/ocean.jpg} # configure background
-    ${pkgs.xorg.xsetroot}/bin/xsetroot -cursor_name left_ptr # configure pointer
-  '';
-
-  polybarOpts = ''
-    ${pkgs.nitrogen}/bin/nitrogen --restore &
-    ${pkgs.pasystray}/bin/pasystray &
-    ${pkgs.networkmanagerapplet}/bin/nm-applet --sm-disable --indicator &
-  '';
-
   configureKeyboards = ''
     configureKeyboards() {
     ################################################################################
@@ -139,7 +128,7 @@ in
       enable = true;
       package = pkgs.polybar.override {
         alsaSupport = true;
-        pulseSupport = true;
+#        pulseSupport = true;
         githubSupport = true;
       };
       config = ./polybar/config.ini;
@@ -442,29 +431,16 @@ in
   };
 
   xsession = {
-    enable = true;
+    enable = false;
     # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
     scriptPath = ".hm-xsession";
 
-    profileExtra = ''
-      eval $(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
-      export SSH_AUTH_SOCK
-    '';
-  }
-  // lib.optionalAttrs osConfig.dev.johnrinehart.xmonad.enable {
-    initExtra = extra + polybarOpts + configureKeyboards;
+#    profileExtra = ''
+#      eval $(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
+#      export SSH_AUTH_SOCK
+#    '';
 
-    windowManager.xmonad = {
-      enable = true;
-      enableContribAndExtras = true;
-
-      extraPackages = hp: [
-        hp.dbus
-        hp.monad-logger
-      ];
-
-      config = ./xmonad/config.hs;
-    };
+#    initExtra = (lib.optionalString osConfig.dev.johnrinehart.xorg.enable extra) + (lib.optionalString osConfig.dev.johnrinehart.xmonad.enable polybarOpts) + (lib.optionalString osConfig.dev.johnrinehart.xorg.enable configureKeyboards);
   };
 
   home.stateVersion = "24.05";

@@ -19,10 +19,14 @@
     ./ssh.nix
     ./system.nix
     ./virtualisation.nix
-    ./xmonad.nix
+
+    ./desktop/default.nix
+    ./desktop/hyprland.nix
+    ./desktop/xmonad.nix
+    ./desktop/xorg-xmonad.nix
+    ./desktop/xorg.nix
 
     ./bootloader
-    ./desktop
     ./kernel
     ./rock5c
   ];

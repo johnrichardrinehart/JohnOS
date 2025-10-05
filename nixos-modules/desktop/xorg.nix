@@ -20,7 +20,7 @@ in
   config = lib.mkIf cfg.enable {
     services.displayManager = {
       # https://www.reddit.com/r/unixporn/comments/a7rg63/oc_a_tiny_riceable_lightdm_greeter/eckzt15?utm_source=share&utm_medium=web2x&context=3
-      defaultSession = "default"; # TODO: figure out a way to use another string besides default
+      defaultSession = "none+xmonad"; # TODO: figure out a way to use another string besides default
     };
 
     services.xserver = {
@@ -33,18 +33,20 @@ in
         lightdm.extraConfig = ''
           logind-check-graphical = true
         '';
+        sessionCommands = ''
+          ${lib.getExe pkgs.feh} --bg-fill ${../../static/ocean.jpg} # configure background
+          ${lib.getExe pkgs.xorg.xsetroot} -cursor_name left_ptr # configure pointer
+          ${lib.getExe pkgs.networkmanagerapplet} --sm-disable --indicator &
+        '';
       };
 
-      desktopManager.session = [
-        {
-          manage = "window";
-          name = "default";
-          start = ''
-            ${pkgs.runtimeShell} $HOME/.hm-xsession &
-            waitPID=$!
-          '';
-        }
-      ];
+#      desktopManager.session = [
+#        {
+#          manage = "window";
+#          name = "default";
+#          start = pkgs.callPackage ./xsession.nix {};
+#        }
+#      ];
     };
   };
 }

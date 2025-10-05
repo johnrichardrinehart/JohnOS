@@ -72,7 +72,7 @@ in
       pkgs.pstree
       pkgs.nethogs
       pkgs.pavucontrol
-      pkgs.autorandr
+#      pkgs.autorandr
       pkgs.file
       pkgs.pv # useful for dd operations (e.g. `dd if=infile | pv | sudo dd of=outfile bs=512`)
       # archive tools
@@ -81,7 +81,7 @@ in
       # communication tools
       pkgs.obs-studio
       # multimedia tools
-      pkgs.pulseaudioFull
+#      pkgs.pulseaudioFull
       pkgs.playerctl
       # DevOps tools
       pkgs.minikube
