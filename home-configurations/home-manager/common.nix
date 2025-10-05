@@ -128,7 +128,7 @@ in
       enable = true;
       package = pkgs.polybar.override {
         alsaSupport = true;
-#        pulseSupport = true;
+        pulseSupport = true;
         githubSupport = true;
       };
       config = ./polybar/config.ini;
@@ -435,12 +435,12 @@ in
     # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
     scriptPath = ".hm-xsession";
 
-#    profileExtra = ''
-#      eval $(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
-#      export SSH_AUTH_SOCK
-#    '';
+    #    profileExtra = ''
+    #      eval $(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
+    #      export SSH_AUTH_SOCK
+    #    '';
 
-#    initExtra = (lib.optionalString osConfig.dev.johnrinehart.xorg.enable extra) + (lib.optionalString osConfig.dev.johnrinehart.xmonad.enable polybarOpts) + (lib.optionalString osConfig.dev.johnrinehart.xorg.enable configureKeyboards);
+    #    initExtra = (lib.optionalString osConfig.dev.johnrinehart.xorg.enable extra) + (lib.optionalString osConfig.dev.johnrinehart.xmonad.enable polybarOpts) + (lib.optionalString osConfig.dev.johnrinehart.xorg.enable configureKeyboards);
   };
 
   home.stateVersion = "24.05";

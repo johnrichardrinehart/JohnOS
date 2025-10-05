@@ -7,7 +7,7 @@ in
     enable = lib.mkEnableOption "John's xmonad config";
   };
 
-  config  = lib.mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     services.xserver.windowManager.xmonad = {
       enable = true;
       enableContribAndExtras = true;

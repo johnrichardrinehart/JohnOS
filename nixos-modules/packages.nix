@@ -24,10 +24,7 @@ in
       pkgs.helix
       pkgs.neovim
       # gui configuration
-      pkgs.feh
-      pkgs.multilockscreen
       pkgs.dconf
-      pkgs.dunst
       pkgs.libnotify
       pkgs.gnome-icon-theme
       # gui apps
@@ -36,7 +33,6 @@ in
       pkgs.vscodium
       #pkgs.vscode
       pkgs.brave
-      pkgs.flameshot
       pkgs.keepassxc
       pkgs.stalonetray
       #pkgs.peek # GIF/webp screen recording
@@ -48,7 +44,6 @@ in
       pkgs.jump
       pkgs.tmux
       pkgs.xdg-utils # `open`
-      pkgs.xclip
       pkgs.fd
       pkgs.bc # needed for adjusting screen brightness
       pkgs.libqalculate
@@ -72,7 +67,6 @@ in
       pkgs.pstree
       pkgs.nethogs
       pkgs.pavucontrol
-#      pkgs.autorandr
       pkgs.file
       pkgs.pv # useful for dd operations (e.g. `dd if=infile | pv | sudo dd of=outfile bs=512`)
       # archive tools
@@ -81,7 +75,7 @@ in
       # communication tools
       pkgs.obs-studio
       # multimedia tools
-#      pkgs.pulseaudioFull
+      #      pkgs.pulseaudioFull
       pkgs.playerctl
       # DevOps tools
       pkgs.minikube

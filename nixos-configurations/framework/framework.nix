@@ -53,18 +53,18 @@
     fsType = "vfat";
   };
 
-#  fileSystems."/mnt/framework250_1" = {
-#    device = "/dev/disk/by-uuid/caca60c2-483b-4a58-a443-5c8df3b3c82d";
-#    fsType = "btrfs";
-#    options = [
-#      "user"
-#      "rw"
-#      "async"
-#      "auto"
-#      "nofail"
-#    ];
-#  };
-#
+  fileSystems."/mnt/framework250_1" = {
+    device = "/dev/disk/by-uuid/caca60c2-483b-4a58-a443-5c8df3b3c82d";
+    fsType = "btrfs";
+    options = [
+      "user"
+      "rw"
+      "async"
+      "auto"
+      "nofail"
+    ];
+  };
+
   swapDevices = [ { device = "/dev/disk/by-uuid/960b1823-195e-4044-8c86-8407b1f25d92"; } ];
 
   # The global useDHCP flag is deprecated, therefore explicitly set to false here.
@@ -109,7 +109,14 @@
     "kvm-intel" # detected automatically
   ];
 
-  services.chrony.enable = true;
+  services.chrony = {
+    enable = true;
+    # if we're off by >1s then jump system clock only within the 1st 3 clock
+    # updates
+    extraConfig = ''
+      makestep 1 3
+    '';
+  };
 
   services.tailscale.enable = true;
   networking.firewall.checkReversePath = "loose";
@@ -124,6 +131,4 @@
   services.upower = {
     enable = true;
   };
-
-#  services.pulseaudio.enable = true;
 }

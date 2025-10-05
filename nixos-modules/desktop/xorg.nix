@@ -37,16 +37,19 @@ in
           ${lib.getExe pkgs.feh} --bg-fill ${../../static/ocean.jpg} # configure background
           ${lib.getExe pkgs.xorg.xsetroot} -cursor_name left_ptr # configure pointer
           ${lib.getExe pkgs.networkmanagerapplet} --sm-disable --indicator &
+          ${pkgs.pasystray}/bin/pasystray &
+          ${pkgs.networkmanagerapplet}/bin/nm-applet --sm-disable --indicator &
         '';
       };
-
-#      desktopManager.session = [
-#        {
-#          manage = "window";
-#          name = "default";
-#          start = pkgs.callPackage ./xsession.nix {};
-#        }
-#      ];
     };
+
+    environment.systemPackages = [
+      pkgs.autorandr
+      pkgs.flameshot
+      pkgs.xclip
+      pkgs.feh
+      pkgs.multilockscreen
+      pkgs.dunst
+    ];
   };
 }
