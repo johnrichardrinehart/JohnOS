@@ -6,6 +6,7 @@
   kernel,
   kmod,
   kernelModuleMakeFlags,
+  buildPackages,
 }:
 
 stdenv.mkDerivation rec {
@@ -29,11 +30,14 @@ stdenv.mkDerivation rec {
     KERNELVERSION = kernel.modDirVersion;
   };
 
+  depsBuildBuild = [ buildPackages.stdenv.cc ];
+
   buildPhase = ''
     cp -r "$KERNELDIR" ./build; # need it to be writeable
     chmod -R u+w ./build;
-    make -C "./build" M=../src/USB/driver_fw/drivers/aic8800
-    make -C "./build" M=../src/USB/driver_fw/drivers/aic_btusb
+
+    make -C "./build" M=../src/USB/driver_fw/drivers/aic8800 ARCH=${kernel.karch} CROSS_COMPILE=${stdenv.cc.targetPrefix};
+    make -C "./build" M=../src/USB/driver_fw/drivers/aic_btusb ARCH=${kernel.karch} CROSS_COMPILE=${stdenv.cc.targetPrefix};
   '';
 
   installPhase = ''
