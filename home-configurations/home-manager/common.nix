@@ -79,17 +79,12 @@ in
     # CLI
     pkgs.fzf
     # instant messengers
-    pkgs.tdesktop
+    pkgs.telegram-desktop
     pkgs.signal-desktop
     #pkgs.discord
     #pkgs.element-desktop
     #pkgs.skypeforlinux
     # development tools
-    (pkgs.google-cloud-sdk.withExtraComponents [
-      pkgs.google-cloud-sdk.components.gke-gcloud-auth-plugin
-      pkgs.google-cloud-sdk.components.config-connector
-    ])
-    pkgs.google-cloud-sql-proxy
   ];
 
   services.flameshot.enable = true;

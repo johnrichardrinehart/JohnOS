@@ -18,7 +18,6 @@ in
       pkgs.openconnect
       pkgs.alsa-tools # https://askubuntu.com/a/1293623
       pkgs.alsa-utils # https://askubuntu.com/a/1293623
-      pkgs.glxinfo
       # editors
       pkgs.vim
       pkgs.helix
