@@ -41,8 +41,6 @@
 
   boot.initrd.kernelModules = [ ];
 
-  boot.resumeDevice = "/dev/disk/by-uuid/960b1823-195e-4044-8c86-8407b1f25d92";
-
   fileSystems."/" = {
     device = "/dev/disk/by-uuid/9dbd56c9-2344-450a-845b-6490d0879256";
     fsType = "ext4";
@@ -62,10 +60,9 @@
       "async"
       "auto"
       "nofail"
+      "x-systemd.device-timeout=5s"
     ];
   };
-
-  swapDevices = [ { device = "/dev/disk/by-uuid/960b1823-195e-4044-8c86-8407b1f25d92"; } ];
 
   # The global useDHCP flag is deprecated, therefore explicitly set to false here.
   # Per-interface useDHCP will be mandatory in the future, so this generated config
