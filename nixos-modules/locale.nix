@@ -2,5 +2,5 @@
 {
   console.useXkbConfig = true;
   services.xserver.xkb.variant = "dvorak";
-  time.timeZone = "America/Los_Angeles";
+  time.timeZone = "America/New_York";
 }
