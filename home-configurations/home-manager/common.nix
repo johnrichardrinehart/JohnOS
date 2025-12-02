@@ -87,10 +87,13 @@ in
     # development tools
   ];
 
-  services.flameshot.enable = true;
+  # only use flameshot with Xorg
+  services.flameshot.enable = osConfig.services.xserver.enable;
+
   services.gpg-agent = {
     enable = true;
   };
+
   services.network-manager-applet.enable = true;
 
   services.polybar =
@@ -120,7 +123,8 @@ in
       '';
     in
     {
-      enable = true;
+      # only use polybar with Xorg
+      enable = osConfig.services.xserver.enable;
       package = pkgs.polybar.override {
         alsaSupport = true;
         pulseSupport = true;
@@ -198,6 +202,7 @@ in
     font.size = 12;
     font.name = "Fira Mono Medium for Powerline";
     extraConfig = ''
+      hide_window_decorations yes
       enable_audio_bell no
       scrollback_lines 250000
       map kitty_mod+f5 change_font_size all 12.0
@@ -415,27 +420,13 @@ in
       unsetopt BEEP
 
       prompt() {
-        #pwr="$(powerline --modules time,ssh,cwd,perms,git,gitstage,nix-shell,root,virtualenv --theme ~/.config/powerline/themes/gruvbox.theme shell left)"
-        pwr="$(powerline shell left)"
+        pwr="$(${lib.getExe pkgs.powerline-go} -modules time,venv,user,host,ssh,cwd,perms,git,hg,jobs,exit,root)"
         PS1=$(printf "%s\n$ " "$pwr")
       }
       precmd_functions+=(prompt)
 
       # ${pkgs.zellij}/bin/zellij attach --index 0 || ${pkgs.zellij}/bin/zellij
     '';
-  };
-
-  xsession = {
-    enable = false;
-    # https://discourse.nixos.org/t/opening-i3-from-home-manager-automatically/4849/8
-    scriptPath = ".hm-xsession";
-
-    #    profileExtra = ''
-    #      eval $(${pkgs.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
-    #      export SSH_AUTH_SOCK
-    #    '';
-
-    #    initExtra = (lib.optionalString osConfig.dev.johnrinehart.xorg.enable extra) + (lib.optionalString osConfig.dev.johnrinehart.xmonad.enable polybarOpts) + (lib.optionalString osConfig.dev.johnrinehart.xorg.enable configureKeyboards);
   };
 
   home.stateVersion = "24.05";

@@ -14,9 +14,13 @@
   services.sshd.enable = true;
   virtualisation.containers.enable = true;
 
+  users.users.john.extraGroups = [ "input" ];
+
   dev.johnrinehart.system.enable = true;
   dev.johnrinehart.desktop = {
     enable = true;
-    variant = "xorg-xmonad";
+    variant = "greetd+niri";
   };
+
+  dev.johnrinehart.systemPackages.enable = true;
 }

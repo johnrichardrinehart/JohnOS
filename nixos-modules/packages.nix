@@ -38,7 +38,7 @@ in
       pkgs.mpv # mplayer replacement
       pkgs.simplescreenrecorder
       # shell tools
-      pkgs.powerline
+      pkgs.powerline-go
       pkgs.ranger
       pkgs.jump
       pkgs.tmux
