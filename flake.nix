@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:johnrichardrinehart/nixpkgs?rev=f9cfdf3526a67b6e12c2b68c15d45125597c1f2d";
+    nixpkgs.url = "github:johnrichardrinehart/nixpkgs?ref=rock-5c-nixos-25.11";
 
     flake-templates.url = "github:NixOS/templates/master";
 
