@@ -23,4 +23,6 @@
   };
 
   dev.johnrinehart.systemPackages.enable = true;
+
+  services.fprintd.enable = true;
 }
