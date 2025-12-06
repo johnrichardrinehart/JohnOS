@@ -14,8 +14,8 @@ let
     account required pam_unix.so
 
     # Authentication management
-    # Fingerprint: success→continue, timeout/unavailable→continue, wrong→reject
-    auth [success=ok ignore=ignore authinfo_unavail=ignore default=bad] ${pkgs.fprintd}/lib/security/pam_fprintd.so timeout=5
+    # Fingerprint: success→continue, timeout/unavailable→continue, wrong→reject immediately
+    auth [success=ok ignore=ignore authinfo_unavail=ignore default=die] ${pkgs.fprintd}/lib/security/pam_fprintd.so timeout=5
     # Password is always required
     auth required pam_unix.so try_first_pass nullok
     auth optional ${pkgs.gnome-keyring}/lib/security/pam_gnome_keyring.so
