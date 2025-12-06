@@ -27,6 +27,7 @@ in
 
     services.greetd.enable = true;
     services.greetd.settings.default_session.command = "${lib.getExe pkgs.tuigreet}";
+    services.greetd.useTextGreeter = true;
 
     environment.systemPackages = [ pkgs.alacritty pkgs.xwayland-satellite pkgs.fuzzel pkgs.grim pkgs.mako pkgs.slurp pkgs.swaylock pkgs.xwayland-satellite pkgs.satty pkgs.waypaper pkgs.swaybg pkgs.waybar pkgs.brightnessctl pkgs.wlsunset ];
 
@@ -47,13 +48,36 @@ in
       '';
     };
 
-    programs.seahorse.enable = true;
     services.gnome.gnome-keyring.enable = true;
-    security.pam.services.login.enableGnomeKeyring = true;
-    security.pam.services.greetd.enableGnomeKeyring = true;
-    security.pam.services.greetd-password.enableGnomeKeyring = true;
-    services.dbus.packages = [ pkgs.gnome-keyring pkgs.gcr ];
-    security.pam.services.gdm-password.enableGnomeKeyring = true;
+
+    # Custom PAM config: fingerprint as first factor (rejects bad fingerprints),
+    # then mandatory password
+    security.pam.services.greetd = {
+      enableGnomeKeyring = true;
+      text = ''
+        # Account management
+        account required pam_unix.so
+
+        # Authentication management
+        # Fingerprint: success→continue, timeout/unavailable→continue, wrong→reject
+        auth [success=ok ignore=ignore authinfo_unavail=ignore default=bad] ${pkgs.fprintd}/lib/security/pam_fprintd.so timeout=5
+        # Password is always required
+        auth required pam_unix.so try_first_pass nullok
+        auth optional ${pkgs.gnome-keyring}/lib/security/pam_gnome_keyring.so
+
+        # Password management
+        password sufficient pam_unix.so nullok yescrypt
+        password optional ${pkgs.gnome-keyring}/lib/security/pam_gnome_keyring.so use_authtok
+
+        # Session management
+        session required pam_env.so conffile=/etc/pam/environment readenv=0
+        session required pam_unix.so
+        session required pam_loginuid.so
+        session optional ${pkgs.systemd}/lib/security/pam_systemd.so
+        session required pam_limits.so
+        session optional ${pkgs.gnome-keyring}/lib/security/pam_gnome_keyring.so auto_start
+      '';
+    };
   };
 }
 
