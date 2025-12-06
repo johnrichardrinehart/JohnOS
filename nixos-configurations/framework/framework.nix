@@ -118,6 +118,29 @@
   services.tailscale.enable = true;
   networking.firewall.checkReversePath = "loose";
 
+  # Fix tailscaled hanging during shutdown when trying to cleanup UPnP port mappings
+  # The daemon has an internal 45s watchdog timeout when closing, which blocks shutdown.
+  # It tries to delete port mappings from the router, but this hangs if the network
+  # is going down or the router is unresponsive.
+  systemd.services.tailscaled = {
+    # Stop tailscale BEFORE network goes down during shutdown
+    # Only use network.target to avoid ordering cycles with NetworkManager
+    before = [ "network.target" ];
+
+    serviceConfig = {
+      # Gracefully disconnect from tailnet before stopping the daemon
+      # This avoids hanging on UPnP port mapping cleanup during shutdown
+      ExecStop = "${pkgs.tailscale}/bin/tailscale down --accept-risk=all";
+
+      # Still set a timeout as a safety measure
+      # Should complete quickly now that we disconnect first
+      TimeoutStopSec = "2s";
+
+      # Send SIGTERM first, then SIGKILL after timeout
+      KillMode = "process";
+    };
+  };
+
   networking.timeServers = options.networking.timeServers.default ++ [ "time.facebook.com" ];
 
   programs.noisetorch.enable = true;
