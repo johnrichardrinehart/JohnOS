@@ -4,10 +4,13 @@
 
   nixpkgs.hostPlatform = "x86_64-linux";
 
+  dev.johnrinehart.boot.loader.systemd-boot = {
+    enable = true;
+    configurationLimit = 5;
+  };
+
   boot.loader = {
     efi.canTouchEfiVariables = true;
-    systemd-boot.enable = true;
-    systemd-boot.configurationLimit = 5;
     timeout = 1;
   };
 
