@@ -30,6 +30,7 @@ in
 
     environment.systemPackages = [ pkgs.alacritty pkgs.xwayland-satellite pkgs.fuzzel pkgs.grim pkgs.mako pkgs.slurp pkgs.swaylock pkgs.xwayland-satellite pkgs.satty pkgs.waypaper pkgs.swaybg pkgs.waybar pkgs.brightnessctl pkgs.wlsunset pkgs.ueberzugpp ];
 
+    environment.etc."niri/config.kdl".source = ./niri.kdl;
 
     systemd.user.services.swaybg = {
       enable = true;
