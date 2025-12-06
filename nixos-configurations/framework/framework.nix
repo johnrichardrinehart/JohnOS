@@ -60,7 +60,7 @@
       "async"
       "auto"
       "nofail"
-      "x-systemd.device-timeout=5s"
+      "x-systemd.device-timeout=2s"
     ];
   };
 
