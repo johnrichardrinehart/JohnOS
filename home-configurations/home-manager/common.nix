@@ -420,8 +420,7 @@ in
       unsetopt BEEP
 
       prompt() {
-        pwr="$(${lib.getExe pkgs.powerline-go} -modules time,venv,user,host,ssh,cwd,perms,git,hg,jobs,exit,root)"
-        PS1=$(printf "%s\n$ " "$pwr")
+        eval $("${lib.getExe pkgs.oh-my-posh}" init zsh --config "${./oh-my-posh.json}");
       }
       precmd_functions+=(prompt)
 
