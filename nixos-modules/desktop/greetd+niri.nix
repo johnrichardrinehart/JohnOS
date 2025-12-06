@@ -28,7 +28,7 @@ in
     services.greetd.enable = true;
     services.greetd.settings.default_session.command = "${lib.getExe pkgs.tuigreet}";
 
-    environment.systemPackages = [ pkgs.alacritty pkgs.xwayland-satellite pkgs.fuzzel pkgs.grim pkgs.mako pkgs.slurp pkgs.swaylock pkgs.xwayland-satellite pkgs.satty pkgs.waypaper pkgs.swaybg pkgs.waybar pkgs.brightnessctl pkgs.wlsunset pkgs.ueberzugpp ];
+    environment.systemPackages = [ pkgs.alacritty pkgs.xwayland-satellite pkgs.fuzzel pkgs.grim pkgs.mako pkgs.slurp pkgs.swaylock pkgs.xwayland-satellite pkgs.satty pkgs.waypaper pkgs.swaybg pkgs.waybar pkgs.brightnessctl pkgs.wlsunset ];
 
     environment.etc."niri/config.kdl".source = ./niri.kdl;
 

@@ -25,4 +25,6 @@
   dev.johnrinehart.systemPackages.enable = true;
 
   services.fprintd.enable = true;
+
+  dev.johnrinehart.terminal.filepicker.enable = true;
 }

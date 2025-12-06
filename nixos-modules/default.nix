@@ -5,6 +5,7 @@
   imports = [
     ./bluetooth.nix
     ./droidcam.nix
+    ./filepicker.nix
     ./fonts.nix
     ./gocryptfs.nix
     ./ide.nix
