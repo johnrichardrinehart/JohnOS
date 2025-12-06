@@ -155,4 +155,12 @@
   services.upower = {
     enable = true;
   };
+
+  swapDevices = [{
+    device = "/swapfile";
+    size = 32 * 1024; # 16 GiB
+  }];
+
+  # Decent value for SSD (writes are expensive - chew up lifetime)
+  boot.kernel.sysctl."vm.swappiness" = 10;
 }
