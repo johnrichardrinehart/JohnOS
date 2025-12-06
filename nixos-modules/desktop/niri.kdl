@@ -76,6 +76,12 @@ input {
 // Find more information on the wiki:
 // https://yalter.github.io/niri/Configuration:-Outputs
 // Remember to uncomment the node by removing "/-"!
+
+// Home office monitor
+output "Dell Inc. DELL U2520D 7Z4V823" {
+	position x=0 y=0 // left of laptop monitor
+}
+
 /-output "eDP-1" {
     // Uncomment this line to disable this output.
     // off
