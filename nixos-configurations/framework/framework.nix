@@ -16,6 +16,7 @@
   ];
 
   dev.johnrinehart.droidcam.enable = false; # TODO: broken
+  dev.johnrinehart.auto-suspend.enable = true;
 
   nix.settings = {
     extra-experimental-features = "nix-command flakes";
