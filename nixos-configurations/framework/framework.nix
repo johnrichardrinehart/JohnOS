@@ -16,7 +16,10 @@
   ];
 
   dev.johnrinehart.droidcam.enable = false; # TODO: broken
-  dev.johnrinehart.auto-suspend.enable = true;
+  dev.johnrinehart.auto-suspend = {
+    notificationLevels = builtins.genList (i: 30 - (i * 5)) 6; # [ 30 25 20 15 10 5 ]
+    enable = true;
+  };
 
   nix.settings = {
     extra-experimental-features = "nix-command flakes";

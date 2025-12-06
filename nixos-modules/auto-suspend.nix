@@ -6,9 +6,11 @@ let
   checkBatteryScript = pkgs.writeShellScript "check-battery" ''
     set -euo pipefail
 
-    # State file to track last action to avoid repeated suspends
-    STATE_FILE="/var/lib/auto-suspend/last-action"
-    ${pkgs.coreutils}/bin/mkdir -p "$(${pkgs.coreutils}/bin/dirname "$STATE_FILE")"
+    # State files to track actions and notifications
+    STATE_DIR="/var/lib/auto-suspend"
+    STATE_FILE="$STATE_DIR/last-action"
+    NOTIFIED_FILE="$STATE_DIR/notified-levels"
+    ${pkgs.coreutils}/bin/mkdir -p "$STATE_DIR"
 
     # Get battery percentage using upower
     BATTERY_PATH=$(${pkgs.upower}/bin/upower -e | ${pkgs.gnugrep}/bin/grep -i battery | ${pkgs.coreutils}/bin/head -n1)
@@ -30,11 +32,31 @@ let
     LOW_ENERGY_THRESHOLD=$(echo "$ENERGY_FULL * ${toString cfg.lowLevel} / 100" | ${pkgs.bc}/bin/bc -l)
     CRITICAL_ENERGY_THRESHOLD=$(echo "$ENERGY_FULL * ${toString cfg.criticalLevel} / 100" | ${pkgs.bc}/bin/bc -l)
 
+    # Function to send notification to user session
+    send_notification() {
+      local title="$1"
+      local message="$2"
+      local urgency="$3"
+
+      # Find the user's UID and DBUS session
+      for uid in $(${pkgs.coreutils}/bin/ls /run/user/ 2>/dev/null); do
+        if [ -S "/run/user/$uid/bus" ]; then
+          # Get username from UID
+          username=$(${pkgs.coreutils}/bin/id -un "$uid" 2>/dev/null || echo "")
+          if [ -n "$username" ]; then
+            DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+              ${pkgs.su}/bin/su -s ${pkgs.bash}/bin/sh "$username" -c \
+              "${pkgs.libnotify}/bin/notify-send --urgency=$urgency --app-name='Auto-Suspend' '$title' '$message'" 2>/dev/null || true
+          fi
+        fi
+      done
+    }
+
     # Don't suspend if charging or fully charged
     if [ "$STATE" = "charging" ] || [ "$STATE" = "fully-charged" ]; then
       echo "Battery is $STATE ($PERCENTAGE%, $ENERGY Wh), not suspending"
-      # Clear state file when charging
-      ${pkgs.coreutils}/bin/rm -f "$STATE_FILE"
+      # Clear state files when charging
+      ${pkgs.coreutils}/bin/rm -f "$STATE_FILE" "$NOTIFIED_FILE"
       exit 0
     fi
 
@@ -46,6 +68,56 @@ let
 
     echo "Battery at $PERCENTAGE% ($ENERGY Wh of $ENERGY_FULL Wh), capacity-level: $CAPACITY_LEVEL, state: $STATE, last action: $LAST_ACTION"
     echo "Thresholds: low=${toString cfg.lowLevel}% ($LOW_ENERGY_THRESHOLD Wh), critical=${toString cfg.criticalLevel}% ($CRITICAL_ENERGY_THRESHOLD Wh)"
+
+    # Check notification levels and send ONE notification per check
+    # Sort levels in ascending order to find the lowest (most urgent) uncrossed threshold
+    NOTIFICATION_LEVELS="${pkgs.lib.concatStringsSep " " (map toString (pkgs.lib.sort (a: b: a < b) cfg.notificationLevels))}"
+    NOTIFIED_LEVELS=""
+    if [ -f "$NOTIFIED_FILE" ]; then
+      NOTIFIED_LEVELS=$(${pkgs.coreutils}/bin/cat "$NOTIFIED_FILE")
+    fi
+
+    # Find the lowest (most urgent) threshold that was crossed but not yet notified
+    NOTIFY_LEVEL=""
+    for level in $NOTIFICATION_LEVELS; do
+      if [ "$PERCENTAGE" -le "$level" ]; then
+        if ! echo "$NOTIFIED_LEVELS" | ${pkgs.gnugrep}/bin/grep -q "\\<$level\\>"; then
+          NOTIFY_LEVEL="$level"
+          # Keep looking for lower levels (more urgent)
+        fi
+      fi
+    done
+
+    # Send notification for the lowest (most urgent) uncrossed threshold only
+    if [ -n "$NOTIFY_LEVEL" ]; then
+      echo "Battery crossed $NOTIFY_LEVEL% threshold, sending notification"
+
+      # Determine urgency based on level
+      if [ "$NOTIFY_LEVEL" -le 5 ]; then
+        urgency="critical"
+        message="Battery critically low at $PERCENTAGE%! System will suspend soon."
+      elif [ "$NOTIFY_LEVEL" -le ${toString cfg.criticalLevel} ]; then
+        urgency="critical"
+        message="Battery at $PERCENTAGE%. System will hibernate soon."
+      elif [ "$NOTIFY_LEVEL" -le ${toString cfg.lowLevel} ]; then
+        urgency="normal"
+        message="Battery at $PERCENTAGE%. System will suspend soon."
+      else
+        urgency="low"
+        message="Battery at $PERCENTAGE%. Please plug in charger."
+      fi
+
+      send_notification "Low Battery" "$message" "$urgency"
+
+      # Mark ALL crossed levels as notified to avoid duplicate notifications
+      for level in $NOTIFICATION_LEVELS; do
+        if [ "$PERCENTAGE" -le "$level" ]; then
+          if ! echo "$NOTIFIED_LEVELS" | ${pkgs.gnugrep}/bin/grep -q "\\<$level\\>"; then
+            echo "$level" >> "$NOTIFIED_FILE"
+          fi
+        fi
+      done
+    fi
 
     # Critical level: UPower says "critical" OR energy below calculated threshold
     if [ "$CAPACITY_LEVEL" = "critical" ] || ([ -n "$ENERGY" ] && [ "$(echo "$ENERGY < $CRITICAL_ENERGY_THRESHOLD" | ${pkgs.bc}/bin/bc)" = "1" ]); then
@@ -84,6 +156,12 @@ let
       echo "Battery recovered (capacity-level=$CAPACITY_LEVEL), clearing state"
       ${pkgs.coreutils}/bin/rm -f "$STATE_FILE"
     fi
+
+    # Clear notified levels if battery has recovered significantly
+    if [ "$PERCENTAGE" -gt 25 ] && [ -f "$NOTIFIED_FILE" ]; then
+      echo "Battery recovered above 25%, clearing notification state"
+      ${pkgs.coreutils}/bin/rm -f "$NOTIFIED_FILE"
+    fi
   '';
 in
 {
@@ -114,6 +192,17 @@ in
       type = lib.types.str;
       default = "90s";
       description = "How often to check battery level (systemd timer format, default: 90s)";
+    };
+
+    notificationLevels = lib.mkOption {
+      type = lib.types.listOf lib.types.int;
+      default = [ 20 15 10 5 ];
+      description = ''
+        Battery percentage levels at which to send notifications (default: [20 15 10 5]).
+        Notifications are sent once when crossing each threshold while discharging.
+        Notification state is cleared when battery recovers above 25% or when charging.
+      '';
+      example = [ 30 20 15 10 5 3 1 ];
     };
   };
 
