@@ -3,6 +3,7 @@
   nixpkgs.overlays = [ inputs.self.overlays.default ];
 
   imports = [
+    ./auto-suspend.nix
     ./bluetooth.nix
     ./droidcam.nix
     ./filepicker.nix
