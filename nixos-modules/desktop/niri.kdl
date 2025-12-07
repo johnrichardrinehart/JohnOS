@@ -603,8 +603,8 @@ binds {
     // Mod+Space       { switch-layout "next"; }
     // Mod+Shift+Space { switch-layout "prev"; }
 
-    Print { spawn-sh r#"grim -g "$(slurp)" - | satty --copy-command wl-copy -f -"#; }
-    Mod+Shift+S { spawn-sh r#"grim -g "$(slurp)" - | satty --copy-command wl-copy -f -"#; }
+    Print { spawn-sh r#"grim -g "$(slurp)" - | satty --fullscreen --copy-command wl-copy -f -"#; }
+    Mod+Shift+S { spawn-sh r#"grim -g "$(slurp)" - | satty --fullscreen --copy-command wl-copy -f -"#; }
 
     // Print { screenshot; }
     Ctrl+Print { screenshot-screen; }
