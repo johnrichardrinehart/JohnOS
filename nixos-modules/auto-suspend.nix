@@ -92,18 +92,24 @@ let
     if [ -n "$NOTIFY_LEVEL" ]; then
       echo "Battery crossed $NOTIFY_LEVEL% threshold, sending notification"
 
-      # Determine urgency based on level
-      if [ "$NOTIFY_LEVEL" -le 5 ]; then
+      # Determine urgency and message based on current battery percentage and what action will be taken
+      # Take into account LAST_ACTION to reflect whether system already suspended
+      if [ "$PERCENTAGE" -le ${toString cfg.criticalLevel} ]; then
         urgency="critical"
-        message="Battery critically low at $PERCENTAGE%! System will suspend soon."
-      elif [ "$NOTIFY_LEVEL" -le ${toString cfg.criticalLevel} ]; then
-        urgency="critical"
-        message="Battery at $PERCENTAGE%. System will hibernate soon."
-      elif [ "$NOTIFY_LEVEL" -le ${toString cfg.lowLevel} ]; then
-        urgency="normal"
-        message="Battery at $PERCENTAGE%. System will suspend soon."
-      else
+        if [ "$LAST_ACTION" = "critical" ]; then
+          message="Battery critically low at $PERCENTAGE%! System will power off soon."
+        else
+          message="Battery critically low at $PERCENTAGE%! System will suspend-then-hibernate immediately."
+        fi
+      elif [ "$PERCENTAGE" -le ${toString cfg.lowLevel} ]; then
         urgency="low"
+        if [ "$LAST_ACTION" = "low" ]; then
+          message="Battery at $PERCENTAGE%. Critical level will be reached soon."
+        else
+          message="Battery at $PERCENTAGE%. System will suspend soon."
+        fi
+      else
+        urgency="normal"
         message="Battery at $PERCENTAGE%. Please plug in charger."
       fi
 
