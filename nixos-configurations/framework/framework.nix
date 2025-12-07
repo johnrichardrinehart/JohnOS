@@ -161,6 +161,28 @@
     };
   };
 
+  # Separate service to bring tailscale up after network is online
+  # This avoids ExecStartPost timing out when network isn't ready at boot
+  systemd.services.tailscale-autoconnect = {
+    description = "Automatically connect to Tailscale";
+    after = [ "network-online.target" "tailscaled.service" ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.tailscale}/bin/tailscale up --accept-routes --accept-dns=false";
+      RemainAfterExit = true;
+
+      # Prevent blocking boot if network is slow/unavailable
+      TimeoutStartSec = "30s";
+
+      # Retry if it fails (e.g., network not ready yet)
+      Restart = "on-failure";
+      RestartSec = "10s";
+    };
+  };
+
   networking.timeServers = options.networking.timeServers.default ++ [ "time.facebook.com" ];
 
   programs.noisetorch.enable = true;
