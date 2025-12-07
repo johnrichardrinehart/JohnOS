@@ -609,6 +609,8 @@ binds {
     // Print { screenshot; }
     Ctrl+Print { screenshot-screen; }
     Alt+Print { screenshot-window; }
+    // View clipboard history
+    Mod+Shift+C { spawn-sh r#"cliphist list | fuzzel --width 100 --dmenu | cliphist decode | wl-copy"#; }
 
     // Applications such as remote-desktop clients and software KVM switches may
     // request that niri stops processing the keyboard shortcuts defined here
