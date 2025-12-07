@@ -12,6 +12,16 @@ let
     NOTIFIED_FILE="$STATE_DIR/notified-levels"
     ${pkgs.coreutils}/bin/mkdir -p "$STATE_DIR"
 
+    # Function to suspend with fallback
+    do_suspend() {
+      if ${pkgs.systemd}/bin/systemctl suspend-then-hibernate; then
+        echo "Successfully initiated suspend-then-hibernate"
+      else
+        echo "suspend-then-hibernate failed, falling back to suspend"
+        ${pkgs.systemd}/bin/systemctl suspend
+      fi
+    }
+
     # Get battery percentage using upower
     BATTERY_PATH=$(${pkgs.upower}/bin/upower -e | ${pkgs.gnugrep}/bin/grep -i battery | ${pkgs.coreutils}/bin/head -n1)
 
@@ -130,15 +140,7 @@ let
       if [ "$LAST_ACTION" != "critical" ]; then
         echo "Battery critical (capacity-level=$CAPACITY_LEVEL or $ENERGY Wh < $CRITICAL_ENERGY_THRESHOLD Wh [${toString cfg.criticalLevel}%]), attempting suspend-then-hibernate"
         echo "critical" > "$STATE_FILE"
-
-        # Check if swap is available
-        if ${pkgs.util-linux}/bin/swapon --show | ${pkgs.gnugrep}/bin/grep -q .; then
-          echo "Swap available, using suspend-then-hibernate"
-          ${pkgs.systemd}/bin/systemctl suspend-then-hibernate
-        else
-          echo "No swap available, falling back to suspend"
-          ${pkgs.systemd}/bin/systemctl suspend
-        fi
+        do_suspend
       else
         echo "Already suspended at critical level, skipping"
       fi
@@ -148,9 +150,9 @@ let
     # Low level: UPower says "low" OR energy below calculated threshold
     if [ "$CAPACITY_LEVEL" = "low" ] || ([ -n "$ENERGY" ] && [ "$(echo "$ENERGY < $LOW_ENERGY_THRESHOLD" | ${pkgs.bc}/bin/bc)" = "1" ]); then
       if [ "$LAST_ACTION" != "low" ] && [ "$LAST_ACTION" != "critical" ]; then
-        echo "Battery low (capacity-level=$CAPACITY_LEVEL or $ENERGY Wh < $LOW_ENERGY_THRESHOLD Wh [${toString cfg.lowLevel}%]), suspending"
+        echo "Battery low (capacity-level=$CAPACITY_LEVEL or $ENERGY Wh < $LOW_ENERGY_THRESHOLD Wh [${toString cfg.lowLevel}%]), attempting suspend-then-hibernate"
         echo "low" > "$STATE_FILE"
-        ${pkgs.systemd}/bin/systemctl suspend
+        do_suspend
       else
         echo "Already suspended at low level, skipping"
       fi
