@@ -157,11 +157,8 @@ let
       ${pkgs.coreutils}/bin/rm -f "$STATE_FILE"
     fi
 
-    # Clear notified levels if battery has recovered significantly
-    if [ "$PERCENTAGE" -gt 25 ] && [ -f "$NOTIFIED_FILE" ]; then
-      echo "Battery recovered above 25%, clearing notification state"
-      ${pkgs.coreutils}/bin/rm -f "$NOTIFIED_FILE"
-    fi
+    # Note: Notification state is only cleared when charging (see above)
+    # This ensures one notification per level per discharge cycle
   '';
 in
 {
@@ -199,8 +196,8 @@ in
       default = [ 20 15 10 5 ];
       description = ''
         Battery percentage levels at which to send notifications (default: [20 15 10 5]).
-        Notifications are sent once when crossing each threshold while discharging.
-        Notification state is cleared when battery recovers above 25% or when charging.
+        Notifications are sent once per level each time you discharge from above the highest level.
+        Notification state is ONLY cleared when charging, ensuring you get fresh warnings on each discharge cycle.
       '';
       example = [ 30 20 15 10 5 3 1 ];
     };
