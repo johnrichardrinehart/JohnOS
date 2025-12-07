@@ -205,8 +205,6 @@ in
       hide_window_decorations yes
       enable_audio_bell no
       scrollback_lines 250000
-      map kitty_mod+f5 change_font_size all 12.0
-      map kitty_mod+f6 change_font_size all 18.0
 
       # vim:ft=kitty
 
