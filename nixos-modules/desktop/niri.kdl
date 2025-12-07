@@ -278,6 +278,8 @@ layout {
 spawn-at-startup "waybar"
 spawn-at-startup "waypaper" "--fill" "fill" "--wallpaper" "/home/john/.config/niri/ocean.jpg" "--monitor" "All" "--backend" "swaybg"
 spawn-at-startup "wlsunset" "-l" "41.9695" "-L" "-71.1821" "-t" "3000" "-g" ".9"
+spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
+spawn-at-startup "wl-clip-persist" "--clipboard" "regular"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
@@ -601,8 +603,8 @@ binds {
     // Mod+Space       { switch-layout "next"; }
     // Mod+Shift+Space { switch-layout "prev"; }
 
-    Print { spawn-sh r#"grim -g "$(slurp)" - | satty -f -"#; }
-    Mod+Shift+S { spawn-sh r#"grim -g "$(slurp)" - | satty -f -"#; }
+    Print { spawn-sh r#"grim -g "$(slurp)" - | satty --copy-command wl-copy -f -"#; }
+    Mod+Shift+S { spawn-sh r#"grim -g "$(slurp)" - | satty --copy-command wl-copy -f -"#; }
 
     // Print { screenshot; }
     Ctrl+Print { screenshot-screen; }

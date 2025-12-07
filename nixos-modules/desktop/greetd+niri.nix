@@ -54,7 +54,7 @@ in
     services.greetd.settings.default_session.command = "${lib.getExe pkgs.tuigreet}";
     services.greetd.useTextGreeter = true;
 
-    environment.systemPackages = [ pkgs.alacritty pkgs.xwayland-satellite pkgs.fuzzel pkgs.grim pkgs.mako pkgs.slurp pkgs.swaylock pkgs.xwayland-satellite pkgs.satty pkgs.waypaper pkgs.swaybg pkgs.waybar pkgs.brightnessctl pkgs.wlsunset ];
+    environment.systemPackages = [ pkgs.alacritty pkgs.xwayland-satellite pkgs.fuzzel pkgs.grim pkgs.mako pkgs.slurp pkgs.swaylock pkgs.xwayland-satellite pkgs.satty pkgs.waypaper pkgs.swaybg pkgs.waybar pkgs.brightnessctl pkgs.wlsunset pkgs.wl-clip-persist pkgs.wl-clipboard pkgs.cliphist ];
 
     environment.etc."niri/config.kdl".source = ./niri.kdl;
     environment.etc."xdg/waybar".source = ./waybar;
