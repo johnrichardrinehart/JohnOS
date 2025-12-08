@@ -1,0 +1,24 @@
+From 46ad7a9c98898e0e33504a216d35706003dd5d0f Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Mon, 8 Dec 2025 14:35:46 -0500
+Subject: [PATCH] feat: support /etc/mako/config
+
+---
+ config.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/config.c b/config.c
+index 817f7e9..7f02139 100644
+--- a/config.c
++++ b/config.c
+@@ -755,6 +755,7 @@ static char *get_default_config_path() {
+ 	}
+ 
+ 	char *config_paths[] = {
++		mako_asprintf("/etc/mako/config"),
+ 		mako_asprintf("%s/.mako/config", home),
+ 		mako_asprintf("%s/mako/config", config_home),
+ 	};
+-- 
+2.51.2
+
