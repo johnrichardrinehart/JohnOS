@@ -276,7 +276,7 @@ layout {
 
 // This line starts waybar, a commonly used bar for Wayland compositors.
 spawn-at-startup "waybar"
-spawn-at-startup "waypaper" "--fill" "fill" "--wallpaper" "/home/john/.config/niri/ocean.jpg" "--monitor" "All" "--backend" "swaybg"
+spawn-at-startup "waypaper" "--fill" "fill" "--wallpaper" "@wallpaper@" "--monitor" "All" "--backend" "swaybg"
 spawn-at-startup "wlsunset" "-l" "41.9695" "-L" "-71.1821" "-t" "3000" "-g" ".9"
 spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
 spawn-at-startup "wl-clip-persist" "--clipboard" "regular"
@@ -375,7 +375,7 @@ binds {
     // Suggested binds for running programs: terminal, app launcher, screen locker.
     Mod+T hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
     Mod+P hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
-    Mod+D hotkey-overlay-title="Select an Application: fuzzel --dmenu" { spawn "~/test.sh"; }
+    Mod+D hotkey-overlay-title="Select an Application: fuzzel --dmenu" { spawn "@fuzzel_dmenu@"; }
     Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.

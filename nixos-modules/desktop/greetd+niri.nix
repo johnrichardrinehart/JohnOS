@@ -54,27 +54,38 @@ in
     services.greetd.settings.default_session.command = "${lib.getExe pkgs.tuigreet}";
     services.greetd.useTextGreeter = true;
 
-    environment.systemPackages = [ pkgs.alacritty pkgs.xwayland-satellite pkgs.fuzzel pkgs.grim pkgs.mako pkgs.slurp pkgs.swaylock pkgs.xwayland-satellite pkgs.satty pkgs.waypaper pkgs.swaybg pkgs.waybar pkgs.brightnessctl pkgs.wlsunset pkgs.wl-clip-persist pkgs.wl-clipboard pkgs.cliphist ];
+    environment.systemPackages = [
+      pkgs.alacritty
+      pkgs.xwayland-satellite
+      pkgs.fuzzel
+      pkgs.grim
+      pkgs.mako
+      pkgs.slurp
+      pkgs.swaylock
+      pkgs.xwayland-satellite
+      pkgs.satty
+      pkgs.waypaper
+      pkgs.swaybg
+      pkgs.waybar
+      pkgs.brightnessctl
+      pkgs.wlsunset
+      pkgs.wl-clip-persist
+      pkgs.wl-clipboard
+      pkgs.cliphist
+    ];
 
-    environment.etc."niri/config.kdl".source = ./niri.kdl;
+    environment.etc."niri/config.kdl".source =
+      let
+        fuzzelDmenu = pkgs.callPackage ./fuzzel_dmenu/fuzzel_dmenu.nix { };
+      in
+      (pkgs.replaceVars ./niri.kdl {
+        wallpaper = ../../static/ocean.jpg;
+        fuzzel_dmenu = lib.getExe fuzzelDmenu;
+      }).overrideAttrs
+        (_: {
+          checkPhase = null;
+        });
     environment.etc."xdg/waybar".source = ./waybar;
-
-    systemd.user.services.swaybg = {
-      enable = true;
-      after = [ "graphical-session.target" ];
-      requisite = [ "graphical-session.target" ];
-      partOf = [ "graphical-session.target" ];
-      path = [ pkgs.swaybg ];
-      serviceConfig = {
-        Type = "forking";
-        Restart = "on-failure";
-      };
-      script = ''
-        ${lib.getExe pkgs.waypaper} --fill fill --wallpaper ${../../static/ocean.jpg} --monitor All --backend swaybg &
-      '';
-    };
-
-    services.gnome.gnome-keyring.enable = true;
 
     # Custom PAM config: fingerprint as first factor (rejects bad fingerprints),
     # then mandatory password - applied to greetd, sudo, and TTY logins
@@ -94,4 +105,3 @@ in
     };
   };
 }
-
