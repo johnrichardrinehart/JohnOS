@@ -661,3 +661,8 @@ recent-windows {
         Mod+Shift+grave { previous-window filter="app-id"; }
     }
 }
+
+switch-events {
+    lid-close { spawn "notify-send \"Sleeping!\" && systemctl suspend-then-hibernate || systemctl suspend"; }
+    lid-open { spawn "notify-send" "Welcome back!"; }
+}
