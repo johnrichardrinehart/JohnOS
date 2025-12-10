@@ -663,6 +663,5 @@ recent-windows {
 }
 
 switch-events {
-    lid-close { spawn "notify-send \"Sleeping!\" && systemctl suspend-then-hibernate || systemctl suspend"; }
-    lid-open { spawn "notify-send" "Welcome back!"; }
+    lid-close { spawn "@lock_and_suspend@"; }
 }

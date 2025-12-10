@@ -87,9 +87,10 @@ in
         fuzzelDmenu = pkgs.callPackage ./fuzzel_dmenu/fuzzel_dmenu.nix { };
       in
       (pkgs.replaceVars ./niri.kdl {
-        wallpaper = ../../static/ocean.jpg;
         fuzzel_dmenu = lib.getExe fuzzelDmenu;
         lock_command = "${lib.getExe' pkgs.systemd "loginctl"} lock-session";
+        lock_and_suspend = lib.getExe (pkgs.callPackage ./lock-and-suspend.nix { });
+        wallpaper = ../../static/ocean.jpg;
       }).overrideAttrs
         (_: {
           checkPhase = null;
