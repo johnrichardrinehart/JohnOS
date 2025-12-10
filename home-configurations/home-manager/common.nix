@@ -194,15 +194,21 @@ in
 
   programs.git = {
     enable = true;
-    userName = "John Rinehart";
-    userEmail = "johnrichardrinehart@gmail.com";
-    extraConfig = {
+    settings = {
+      user = {
+        name = "John Rinehart";
+        email = "johnrichardrinehart@gmail.com";
+      };
       init.defaultBranch = "main";
       core.editor = "vim";
-      # TODO: commented for cargo-tarpaulin, remove line if nothing breaks
-      url."git@github.com:".insteadOf = "https://github.com";
-      core.excludesFile = "~/.gitignore";
-      pull.rebase = true;
+        # TODO: commented for cargo-tarpaulin, remove line if nothing breaks
+        url = {
+          "git@github.com:" = {
+            insteadOf = "https://github.com";
+          };
+        };
+        core.excludesFile = "~/.gitignore";
+        pull.rebase = true;
     };
   };
 
