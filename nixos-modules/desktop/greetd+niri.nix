@@ -47,6 +47,14 @@ in
     environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
     programs.niri.enable = true;
+    programs.niri.package = pkgs.niri.overrideAttrs (old: {
+      src = pkgs.fetchFromGitHub {
+        owner = "johnrichardrinehart";
+        repo = "niri";
+        rev = "405d902cb0c6e9406e58e18bb1f021bb195bb6b8";
+        hash = "sha256-nwlKZcsMfwWtS5Id/50Ay3h3+plFXCoCi6+SWWEPp8s=";
+      };
+    });
 
     users.users.john.extraGroups = [ "seat" ];
 
