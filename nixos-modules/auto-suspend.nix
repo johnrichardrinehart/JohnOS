@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   cfg = config.dev.johnrinehart.auto-suspend;
 
@@ -42,13 +47,26 @@ in
 
     notificationLevels = lib.mkOption {
       type = lib.types.listOf lib.types.int;
-      default = [ 20 15 10 5 ];
+      default = [
+        20
+        15
+        10
+        5
+      ];
       description = ''
         Battery percentage levels at which to send notifications (default: [20 15 10 5]).
         Notifications are sent once per level each time you discharge from above the highest level.
         Notification state is ONLY cleared when charging, ensuring you get fresh warnings on each discharge cycle.
       '';
-      example = [ 30 20 15 10 5 3 1 ];
+      example = [
+        30
+        20
+        15
+        10
+        5
+        3
+        1
+      ];
     };
   };
 

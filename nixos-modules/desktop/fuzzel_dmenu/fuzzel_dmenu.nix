@@ -1,15 +1,22 @@
-{ stdenv
-, lib
-, makeWrapper
-, niri
-, jq
-, fuzzel
-, coreutils
-, gnugrep
+{
+  stdenv,
+  lib,
+  makeWrapper,
+  niri,
+  jq,
+  fuzzel,
+  coreutils,
+  gnugrep,
 }:
 
 let
-  buildInputs = [ niri jq fuzzel coreutils gnugrep ];
+  buildInputs = [
+    niri
+    jq
+    fuzzel
+    coreutils
+    gnugrep
+  ];
 in
 stdenv.mkDerivation {
   pname = "fuzzel_dmenu";
@@ -33,7 +40,7 @@ stdenv.mkDerivation {
 
   meta = with lib; {
     description = "Fuzzel dmenu script for niri window manager";
-    license = licenses.mit;  # Adjust according to your license
+    license = licenses.mit; # Adjust according to your license
     platforms = platforms.all;
     mainProgram = "fuzzel_dmenu";
   };

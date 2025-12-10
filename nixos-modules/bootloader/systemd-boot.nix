@@ -26,6 +26,9 @@ in
     # Mount point '/boot' which backs the random seed file is world accessible, which is a security hole!
     # and
     # Random seed file '/boot/loader/random-seed' is world accessible, which is a security hole!
-    fileSystems."/boot".options = [ "umask=0077" "defaults" ];
+    fileSystems."/boot".options = [
+      "umask=0077"
+      "defaults"
+    ];
   };
 }

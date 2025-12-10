@@ -165,16 +165,17 @@ in
   home.file = {
     ".config/powerline/themes/gruvbox.theme".source = ./gruvbox.theme;
     ".config/hypr/hyprlock.conf".source = ./hyprlock.conf;
-    ".config/hypr/hypridle.conf".source = (pkgs.replaceVars ./hypridle.conf {
-      lock_command = lib.getExe pkgs.hyprlock;
-      loginctl = lib.getExe' pkgs.systemd "loginctl";
-      monitor_off = "${lib.getExe pkgs.niri} msg action power-off-monitors";
-      notify_send = lib.getExe' pkgs.libnotify "notify-send";
-      systemctl = lib.getExe' pkgs.systemd "systemctl";
-    }).overrideAttrs
-    (_: {
-      checkPhase = null;
-    });
+    ".config/hypr/hypridle.conf".source =
+      (pkgs.replaceVars ./hypridle.conf {
+        lock_command = lib.getExe pkgs.hyprlock;
+        loginctl = lib.getExe' pkgs.systemd "loginctl";
+        monitor_off = "${lib.getExe pkgs.niri} msg action power-off-monitors";
+        notify_send = lib.getExe' pkgs.libnotify "notify-send";
+        systemctl = lib.getExe' pkgs.systemd "systemctl";
+      }).overrideAttrs
+        (_: {
+          checkPhase = null;
+        });
   };
 
   home.sessionVariables.EDITOR = "vim";
@@ -201,14 +202,14 @@ in
       };
       init.defaultBranch = "main";
       core.editor = "vim";
-        # TODO: commented for cargo-tarpaulin, remove line if nothing breaks
-        url = {
-          "git@github.com:" = {
-            insteadOf = "https://github.com";
-          };
+      # TODO: commented for cargo-tarpaulin, remove line if nothing breaks
+      url = {
+        "git@github.com:" = {
+          insteadOf = "https://github.com";
         };
-        core.excludesFile = "~/.gitignore";
-        pull.rebase = true;
+      };
+      core.excludesFile = "~/.gitignore";
+      pull.rebase = true;
     };
   };
 

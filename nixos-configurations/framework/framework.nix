@@ -36,7 +36,16 @@
         protocol = "ssh-ng";
         system = "x86_64-linux";
         maxJobs = 12;
-        supportedFeatures = [ "benchmark" "big-parallel" "gccarch-alderlake" "gccarch-x86_64-v3" "gccarch-znver1" "gccarch-znver3" "kvm" "nixos-test" ];
+        supportedFeatures = [
+          "benchmark"
+          "big-parallel"
+          "gccarch-alderlake"
+          "gccarch-x86_64-v3"
+          "gccarch-znver1"
+          "gccarch-znver3"
+          "kvm"
+          "nixos-test"
+        ];
         publicHostKey = "c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSUNuYlFKakdjYUExS1N3LzZSbnFxZzNlNGxwNFJtSFVKb1dpR3NXQk5lNVUgcm9vdEBuaXhvcwo=";
       }
     ];
@@ -165,7 +174,10 @@
   # This avoids ExecStartPost timing out when network isn't ready at boot
   systemd.services.tailscale-autoconnect = {
     description = "Automatically connect to Tailscale";
-    after = [ "network-online.target" "tailscaled.service" ];
+    after = [
+      "network-online.target"
+      "tailscaled.service"
+    ];
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
 
@@ -194,10 +206,12 @@
     enable = true;
   };
 
-  swapDevices = [{
-    device = "/swapfile";
-    size = 32 * 1024; # 16 GiB
-  }];
+  swapDevices = [
+    {
+      device = "/swapfile";
+      size = 32 * 1024; # 16 GiB
+    }
+  ];
 
   # Decent value for SSD (writes are expensive - chew up lifetime)
   boot.kernel.sysctl."vm.swappiness" = 10;

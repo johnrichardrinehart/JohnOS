@@ -1,4 +1,9 @@
-{ pkgs, lowLevel, criticalLevel, notificationLevels }:
+{
+  pkgs,
+  lowLevel,
+  criticalLevel,
+  notificationLevels,
+}:
 
 pkgs.writeShellScript "check-battery" ''
   set -euo pipefail
@@ -78,7 +83,9 @@ pkgs.writeShellScript "check-battery" ''
 
   # Check notification levels and send ONE notification per check
   # Sort levels in ascending order to find the lowest (most urgent) uncrossed threshold
-  NOTIFICATION_LEVELS="${pkgs.lib.concatStringsSep " " (map toString (pkgs.lib.sort (a: b: a < b) notificationLevels))}"
+  NOTIFICATION_LEVELS="${
+    pkgs.lib.concatStringsSep " " (map toString (pkgs.lib.sort (a: b: a < b) notificationLevels))
+  }"
   NOTIFIED_LEVELS=""
   if [ -f "$NOTIFIED_FILE" ]; then
     NOTIFIED_LEVELS=$(${pkgs.coreutils}/bin/cat "$NOTIFIED_FILE")

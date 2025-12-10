@@ -54,31 +54,33 @@ in
     services.greetd.settings.default_session.command = "${lib.getExe pkgs.tuigreet}";
     services.greetd.useTextGreeter = true;
 
-    environment.systemPackages = let
-      myMako = pkgs.mako.overrideAttrs (old: {
-        patches = old.patches or [] ++ [ ./0001-feat-support-etc-mako-config.patch ];
-      });
-    in
+    environment.systemPackages =
+      let
+        myMako = pkgs.mako.overrideAttrs (old: {
+          patches = old.patches or [ ] ++ [ ./0001-feat-support-etc-mako-config.patch ];
+        });
+      in
       [
-      pkgs.alacritty
-      pkgs.xwayland-satellite
-      pkgs.fuzzel
-      pkgs.grim
-      pkgs.slurp
-      pkgs.swaylock
-      pkgs.xwayland-satellite
-      pkgs.satty
-      pkgs.waypaper
-      pkgs.swaybg
-      pkgs.waybar
-      pkgs.brightnessctl
-      pkgs.wlsunset
-      pkgs.wl-clip-persist
-      pkgs.wl-clipboard
-      pkgs.cliphist
-    ] ++ [
-      myMako
-    ];
+        pkgs.alacritty
+        pkgs.xwayland-satellite
+        pkgs.fuzzel
+        pkgs.grim
+        pkgs.slurp
+        pkgs.swaylock
+        pkgs.xwayland-satellite
+        pkgs.satty
+        pkgs.waypaper
+        pkgs.swaybg
+        pkgs.waybar
+        pkgs.brightnessctl
+        pkgs.wlsunset
+        pkgs.wl-clip-persist
+        pkgs.wl-clipboard
+        pkgs.cliphist
+      ]
+      ++ [
+        myMako
+      ];
 
     environment.etc."niri/config.kdl".source =
       let
