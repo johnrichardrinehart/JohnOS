@@ -77,6 +77,7 @@
     pkgs.git
     pkgs.tmux
     pkgs.thin-provisioning-tools # for cache_check
+    pkgs.htop
   ];
 
   boot.kernelModules = [ "dm_cache" ];
