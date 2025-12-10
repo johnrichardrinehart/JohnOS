@@ -2,6 +2,6 @@
 fetchFromGitHub {
   owner = "radxa-pkg";
   repo = "aic8800";
-  rev = "eb8652a3d85feeba19474e80e362bf0adaf98cfd";
-  hash = "sha256-Uka5OlqBkJVl13afbR0CvWlMC8fFVRAKkM+pQZUkbHw=";
+  rev = "39353303d3f2d7973786d94440c04c6b8008efb6";
+  hash = "sha256-be55KF7qfo5nbwLz7ZXQLh1L51t3On7/O3emBHexsm0=";
 }
