@@ -50,6 +50,13 @@ in
       };
     };
 
+    # Cf.
+    # 1. https://github.com/systemd/systemd/issues/32420
+    # 2. https://github.com/systemd/systemd/issues/27839
+    systemd.sleep.extraConfig = ''
+      HibernateDelaySec=5m
+    '';
+
     # https://github.com/VTimofeenko/home-manager/blob/3d9ea6d74ee511cd8664f4a486ce65bd39e03ea8/experiments/homed.nix
     # systemd.package = pkgs.systemd.override (old: { withHomed = true; });
 
