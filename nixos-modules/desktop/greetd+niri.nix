@@ -87,6 +87,7 @@ in
       (pkgs.replaceVars ./niri.kdl {
         wallpaper = ../../static/ocean.jpg;
         fuzzel_dmenu = lib.getExe fuzzelDmenu;
+        lock_command = "${lib.getExe' pkgs.systemd "loginctl"} lock-session";
       }).overrideAttrs
         (_: {
           checkPhase = null;
