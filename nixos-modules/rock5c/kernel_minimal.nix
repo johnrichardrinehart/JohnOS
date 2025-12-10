@@ -46,7 +46,7 @@ in
       })
     ];
 
-    boot.kernelPackages = pkgs.linuxPackagesFor pkgs.linuxKernel.kernels.linux_6_16;
+    boot.kernelPackages = pkgs.linuxPackagesFor pkgs.linuxKernel.kernels.linux_6_17;
 
     # try to add hw-acceleration for the rk3588 (cf.
     # https://jellyfin.org/docs/general/post-install/transcoding/hardware-acceleration/rockchip/)
