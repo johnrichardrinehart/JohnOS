@@ -164,6 +164,17 @@ in
 
   home.file = {
     ".config/powerline/themes/gruvbox.theme".source = ./gruvbox.theme;
+    ".config/hypr/hyprlock.conf".source = ./hyprlock.conf;
+    ".config/hypr/hypridle.conf".source = (pkgs.replaceVars ./hypridle.conf {
+      lock_command = lib.getExe pkgs.hyprlock;
+      loginctl = lib.getExe' pkgs.systemd "loginctl";
+      monitor_off = "${lib.getExe pkgs.niri} msg action power-off-monitors";
+      notify_send = lib.getExe' pkgs.libnotify "notify-send";
+      systemctl = lib.getExe' pkgs.systemd "systemctl";
+    }).overrideAttrs
+    (_: {
+      checkPhase = null;
+    });
   };
 
   home.sessionVariables.EDITOR = "vim";

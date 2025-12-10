@@ -110,5 +110,13 @@ in
       enableGnomeKeyring = true;
       text = fprintPamConfig;
     };
+
+    security.pam.services.hyprlock = {
+      enableGnomeKeyring = true;
+      text = fprintPamConfig;
+    };
+
+    services.hypridle.enable = true;
+    programs.hyprlock.enable = true;
   };
 }
