@@ -176,6 +176,13 @@ in
         (_: {
           checkPhase = null;
         });
+    ".config/hypr/hyprpaper.conf".source =
+      (pkgs.replaceVars ./hyprpaper.conf {
+        wallpaper = ../../static/ocean.jpg;
+      }).overrideAttrs
+        (_: {
+          checkPhase = null;
+        });
   };
 
   home.sessionVariables.EDITOR = "vim";

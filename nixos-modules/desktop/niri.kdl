@@ -276,7 +276,7 @@ layout {
 
 // This line starts waybar, a commonly used bar for Wayland compositors.
 spawn-at-startup "waybar"
-spawn-at-startup "waypaper" "--fill" "fill" "--wallpaper" "@wallpaper@" "--monitor" "All" "--backend" "swaybg"
+spawn-at-startup "hyprpaper"
 spawn-at-startup "wlsunset" "-l" "41.9695" "-L" "-71.1821" "-t" "3000" "-g" ".9"
 spawn-at-startup "wl-paste" "--watch" "cliphist" "store"
 spawn-at-startup "wl-clip-persist" "--clipboard" "regular"

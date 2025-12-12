@@ -62,21 +62,19 @@ in
       in
       [
         pkgs.alacritty
-        pkgs.xwayland-satellite
+        pkgs.brightnessctl
+        pkgs.cliphist
         pkgs.fuzzel
         pkgs.grim
+        pkgs.hyprpaper
+        pkgs.satty
         pkgs.slurp
         pkgs.swaylock
-        pkgs.xwayland-satellite
-        pkgs.satty
-        pkgs.waypaper
-        pkgs.swaybg
         pkgs.waybar
-        pkgs.brightnessctl
-        pkgs.wlsunset
         pkgs.wl-clip-persist
         pkgs.wl-clipboard
-        pkgs.cliphist
+        pkgs.wlsunset
+        pkgs.xwayland-satellite
       ]
       ++ [
         myMako
@@ -90,7 +88,6 @@ in
         fuzzel_dmenu = lib.getExe fuzzelDmenu;
         lock_command = "${lib.getExe' pkgs.systemd "loginctl"} lock-session";
         lock_and_suspend = lib.getExe (pkgs.callPackage ./lock-and-suspend.nix { });
-        wallpaper = ../../static/ocean.jpg;
       }).overrideAttrs
         (_: {
           checkPhase = null;
