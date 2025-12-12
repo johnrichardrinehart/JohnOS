@@ -208,11 +208,21 @@
 
   swapDevices = [
     {
-      device = "/swapfile";
-      size = 32 * 1024; # 16 GiB
+      device = "/dev/nvme0n1p3";
     }
   ];
 
   # Decent value for SSD (writes are expensive - chew up lifetime)
   boot.kernel.sysctl."vm.swappiness" = 10;
+
+  systemd.sleep.extraConfig = ''
+    MemorySleepMode=deep
+    SuspendState=disk mem freeze
+  '';
+
+  boot.kernelParams = [
+    "resume=/dev/nvme0n1p3"
+    "nocompress"
+  ];
+  boot.resumeDevice = "/dev/nvme0n1p3";
 }
