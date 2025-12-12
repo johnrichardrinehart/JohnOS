@@ -223,6 +223,7 @@
   boot.kernelParams = [
     "resume=/dev/nvme0n1p3"
     "nocompress"
+    "mem_sleep_default=deep"
   ];
   boot.resumeDevice = "/dev/nvme0n1p3";
 }
