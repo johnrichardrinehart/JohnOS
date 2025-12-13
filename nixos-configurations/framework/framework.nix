@@ -216,8 +216,10 @@
   boot.kernel.sysctl."vm.swappiness" = 10;
 
   systemd.sleep.extraConfig = ''
-    MemorySleepMode=deep
-    SuspendState=disk mem freeze
+    # https://github.com/systemd/systemd/blob/595d88cdc86afdf40127282d711c5985c85fed9b/src/shared/sleep-config.c#L96-L97
+    # SuspendState=disk mem freeze
+    SuspendState=mem freeze
+    MemorySleepMode=deep s2idle
   '';
 
   boot.kernelParams = [
@@ -225,9 +227,13 @@
     "nocompress"
     "mem_sleep_default=deep"
   ];
+
   boot.resumeDevice = "/dev/nvme0n1p3";
 
   services.logind.settings.Login = {
-    SleepOperation = [ "suspend-then-hibernate" "hibernate" "hybrid-sleep" "suspend" ];
+    SleepOperation = "suspend-then-hibernate hibernate hybrid-sleep suspend";
+    HandleLidSwitch="hibernate";
+    HandlePowerKey="hibernate";
+    HandleSuspendKey="hibernate";
   };
 }
