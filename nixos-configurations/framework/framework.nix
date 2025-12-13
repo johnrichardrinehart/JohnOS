@@ -236,4 +236,6 @@
     HandlePowerKey="hibernate";
     HandleSuspendKey="hibernate";
   };
+
+  services.getty.loginOptions = "TMOUT=5 -- ";
 }
