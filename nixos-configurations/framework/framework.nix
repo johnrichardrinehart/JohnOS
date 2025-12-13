@@ -226,4 +226,8 @@
     "mem_sleep_default=deep"
   ];
   boot.resumeDevice = "/dev/nvme0n1p3";
+
+  services.logind.settings.Login = {
+    SleepOperation = [ "suspend-then-hibernate" "hibernate" "hybrid-sleep" "suspend" ];
+  };
 }
