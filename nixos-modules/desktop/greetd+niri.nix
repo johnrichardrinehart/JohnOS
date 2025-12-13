@@ -87,7 +87,7 @@ in
       (pkgs.replaceVars ./niri.kdl {
         fuzzel_dmenu = lib.getExe fuzzelDmenu;
         lock_command = "${lib.getExe' pkgs.systemd "loginctl"} lock-session";
-        lock_and_suspend = lib.getExe (pkgs.callPackage ./lock-and-suspend.nix { });
+        suspend = "${lib.getExe' pkgs.systemd "systemctl"} suspend-then-hibernate";
       }).overrideAttrs
         (_: {
           checkPhase = null;

@@ -662,6 +662,6 @@ recent-windows {
     }
 }
 
-//switch-events {
-//    lid-close { spawn "@lock_and_suspend@"; }
-//}
+switch-events {
+    lid-close { spawn "@suspend@"; }
+}
