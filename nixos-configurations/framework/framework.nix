@@ -237,5 +237,5 @@
     HandleSuspendKey="hibernate";
   };
 
-  services.getty.loginOptions = "TMOUT=5 -- ";
+  services.getty.loginOptions = "-- \\u TMOUT=10";
 }
