@@ -171,6 +171,7 @@ in
         loginctl = lib.getExe' pkgs.systemd "loginctl";
         monitor_off = "${lib.getExe pkgs.niri} msg action power-off-monitors";
         notify_send = lib.getExe' pkgs.libnotify "notify-send";
+        on_idle = lib.getExe (pkgs.callPackage ./on-idle.nix {});
         systemctl = lib.getExe' pkgs.systemd "systemctl";
       }).overrideAttrs
         (_: {
