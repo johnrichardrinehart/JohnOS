@@ -95,27 +95,20 @@ in
     environment.etc."xdg/waybar".source = ./waybar;
     environment.etc."mako/config".source = ./mako.conf;
 
-    # Custom PAM config: fingerprint as first factor (rejects bad fingerprints),
-    # then mandatory password - applied to greetd, sudo, and TTY logins
-    security.pam.services.greetd = {
+    # Custom PAM config: fingerprint as first factor (rejects bad
+    # fingerprints), then mandatory password - applied to authentication
+    # services
+    security.pam.services = lib.genAttrs [
+      "greetd"
+      "hyprlock"
+      "login"
+      "polkit-1"
+      "sudo"
+      "swaylock"
+    ] (_: {
       enableGnomeKeyring = true;
       text = fprintPamConfig;
-    };
-
-    security.pam.services.sudo = {
-      enableGnomeKeyring = true;
-      text = fprintPamConfig;
-    };
-
-    security.pam.services.login = {
-      enableGnomeKeyring = true;
-      text = fprintPamConfig;
-    };
-
-    security.pam.services.hyprlock = {
-      enableGnomeKeyring = true;
-      text = fprintPamConfig;
-    };
+    });
 
     services.hypridle.enable = true;
     programs.hyprlock.enable = true;
