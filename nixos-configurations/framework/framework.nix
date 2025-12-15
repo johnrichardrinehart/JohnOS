@@ -240,4 +240,16 @@
   services.getty.loginOptions = "-- \\u TMOUT=10";
 
   dev.johnrinehart.sound.enable = true;
+
+  virtualisation.vmVariant = ({ ... }: {
+    fileSystems."/" = {
+      device = "/dev/sda";
+      fsType = "ext4";
+    };
+
+    boot.resumeDevice = lib.mkForce "";
+    swapDevices = lib.mkForce [];
+
+    networking.interfaces = lib.mkForce {};
+  });
 }
