@@ -238,4 +238,6 @@
   };
 
   services.getty.loginOptions = "-- \\u TMOUT=10";
+
+  dev.johnrinehart.sound.enable = true;
 }

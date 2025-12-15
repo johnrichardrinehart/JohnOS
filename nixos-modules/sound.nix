@@ -16,15 +16,12 @@ in
     services.pipewire = {
       enable = true;
 
-      alsa.enable = false; # https://github.com/NixOS/nixpkgs/issues/157442
-      alsa.support32Bit = false; # https://github.com/NixOS/nixpkgs/issues/157442
-
+      alsa.enable = true;
+      alsa.support32Bit = false;
       pulse.enable = true;
-
-      # If you want to use JACK applications, uncomment this
-      jack.enable = true;
-
       wireplumber.enable = true;
+
+      jack.enable = false;
     };
   };
 }
