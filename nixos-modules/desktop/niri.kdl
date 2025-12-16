@@ -454,7 +454,8 @@ binds {
     Mod+Shift+Ctrl+L     { move-column-to-monitor-right; }
 
     // Alternatively, there are commands to move just a single window:
-    // Mod+Shift+Ctrl+Left  { move-window-to-monitor-left; }
+    Mod+Alt+Left  { move-window-to-monitor-left; }
+    Mod+Alt+Right  { move-window-to-monitor-right; }
     // ...
 
     // And you can also move a whole workspace to another monitor:
