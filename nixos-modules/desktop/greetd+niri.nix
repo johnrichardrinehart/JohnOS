@@ -88,6 +88,7 @@ in
         fuzzel_dmenu = lib.getExe fuzzelDmenu;
         lock_command = "${lib.getExe' pkgs.systemd "loginctl"} lock-session";
         suspend = "${lib.getExe' pkgs.systemd "systemctl"} suspend-then-hibernate";
+        wl-kbptr = lib.getExe pkgs.wl-kbptr;
       }).overrideAttrs
         (_: {
           checkPhase = null;
