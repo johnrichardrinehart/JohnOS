@@ -79,11 +79,17 @@ input {
 // Remember to uncomment the node by removing "/-"!
 
 // Home office monitor
-output "Dell Inc. DELL U2520D 7Z4V823" {
-	position x=0 y=0 // left of laptop monitor
+output "Dell Inc. DELL U3225QE 6WS9B84" {
+	mode "3840x2160@59.997"
+	position x=0 y=0 // top-left corner of large display
+	scale 1.0
 }
 
-/-output "eDP-1" {
+output "Dell Inc. DELL U2520D 7Z4V823" {
+	position x=3840 y=640 // .5 ($HEIGHT_OF_LARGER_EXTERNAL_DISPLAY - $HEIGHT_OF_SHORTER_EXTERNAL_DISPLAY)
+}
+
+output "eDP-1" {
     // Uncomment this line to disable this output.
     // off
 
@@ -93,10 +99,10 @@ output "Dell Inc. DELL U2520D 7Z4V823" {
     // for the resolution.
     // If the mode is omitted altogether or is invalid, niri will pick one automatically.
     // Run `niri msg outputs` while inside a niri instance to list all outputs and their modes.
-    mode "1920x1080@120.030"
+    mode "1920x1200@60.001"
 
     // You can use integer or fractional scale, for example use 1.5 for 150% scale.
-    scale 1.5
+    scale 1.0
 
     // Transform allows to rotate the output counter-clockwise, valid values are:
     // normal, 90, 180, 270, flipped, flipped-90, flipped-180 and flipped-270.
@@ -111,7 +117,7 @@ output "Dell Inc. DELL U2520D 7Z4V823" {
     // so to put another output directly adjacent to it on the right, set its x to 1920.
     // If the position is unset or results in an overlap, the output is instead placed
     // automatically.
-    position x=1280 y=0
+    position x=3840 y=2160 // # top-left of laptop monitor aligned with bottom-right of large external display
 }
 
 // Settings that influence how windows are positioned and sized.
