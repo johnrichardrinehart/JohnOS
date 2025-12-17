@@ -166,12 +166,18 @@ in
     ".config/powerline/themes/gruvbox.theme".source = ./gruvbox.theme;
     ".config/hypr/hyprlock.conf".source = ./hyprlock.conf;
     ".config/hypr/hypridle.conf".source =
+      let
+        onIdlePackage = pkgs.callPackage ./on-idle.nix {};
+      in
       (pkgs.replaceVars ./hypridle.conf {
         lock_command = lib.getExe pkgs.hyprlock;
         loginctl = lib.getExe' pkgs.systemd "loginctl";
         monitor_off = "${lib.getExe pkgs.niri} msg action power-off-monitors";
         notify_send = lib.getExe' pkgs.libnotify "notify-send";
-        on_idle = lib.getExe (pkgs.callPackage ./on-idle.nix {});
+        on_idle = lib.getExe onIdlePackage;
+        on_short_resume = lib.getExe (pkgs.callPackage ./kill-idle-group.nix {
+          inherit onIdlePackage;
+        });
         systemctl = lib.getExe' pkgs.systemd "systemctl";
       }).overrideAttrs
         (_: {
