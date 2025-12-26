@@ -252,4 +252,6 @@
 
     networking.interfaces = lib.mkForce {};
   });
+
+  hardware.keyboard.zsa.enable = true;
 }
