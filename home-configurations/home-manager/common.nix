@@ -1,7 +1,8 @@
 {
-  pkgs,
+  config,
   lib,
   osConfig,
+  pkgs,
   ...
 }:
 let
@@ -69,9 +70,11 @@ in
 {
   imports = [
     #    ../wm/xmonad
+    ./options.nix
   ];
 
-  home.packages = [
+  config = {
+    home.packages = [
     # games
     pkgs.gnuchess
     pkgs.stockfish
@@ -162,60 +165,63 @@ in
       extraConfig = bars + colors + modules + user_modules + module_xmonad + module_pt + module_nyc_time;
     };
 
-  home.file = {
-    ".config/powerline/themes/gruvbox.theme".source = ./gruvbox.theme;
-    ".config/hypr/hyprlock.conf".source = ./hyprlock.conf;
-    ".config/hypr/hypridle.conf".source =
-      let
-        onIdlePackage = pkgs.callPackage ./on-idle.nix {};
-      in
-      (pkgs.replaceVars ./hypridle.conf {
-        lock_command = lib.getExe pkgs.hyprlock;
-        loginctl = lib.getExe' pkgs.systemd "loginctl";
-        monitor_off = "${lib.getExe pkgs.niri} msg action power-off-monitors";
-        notify_send = lib.getExe' pkgs.libnotify "notify-send";
-        on_idle = lib.getExe onIdlePackage;
-        on_short_resume = lib.getExe (pkgs.callPackage ./kill-idle-group.nix {
-          inherit onIdlePackage;
-        });
-        systemctl = lib.getExe' pkgs.systemd "systemctl";
-      }).overrideAttrs
+    home.file = {
+      ".config/powerline/themes/gruvbox.theme".source = ./gruvbox.theme;
+      ".config/hypr/hyprlock.conf".source = ./hyprlock.conf;
+      ".config/hypr/hypridle.conf".source =
+        let
+          onIdlePackage = pkgs.callPackage ./on-idle.nix {};
+        in
+        (pkgs.replaceVars ./hypridle.conf {
+          lock_command = lib.getExe pkgs.hyprlock;
+          loginctl = lib.getExe' pkgs.systemd "loginctl";
+          monitor_off = "${lib.getExe pkgs.niri} msg action power-off-monitors";
+          notify_send = lib.getExe' pkgs.libnotify "notify-send";
+          on_idle = lib.getExe onIdlePackage;
+          on_short_resume = lib.getExe (pkgs.callPackage ./kill-idle-group.nix {
+            inherit onIdlePackage;
+          });
+          short_timeout_duration = config.idle.short_timeout_duration;
+          medium_timeout_duration = config.idle.medium_timeout_duration;
+          long_timeout_duration = config.idle.long_timeout_duration;
+          systemctl = lib.getExe' pkgs.systemd "systemctl";
+        }).overrideAttrs
         (_: {
           checkPhase = null;
         });
-    ".config/hypr/hyprpaper.conf".source =
-      (pkgs.replaceVars ./hyprpaper.conf {
-        wallpaper = ../../static/ocean.jpg;
-      }).overrideAttrs
-        (_: {
-          checkPhase = null;
-        });
-  };
+        ".config/hypr/hyprpaper.conf".source =
+          (pkgs.replaceVars ./hyprpaper.conf {
+            wallpaper = ../../static/ocean.jpg;
+          }).overrideAttrs
+          (_: {
+            checkPhase = null;
+          });
+        };
 
-  home.sessionVariables.EDITOR = "vim";
+        home.sessionVariables.EDITOR = "vim";
 
-  gtk = {
-    enable = true;
-    theme = {
-      package = pkgs.gnome-themes-extra;
-      name = "Adawaita-dark";
-    };
-  };
+        gtk = {
+          enable = true;
+          theme = {
+            package = pkgs.gnome-themes-extra;
+            name = "Adawaita-dark";
+          };
+        };
 
-  programs.direnv = {
-    enable = true;
-    nix-direnv.enable = true;
-  };
+        programs.direnv = {
+          enable = true;
+          nix-direnv.enable = true;
+        };
 
-  programs.git = {
-    enable = true;
-    settings = {
-      user = {
-        name = "John Rinehart";
-        email = "johnrichardrinehart@gmail.com";
-      };
-      init.defaultBranch = "main";
-      core.editor = "vim";
+        programs.git = {
+          enable = true;
+          settings = {
+            user = {
+              name = "John Rinehart";
+              email = "johnrichardrinehart@gmail.com";
+            };
+            init.defaultBranch = "main";
+            core.editor = "vim";
       # TODO: commented for cargo-tarpaulin, remove line if nothing breaks
       url = {
         "git@github.com:" = {
@@ -352,43 +358,43 @@ in
         p.vim-plug
         p.julia-vim
       ];
-  };
+    };
 
-  programs.zsh = {
-    enable = true;
+    programs.zsh = {
+      enable = true;
 
-    plugins = [
-      {
-        name = "zsh-nix-shell";
-        file = "nix-shell.plugin.zsh";
-        src = pkgs.fetchFromGitHub {
-          owner = "chisui";
-          repo = "zsh-nix-shell";
-          rev = "v0.5.0";
-          hash = "sha256-IT3wpfw8zhiNQsrw59lbSWYh0NQ1CUdUtFzRzHlURH0=";
-        };
-      }
-    ];
+      plugins = [
+        {
+          name = "zsh-nix-shell";
+          file = "nix-shell.plugin.zsh";
+          src = pkgs.fetchFromGitHub {
+            owner = "chisui";
+            repo = "zsh-nix-shell";
+            rev = "v0.5.0";
+            hash = "sha256-IT3wpfw8zhiNQsrw59lbSWYh0NQ1CUdUtFzRzHlURH0=";
+          };
+        }
+      ];
 
-    autosuggestion.enable = true;
+      autosuggestion.enable = true;
 
-    shellAliases =
-      let
-        fetchLatestKernelVersion =
-          release_line:
-          let
-            kernelOrgXpath =
-              release_line:
-              let
-                row = release_line: if release_line == "mainline" then "1" else "2";
-              in
-              ''//table[@id="releases"]/tr[${row release_line}]/td[2]/strong/text()'';
-            xpath = kernelOrgXpath release_line;
-          in
-          "curl --silent 'https://kernel.org' | xmllint -html -xpath '${xpath}' - 2>/dev/null";
-      in
-      {
-        ssh = "kitty +kitten ssh";
+      shellAliases =
+        let
+          fetchLatestKernelVersion =
+            release_line:
+            let
+              kernelOrgXpath =
+                release_line:
+                let
+                  row = release_line: if release_line == "mainline" then "1" else "2";
+                in
+                ''//table[@id="releases"]/tr[${row release_line}]/td[2]/strong/text()'';
+                  xpath = kernelOrgXpath release_line;
+            in
+            "curl --silent 'https://kernel.org' | xmllint -html -xpath '${xpath}' - 2>/dev/null";
+            in
+            {
+            ssh = "kitty +kitten ssh";
         # from https://stackoverflow.com/a/47285611
         gbbd = "git for-each-ref --sort=committerdate refs/heads/ --format='%(color: red)%(committerdate:short) %(color: cyan)%(refname:short)'";
         # latest kernel version
@@ -400,65 +406,66 @@ in
         sudo-nixos-rebuild-flake = "sudo nixos-rebuild switch --flake $HOME/code/repos/mine/nix"; # https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
       };
 
-    oh-my-zsh = {
-      enable = true;
-      plugins = [
-        "git"
-        "sudo"
-        "docker"
-        "kubectl"
-        "fzf"
-      ];
-      theme = "agnoster";
-    };
+      oh-my-zsh = {
+        enable = true;
+        plugins = [
+          "git"
+          "sudo"
+          "docker"
+          "kubectl"
+          "fzf"
+          ];
+          theme = "agnoster";
+        };
 
-    initContent = ''
-      export BGIMG="${../../static/ocean.jpg}"
-      if [ ! -f $BGIMG ]; then
-        curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
-      fi
+        initContent = ''
+          export BGIMG="${../../static/ocean.jpg}"
+          if [ ! -f $BGIMG ]; then
+          curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
+          fi
 
       # Put the line below in ~/.zshrc:
       #
-      eval "$(jump shell zsh)"
+          eval "$(jump shell zsh)"
       #
       # The following lines are autogenerated:
 
-      __jump_chpwd() {
-        jump chdir
-      }
+          __jump_chpwd() {
+          jump chdir
+          }
 
-      jump_completion() {
-        reply="'$(jump hint "$@")'"
-      }
+          jump_completion() {
+          reply="'$(jump hint "$@")'"
+          }
 
-      j() {
-      local dir="$(jump cd $@)"
-        test -d "$dir" && cd "$dir"
-      }
+          j() {
+          local dir="$(jump cd $@)"
+          test -d "$dir" && cd "$dir"
+          }
 
-      typeset -gaU chpwd_functions
-      chpwd_functions+=__jump_chpwd
+          typeset -gaU chpwd_functions
+          chpwd_functions+=__jump_chpwd
 
-      compctl -U -K jump_completion j
+          compctl -U -K jump_completion j
 
 
       # https://github.com/nix-community/nix-direnv
-      eval "$(direnv hook zsh)"
+          eval "$(direnv hook zsh)"
 
       # https://blog.vghaisas.com/zsh-beep-sound/
-      unsetopt BEEP
+          unsetopt BEEP
 
-      prompt() {
-        eval $("${lib.getExe pkgs.oh-my-posh}" init zsh --config "${./oh-my-posh.json}");
-      }
-      precmd_functions+=(prompt)
+          prompt() {
+          eval $("${lib.getExe pkgs.oh-my-posh}" init zsh --config "${./oh-my-posh.json}");
+          }
+          precmd_functions+=(prompt)
 
       # ${pkgs.zellij}/bin/zellij attach --index 0 || ${pkgs.zellij}/bin/zellij
-    '';
-  };
+        '';
+      };
 
-  home.stateVersion = "24.05";
+      home.stateVersion = "24.05";
 
-  manual.manpages.enable = false;
-}
+      manual.manpages.enable = false;
+    };
+  }

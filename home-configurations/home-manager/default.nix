@@ -5,9 +5,7 @@
   };
 
   imports = [
-    #    ./dwm
-    #    ./i3
-    #    ./xmonad
+    ./options.nix
     ({
       home-manager = {
         useGlobalPkgs = true;
