@@ -232,26 +232,29 @@
 
   services.logind.settings.Login = {
     SleepOperation = "suspend-then-hibernate hibernate hybrid-sleep suspend";
-    HandleLidSwitch="hibernate";
-    HandlePowerKey="hibernate";
-    HandleSuspendKey="hibernate";
+    HandleLidSwitch = "hibernate";
+    HandlePowerKey = "hibernate";
+    HandleSuspendKey = "hibernate";
   };
 
   services.getty.loginOptions = "-- \\u TMOUT=10";
 
   dev.johnrinehart.sound.enable = true;
 
-  virtualisation.vmVariant = ({ ... }: {
-    fileSystems."/" = {
-      device = "/dev/sda";
-      fsType = "ext4";
-    };
+  virtualisation.vmVariant = (
+    { ... }:
+    {
+      fileSystems."/" = {
+        device = "/dev/sda";
+        fsType = "ext4";
+      };
 
-    boot.resumeDevice = lib.mkForce "";
-    swapDevices = lib.mkForce [];
+      boot.resumeDevice = lib.mkForce "";
+      swapDevices = lib.mkForce [ ];
 
-    networking.interfaces = lib.mkForce {};
-  });
+      networking.interfaces = lib.mkForce { };
+    }
+  );
 
   hardware.keyboard.zsa.enable = true;
 }

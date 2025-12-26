@@ -75,102 +75,102 @@ in
 
   config = {
     home.packages = [
-    # games
-    pkgs.gnuchess
-    pkgs.stockfish
-    pkgs.scid-vs-pc
-    # CLI
-    pkgs.fzf
-    # instant messengers
-    pkgs.telegram-desktop
-    pkgs.signal-desktop
-    #pkgs.discord
-    #pkgs.element-desktop
-    #pkgs.skypeforlinux
-    # development tools
-  ];
+      # games
+      pkgs.gnuchess
+      pkgs.stockfish
+      pkgs.scid-vs-pc
+      # CLI
+      pkgs.fzf
+      # instant messengers
+      pkgs.telegram-desktop
+      pkgs.signal-desktop
+      #pkgs.discord
+      #pkgs.element-desktop
+      #pkgs.skypeforlinux
+      # development tools
+    ];
 
-  # only use flameshot with Xorg
-  services.flameshot.enable = osConfig.services.xserver.enable;
+    # only use flameshot with Xorg
+    services.flameshot.enable = osConfig.services.xserver.enable;
 
-  services.gpg-agent = {
-    enable = true;
-  };
-
-  services.network-manager-applet.enable = true;
-
-  services.polybar =
-    let
-      bars = builtins.readFile ./polybar/bars.ini;
-      colors = builtins.readFile ./polybar/colors.ini;
-      modules = builtins.readFile ./polybar/modules.ini;
-      user_modules = builtins.readFile ./polybar/user_modules.ini;
-      module_xmonad = ''
-        [module/xmonad]
-        type = custom/script
-        exec = ${pkgs.xmonad-log}/bin/xmonad-log
-
-        tail = true
-      '';
-      module_pt = ''
-        [module/time-pt]
-        type = custom/script
-        exec = TZ=America/Los_Angeles ${pkgs.coreutils}/bin/date +"%a, %d %b %H:%M"
-        interval = 59
-      '';
-      module_nyc_time = ''
-        [module/time-nyc]
-        type = custom/script
-        exec = TZ=America/New_York ${pkgs.coreutils}/bin/date +"(ET: %H:%M)"
-        interval = 59
-      '';
-    in
-    {
-      # only use polybar with Xorg
-      enable = osConfig.services.xserver.enable;
-      package = pkgs.polybar.override {
-        alsaSupport = true;
-        pulseSupport = true;
-        githubSupport = true;
-      };
-      config = ./polybar/config.ini;
-      script = ''
-        # The below script has a weird structure, mostly owing to the long
-        # delay introduced by `xrandr` detecting and setting the display
-        # settings (when the window manager starts up). We basically need
-        # to wait a few seconds until the window manager has established 
-        # which screens are on and what their resolutions are before we
-        # start polybar, otherwise it starts on the first detected screen
-        # and then may jump to a later-activated screen (which may have a
-        # different resolution). The end result being a poylbar that is either
-        # either too short or too long. 3 seconds seems to be a kind of sweet
-        # spot for my hardware. However, stalonetray starts up faster than
-        # polybar so we need to add an additional delay to its startup so that
-        # we don't hide stalonetray behind polybar when polybar finishes
-        # loading.
-
-        startPolybar() {
-           ${pkgs.coreutils}/bin/sleep 2
-           ${pkgs.polybar}/bin/polybar $1
-        }
-
-        startStalonetray() {
-           ${pkgs.coreutils}/bin/sleep 5
-           ${pkgs.stalonetray}/bin/stalonetray --config ${stalonetrayrc}
-        }
-
-        startPolybar main &
-        startStalonetray &
-      '';
-      extraConfig = bars + colors + modules + user_modules + module_xmonad + module_pt + module_nyc_time;
+    services.gpg-agent = {
+      enable = true;
     };
+
+    services.network-manager-applet.enable = true;
+
+    services.polybar =
+      let
+        bars = builtins.readFile ./polybar/bars.ini;
+        colors = builtins.readFile ./polybar/colors.ini;
+        modules = builtins.readFile ./polybar/modules.ini;
+        user_modules = builtins.readFile ./polybar/user_modules.ini;
+        module_xmonad = ''
+          [module/xmonad]
+          type = custom/script
+          exec = ${pkgs.xmonad-log}/bin/xmonad-log
+
+          tail = true
+        '';
+        module_pt = ''
+          [module/time-pt]
+          type = custom/script
+          exec = TZ=America/Los_Angeles ${pkgs.coreutils}/bin/date +"%a, %d %b %H:%M"
+          interval = 59
+        '';
+        module_nyc_time = ''
+          [module/time-nyc]
+          type = custom/script
+          exec = TZ=America/New_York ${pkgs.coreutils}/bin/date +"(ET: %H:%M)"
+          interval = 59
+        '';
+      in
+      {
+        # only use polybar with Xorg
+        enable = osConfig.services.xserver.enable;
+        package = pkgs.polybar.override {
+          alsaSupport = true;
+          pulseSupport = true;
+          githubSupport = true;
+        };
+        config = ./polybar/config.ini;
+        script = ''
+          # The below script has a weird structure, mostly owing to the long
+          # delay introduced by `xrandr` detecting and setting the display
+          # settings (when the window manager starts up). We basically need
+          # to wait a few seconds until the window manager has established 
+          # which screens are on and what their resolutions are before we
+          # start polybar, otherwise it starts on the first detected screen
+          # and then may jump to a later-activated screen (which may have a
+          # different resolution). The end result being a poylbar that is either
+          # either too short or too long. 3 seconds seems to be a kind of sweet
+          # spot for my hardware. However, stalonetray starts up faster than
+          # polybar so we need to add an additional delay to its startup so that
+          # we don't hide stalonetray behind polybar when polybar finishes
+          # loading.
+
+          startPolybar() {
+             ${pkgs.coreutils}/bin/sleep 2
+             ${pkgs.polybar}/bin/polybar $1
+          }
+
+          startStalonetray() {
+             ${pkgs.coreutils}/bin/sleep 5
+             ${pkgs.stalonetray}/bin/stalonetray --config ${stalonetrayrc}
+          }
+
+          startPolybar main &
+          startStalonetray &
+        '';
+        extraConfig = bars + colors + modules + user_modules + module_xmonad + module_pt + module_nyc_time;
+      };
 
     home.file = {
       ".config/powerline/themes/gruvbox.theme".source = ./gruvbox.theme;
       ".config/hypr/hyprlock.conf".source = ./hyprlock.conf;
       ".config/hypr/hypridle.conf".source =
         let
-          onIdlePackage = pkgs.callPackage ./on-idle.nix {};
+          onIdlePackage = pkgs.callPackage ./on-idle.nix { };
         in
         (pkgs.replaceVars ./hypridle.conf {
           lock_command = lib.getExe pkgs.hyprlock;
@@ -178,186 +178,188 @@ in
           monitor_off = "${lib.getExe pkgs.niri} msg action power-off-monitors";
           notify_send = lib.getExe' pkgs.libnotify "notify-send";
           on_idle = lib.getExe onIdlePackage;
-          on_short_resume = lib.getExe (pkgs.callPackage ./kill-idle-group.nix {
-            inherit onIdlePackage;
-          });
+          on_short_resume = lib.getExe (
+            pkgs.callPackage ./kill-idle-group.nix {
+              inherit onIdlePackage;
+            }
+          );
           short_timeout_duration = config.idle.short_timeout_duration;
           medium_timeout_duration = config.idle.medium_timeout_duration;
           long_timeout_duration = config.idle.long_timeout_duration;
           systemctl = lib.getExe' pkgs.systemd "systemctl";
         }).overrideAttrs
-        (_: {
-          checkPhase = null;
-        });
-        ".config/hypr/hyprpaper.conf".source =
-          (pkgs.replaceVars ./hyprpaper.conf {
-            wallpaper = ../../static/ocean.jpg;
-          }).overrideAttrs
           (_: {
             checkPhase = null;
           });
+      ".config/hypr/hyprpaper.conf".source =
+        (pkgs.replaceVars ./hyprpaper.conf {
+          wallpaper = ../../static/ocean.jpg;
+        }).overrideAttrs
+          (_: {
+            checkPhase = null;
+          });
+    };
+
+    home.sessionVariables.EDITOR = "vim";
+
+    gtk = {
+      enable = true;
+      theme = {
+        package = pkgs.gnome-themes-extra;
+        name = "Adawaita-dark";
+      };
+    };
+
+    programs.direnv = {
+      enable = true;
+      nix-direnv.enable = true;
+    };
+
+    programs.git = {
+      enable = true;
+      settings = {
+        user = {
+          name = "John Rinehart";
+          email = "johnrichardrinehart@gmail.com";
         };
-
-        home.sessionVariables.EDITOR = "vim";
-
-        gtk = {
-          enable = true;
-          theme = {
-            package = pkgs.gnome-themes-extra;
-            name = "Adawaita-dark";
+        init.defaultBranch = "main";
+        core.editor = "vim";
+        # TODO: commented for cargo-tarpaulin, remove line if nothing breaks
+        url = {
+          "git@github.com:" = {
+            insteadOf = "https://github.com";
           };
         };
-
-        programs.direnv = {
-          enable = true;
-          nix-direnv.enable = true;
-        };
-
-        programs.git = {
-          enable = true;
-          settings = {
-            user = {
-              name = "John Rinehart";
-              email = "johnrichardrinehart@gmail.com";
-            };
-            init.defaultBranch = "main";
-            core.editor = "vim";
-      # TODO: commented for cargo-tarpaulin, remove line if nothing breaks
-      url = {
-        "git@github.com:" = {
-          insteadOf = "https://github.com";
-        };
+        core.excludesFile = "~/.gitignore";
+        pull.rebase = true;
       };
-      core.excludesFile = "~/.gitignore";
-      pull.rebase = true;
     };
-  };
 
-  programs.gpg.enable = true;
+    programs.gpg.enable = true;
 
-  programs.kitty = {
-    enable = true;
-    font.size = 12;
-    font.name = "Fira Mono Medium for Powerline";
-    extraConfig = ''
-      hide_window_decorations yes
-      enable_audio_bell no
-      scrollback_lines 250000
+    programs.kitty = {
+      enable = true;
+      font.size = 12;
+      font.name = "Fira Mono Medium for Powerline";
+      extraConfig = ''
+        hide_window_decorations yes
+        enable_audio_bell no
+        scrollback_lines 250000
 
-      # vim:ft=kitty
+        # vim:ft=kitty
 
-      ## name:     Catppuccin Kitty Macchiato
-      ## author:   Catppuccin Org
-      ## license:  MIT
-      ## upstream: https://github.com/catppuccin/kitty/blob/main/macchiato.conf
-      ## blurb:    Soothing pastel theme for the high-spirited!
-
+        ## name:     Catppuccin Kitty Macchiato
+        ## author:   Catppuccin Org
+        ## license:  MIT
+        ## upstream: https://github.com/catppuccin/kitty/blob/main/macchiato.conf
+        ## blurb:    Soothing pastel theme for the high-spirited!
 
 
-      # The basic colors
-      foreground              #CAD3F5
-      background              #24273A
-      selection_foreground    #24273A
-      selection_background    #F4DBD6
 
-      # Cursor colors
-      cursor                  #F4DBD6
-      cursor_text_color       #24273A
+        # The basic colors
+        foreground              #CAD3F5
+        background              #24273A
+        selection_foreground    #24273A
+        selection_background    #F4DBD6
 
-      # URL underline color when hovering with mouse
-      url_color               #F4DBD6
+        # Cursor colors
+        cursor                  #F4DBD6
+        cursor_text_color       #24273A
 
-      # Kitty window border colors
-      active_border_color     #B7BDF8
-      inactive_border_color   #6E738D
-      bell_border_color       #EED49F
+        # URL underline color when hovering with mouse
+        url_color               #F4DBD6
 
-      # OS Window titlebar colors
-      wayland_titlebar_color system
-      macos_titlebar_color system
+        # Kitty window border colors
+        active_border_color     #B7BDF8
+        inactive_border_color   #6E738D
+        bell_border_color       #EED49F
 
-      # Tab bar colors
-      active_tab_foreground   #181926
-      active_tab_background   #C6A0F6
-      inactive_tab_foreground #CAD3F5
-      inactive_tab_background #1E2030
-      tab_bar_background      #181926
+        # OS Window titlebar colors
+        wayland_titlebar_color system
+        macos_titlebar_color system
 
-      # Colors for marks (marked text in the terminal)
-      mark1_foreground #24273A
-      mark1_background #B7BDF8
-      mark2_foreground #24273A
-      mark2_background #C6A0F6
-      mark3_foreground #24273A
-      mark3_background #7DC4E4
+        # Tab bar colors
+        active_tab_foreground   #181926
+        active_tab_background   #C6A0F6
+        inactive_tab_foreground #CAD3F5
+        inactive_tab_background #1E2030
+        tab_bar_background      #181926
 
-      # The 16 terminal colors
+        # Colors for marks (marked text in the terminal)
+        mark1_foreground #24273A
+        mark1_background #B7BDF8
+        mark2_foreground #24273A
+        mark2_background #C6A0F6
+        mark3_foreground #24273A
+        mark3_background #7DC4E4
 
-      # black
-      color0 #494D64
-      color8 #5B6078
+        # The 16 terminal colors
 
-      # red
-      color1 #ED8796
-      color9 #ED8796
+        # black
+        color0 #494D64
+        color8 #5B6078
 
-      # green
-      color2  #A6DA95
-      color10 #A6DA95
+        # red
+        color1 #ED8796
+        color9 #ED8796
 
-      # yellow
-      color3  #EED49F
-      color11 #EED49F
+        # green
+        color2  #A6DA95
+        color10 #A6DA95
 
-      # blue
-      color4  #8AADF4
-      color12 #8AADF4
+        # yellow
+        color3  #EED49F
+        color11 #EED49F
 
-      # magenta
-      color5  #F5BDE6
-      color13 #F5BDE6
+        # blue
+        color4  #8AADF4
+        color12 #8AADF4
 
-      # cyan
-      color6  #8BD5CA
-      color14 #8BD5CA
+        # magenta
+        color5  #F5BDE6
+        color13 #F5BDE6
 
-      # white
-      color7  #B8C0E0
-      color15 #A5ADCB
-    '';
-  };
+        # cyan
+        color6  #8BD5CA
+        color14 #8BD5CA
 
-  programs.rofi = {
-    enable = true;
-    extraConfig = {
-      modi = "window,windowcd,run,ssh,drun,combi,keys,filebrowser";
+        # white
+        color7  #B8C0E0
+        color15 #A5ADCB
+      '';
     };
-  };
 
-  programs.vim = {
-    enable = true;
-    extraConfig = ''
-      set autochdir
-      set number
-      syntax on
-      filetype on
+    programs.rofi = {
+      enable = true;
+      extraConfig = {
+        modi = "window,windowcd,run,ssh,drun,combi,keys,filebrowser";
+      };
+    };
 
-      autocmd BufNewFile,BufRead *.svelte set filetype=html
+    programs.vim = {
+      enable = true;
+      extraConfig = ''
+        set autochdir
+        set number
+        syntax on
+        filetype on
 
-      " highlight trailing whitespace
-      " https://stackoverflow.com/a/4617156/1477586
-      :highlight ExtraWhitespace ctermbg=red guibg=red
-      :match ExtraWhitespace /\s\+$/
-    '';
-    plugins =
-      let
-        p = pkgs.vimPlugins;
-      in
-      [
-        p.vim-airline
-        p.vim-plug
-        p.julia-vim
-      ];
+        autocmd BufNewFile,BufRead *.svelte set filetype=html
+
+        " highlight trailing whitespace
+        " https://stackoverflow.com/a/4617156/1477586
+        :highlight ExtraWhitespace ctermbg=red guibg=red
+        :match ExtraWhitespace /\s\+$/
+      '';
+      plugins =
+        let
+          p = pkgs.vimPlugins;
+        in
+        [
+          p.vim-airline
+          p.vim-plug
+          p.julia-vim
+        ];
     };
 
     programs.zsh = {
@@ -389,22 +391,22 @@ in
                   row = release_line: if release_line == "mainline" then "1" else "2";
                 in
                 ''//table[@id="releases"]/tr[${row release_line}]/td[2]/strong/text()'';
-                  xpath = kernelOrgXpath release_line;
+              xpath = kernelOrgXpath release_line;
             in
             "curl --silent 'https://kernel.org' | xmllint -html -xpath '${xpath}' - 2>/dev/null";
-            in
-            {
-            ssh = "kitty +kitten ssh";
-        # from https://stackoverflow.com/a/47285611
-        gbbd = "git for-each-ref --sort=committerdate refs/heads/ --format='%(color: red)%(committerdate:short) %(color: cyan)%(refname:short)'";
-        # latest kernel version
-        lskv = fetchLatestKernelVersion "stable";
-        lmkv = fetchLatestKernelVersion "mainline";
-        clv = "uname -a | cut -f3 -d' ' | cut -f 1 -d'-' ";
-        k = "kubectl";
-        chess = "scid";
-        sudo-nixos-rebuild-flake = "sudo nixos-rebuild switch --flake $HOME/code/repos/mine/nix"; # https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
-      };
+        in
+        {
+          ssh = "kitty +kitten ssh";
+          # from https://stackoverflow.com/a/47285611
+          gbbd = "git for-each-ref --sort=committerdate refs/heads/ --format='%(color: red)%(committerdate:short) %(color: cyan)%(refname:short)'";
+          # latest kernel version
+          lskv = fetchLatestKernelVersion "stable";
+          lmkv = fetchLatestKernelVersion "mainline";
+          clv = "uname -a | cut -f3 -d' ' | cut -f 1 -d'-' ";
+          k = "kubectl";
+          chess = "scid";
+          sudo-nixos-rebuild-flake = "sudo nixos-rebuild switch --flake $HOME/code/repos/mine/nix"; # https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
+        };
 
       oh-my-zsh = {
         enable = true;
@@ -414,58 +416,58 @@ in
           "docker"
           "kubectl"
           "fzf"
-          ];
-          theme = "agnoster";
-        };
-
-        initContent = ''
-          export BGIMG="${../../static/ocean.jpg}"
-          if [ ! -f $BGIMG ]; then
-          curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
-          fi
-
-      # Put the line below in ~/.zshrc:
-      #
-          eval "$(jump shell zsh)"
-      #
-      # The following lines are autogenerated:
-
-          __jump_chpwd() {
-          jump chdir
-          }
-
-          jump_completion() {
-          reply="'$(jump hint "$@")'"
-          }
-
-          j() {
-          local dir="$(jump cd $@)"
-          test -d "$dir" && cd "$dir"
-          }
-
-          typeset -gaU chpwd_functions
-          chpwd_functions+=__jump_chpwd
-
-          compctl -U -K jump_completion j
-
-
-      # https://github.com/nix-community/nix-direnv
-          eval "$(direnv hook zsh)"
-
-      # https://blog.vghaisas.com/zsh-beep-sound/
-          unsetopt BEEP
-
-          prompt() {
-          eval $("${lib.getExe pkgs.oh-my-posh}" init zsh --config "${./oh-my-posh.json}");
-          }
-          precmd_functions+=(prompt)
-
-      # ${pkgs.zellij}/bin/zellij attach --index 0 || ${pkgs.zellij}/bin/zellij
-        '';
+        ];
+        theme = "agnoster";
       };
 
-      home.stateVersion = "24.05";
+      initContent = ''
+            export BGIMG="${../../static/ocean.jpg}"
+            if [ ! -f $BGIMG ]; then
+            curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
+            fi
 
-      manual.manpages.enable = false;
+        # Put the line below in ~/.zshrc:
+        #
+            eval "$(jump shell zsh)"
+        #
+        # The following lines are autogenerated:
+
+            __jump_chpwd() {
+            jump chdir
+            }
+
+            jump_completion() {
+            reply="'$(jump hint "$@")'"
+            }
+
+            j() {
+            local dir="$(jump cd $@)"
+            test -d "$dir" && cd "$dir"
+            }
+
+            typeset -gaU chpwd_functions
+            chpwd_functions+=__jump_chpwd
+
+            compctl -U -K jump_completion j
+
+
+        # https://github.com/nix-community/nix-direnv
+            eval "$(direnv hook zsh)"
+
+        # https://blog.vghaisas.com/zsh-beep-sound/
+            unsetopt BEEP
+
+            prompt() {
+            eval $("${lib.getExe pkgs.oh-my-posh}" init zsh --config "${./oh-my-posh.json}");
+            }
+            precmd_functions+=(prompt)
+
+        # ${pkgs.zellij}/bin/zellij attach --index 0 || ${pkgs.zellij}/bin/zellij
+      '';
     };
-  }
+
+    home.stateVersion = "24.05";
+
+    manual.manpages.enable = false;
+  };
+}

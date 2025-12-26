@@ -99,17 +99,20 @@ in
     # Custom PAM config: fingerprint as first factor (rejects bad
     # fingerprints), then mandatory password - applied to authentication
     # services
-    security.pam.services = lib.genAttrs [
-      "greetd"
-      "hyprlock"
-      "login"
-      "polkit-1"
-      "sudo"
-      "swaylock"
-    ] (_: {
-      enableGnomeKeyring = true;
-      text = fprintPamConfig;
-    });
+    security.pam.services =
+      lib.genAttrs
+        [
+          "greetd"
+          "hyprlock"
+          "login"
+          "polkit-1"
+          "sudo"
+          "swaylock"
+        ]
+        (_: {
+          enableGnomeKeyring = true;
+          text = fprintPamConfig;
+        });
 
     services.hypridle.enable = true;
     programs.hyprlock.enable = true;

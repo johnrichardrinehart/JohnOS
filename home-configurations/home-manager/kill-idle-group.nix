@@ -1,8 +1,9 @@
-{ lib
-, writeShellScriptBin
-, libnotify
-, procps
-, onIdlePackage  # The exact on-idle package
+{
+  lib,
+  writeShellScriptBin,
+  libnotify,
+  procps,
+  onIdlePackage, # The exact on-idle package
 }:
 
 writeShellScriptBin "kill-idle-group" ''

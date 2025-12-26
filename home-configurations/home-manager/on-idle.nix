@@ -1,8 +1,9 @@
-{ lib
-, writeShellScriptBin
-, libnotify
-, systemd
-, jq
+{
+  lib,
+  writeShellScriptBin,
+  libnotify,
+  systemd,
+  jq,
 }:
 
 writeShellScriptBin "on-idle" ''
