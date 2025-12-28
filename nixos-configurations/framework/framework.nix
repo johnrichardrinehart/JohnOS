@@ -257,4 +257,7 @@
   );
 
   hardware.keyboard.zsa.enable = true;
+
+  virtualisation.docker.enable = true;
+  users.users.john.extraGroups = [ "docker" ];
 }
