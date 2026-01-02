@@ -246,6 +246,10 @@ in
         enable_audio_bell no
         scrollback_lines 250000
 
+        # Send a newline literal for claude-code CLI
+        # See: https://github.com/anthropics/claude-code/issues/3853
+        map shift+enter send_text all \n
+
         # vim:ft=kitty
 
         ## name:     Catppuccin Kitty Macchiato
