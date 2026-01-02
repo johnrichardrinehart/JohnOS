@@ -213,6 +213,11 @@ in
     programs.direnv = {
       enable = true;
       nix-direnv.enable = true;
+      config = {
+        whitelist = {
+          prefix = [ "/home/john/code/repos/sr.ht/fuzzybear3965/" ];
+        };
+      };
     };
 
     programs.git = {
