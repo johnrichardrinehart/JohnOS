@@ -48,11 +48,82 @@ in
 
     programs.niri.enable = true;
 
+    # Use custom niri fork - build from scratch since overriding cargoHash requires rebuilding
+    programs.niri.package = pkgs.rustPlatform.buildRustPackage {
+      pname = "niri";
+      version = "unstable-2024-12-fork";
+
+      src = pkgs.fetchFromGitHub {
+        owner = "johnrichardrinehart";
+        repo = "niri";
+        rev = "e1b394ce9ad51a6892c8df4eb15605cb71f7dc0a";
+        hash = "sha256-gvCF+DaFeR2siWMdl3reM9tuvuNewJW5TiafRGvaH9I=";
+      };
+
+      cargoHash = "sha256-CXRI9LBmP2YXd2Kao9Z2jpON+98n2h7m0zQVVTuwqYQ=";
+
+      postPatch = ''
+        patchShebangs resources/niri-session
+        substituteInPlace resources/niri.service \
+          --replace-fail 'ExecStart=niri' "ExecStart=$out/bin/niri"
+      '';
+
+      nativeBuildInputs = with pkgs; [
+        installShellFiles
+        pkg-config
+        rustPlatform.bindgenHook
+      ];
+
+      buildInputs = with pkgs; [
+        dbus
+        libdisplay-info
+        libglvnd
+        libinput
+        libxkbcommon
+        libgbm
+        pango
+        pipewire
+        seatd
+        systemd
+        wayland
+      ];
+
+      buildFeatures = [ "dbus" "xdp-gnome-screencast" "systemd" ];
+      buildNoDefaultFeatures = true;
+
+      checkFlags = [ "--skip=::egl" ];
+
+      postInstall = ''
+        install -Dm0644 resources/niri.desktop -t $out/share/wayland-sessions
+        install -Dm0644 resources/niri-portals.conf -t $out/share/xdg-desktop-portal
+        install -Dm0755 resources/niri-session -t $out/bin
+        install -Dm0644 resources/niri{-shutdown.target,.service} -t $out/lib/systemd/user
+      '';
+
+      env = {
+        RUSTFLAGS = toString (
+          map (arg: "-C link-arg=" + arg) [
+            "-Wl,--push-state,--no-as-needed"
+            "-lEGL"
+            "-lwayland-client"
+            "-Wl,--pop-state"
+          ]
+        );
+        NIRI_BUILD_COMMIT = "a84a8ceb";
+      };
+
+      passthru.providedSessions = [ "niri" ];
+
+      meta.mainProgram = "niri";
+    };
+
     users.users.john.extraGroups = [ "seat" ];
 
     services.greetd.enable = true;
-    services.greetd.settings.default_session.command = "${lib.getExe pkgs.tuigreet}";
-    services.greetd.useTextGreeter = true;
+    services.greetd.settings.default_session = {
+      command = "${lib.getExe' config.programs.niri.package "niri-session"}";
+      user = "john";
+    };
 
     environment.systemPackages =
       let
@@ -75,6 +146,7 @@ in
         pkgs.wl-clipboard
         pkgs.wlsunset
         pkgs.xwayland-satellite
+        # (builtins.getFlake "github:johnrichardrinehart/niri?rev=a84a8ceb5882cca5b26c6caf9e582111a3772634").packages.${pkgs.stdenv.hostPlatform.system}.niri
       ]
       ++ [
         myMako

@@ -35,6 +35,11 @@ in
   ];
 
   config = lib.mkIf cfg.enable {
+    home-manager.users.john.idle = {
+      short_timeout_duration = 60*5;
+      medium_timeout_duration = 60*6;
+      long_timeout_duration = 60*10;
+    };
     networking.networkmanager.enable = true;
     dev.johnrinehart.desktop.xorg-xmonad.enable = (cfg.variant == "xorg-xmonad");
     dev.johnrinehart.desktop.wl-hyprland.enable = (cfg.variant == "wl-hyprland");
