@@ -197,7 +197,7 @@ in
           });
       ".config/hypr/hyprpaper.conf".source =
         (pkgs.replaceVars ./hyprpaper.conf {
-          wallpaper = ../../static/ocean.jpg;
+          wallpaper = ../../static/full-moon-forest-night-dark-starry-sky-5k-8k-7952x5304-1684.jpg;
         }).overrideAttrs
           (_: {
             checkPhase = null;
@@ -278,7 +278,7 @@ in
 
         # The basic colors
         foreground              #CAD3F5
-        background              #24273A
+        background              #000000
         selection_foreground    #24273A
         selection_background    #F4DBD6
 
@@ -442,7 +442,7 @@ in
       };
 
       initContent = ''
-            export BGIMG="${../../static/ocean.jpg}"
+            export BGIMG="${../../static/full-moon-forest-night-dark-starry-sky-5k-8k-7952x5304-1684.jpg}"
             if [ ! -f $BGIMG ]; then
             curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
             fi
