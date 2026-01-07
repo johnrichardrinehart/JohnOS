@@ -166,6 +166,10 @@ in
       };
 
     home.file = {
+      ".config/satty/config.toml".text = ''
+        [general]
+        initial-tool = "pointer"
+      '';
       ".config/powerline/themes/gruvbox.theme".source = ./gruvbox.theme;
       ".config/hypr/hyprlock.conf".source = ./hyprlock.conf;
       ".config/hypr/hypridle.conf".source =
