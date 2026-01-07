@@ -86,7 +86,7 @@ output "Dell Inc. DELL U3225QE 6WS9B84" {
 }
 
 output "Dell Inc. DELL U2520D 7Z4V823" {
-	position x=3840 y=640 // .5 ($HEIGHT_OF_LARGER_EXTERNAL_DISPLAY - $HEIGHT_OF_SHORTER_EXTERNAL_DISPLAY)
+	position x=3840 y=360 // centered vertically with 32" monitor
 }
 
 output "eDP-1" {
@@ -117,7 +117,7 @@ output "eDP-1" {
     // so to put another output directly adjacent to it on the right, set its x to 1920.
     // If the position is unset or results in an overlap, the output is instead placed
     // automatically.
-    position x=3840 y=2160 // # top-left of laptop monitor aligned with bottom-right of large external display
+    position x=3840 y=1800 // below 25" monitor, left edges aligned
 }
 
 // Settings that influence how windows are positioned and sized.
