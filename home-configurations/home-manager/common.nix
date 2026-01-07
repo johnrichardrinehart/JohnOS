@@ -206,6 +206,13 @@ in
 
     home.sessionVariables.EDITOR = "vim";
 
+    dconf.settings = {
+      "org/gnome/nautilus/preferences" = {
+        default-sort-order = "mtime";
+        default-sort-in-reverse-order = true;
+      };
+    };
+
     gtk = {
       enable = true;
       theme = {
@@ -409,6 +416,7 @@ in
             "curl --silent 'https://kernel.org' | xmllint -html -xpath '${xpath}' - 2>/dev/null";
         in
         {
+          lt = "ls -lhrtc";
           ssh = "kitty +kitten ssh";
           # from https://stackoverflow.com/a/47285611
           gbbd = "git for-each-ref --sort=committerdate refs/heads/ --format='%(color: red)%(committerdate:short) %(color: cyan)%(refname:short)'";
