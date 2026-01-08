@@ -279,4 +279,5 @@
 
   hardware.keyboard.zsa.enable = true;
 
+  services.hardware.bolt.enable = true;
 }
