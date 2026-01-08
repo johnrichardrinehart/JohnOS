@@ -20,6 +20,18 @@
 
   users.users.john.extraGroups = [ "input" ];
 
+  # Enable cgroup delegation for the john user's systemd user manager.
+  # This is required for running Kubernetes (k3s) inside rootless Podman containers.
+  # Without this, k3s fails with "failed to find cpuset cgroup (v2)" because
+  # rootless containers don't have access to cgroup controllers by default.
+  #
+  # The Delegate= directive allows the user's systemd instance to manage its own
+  # cgroup subtree, enabling proper resource isolation for containerized workloads.
+  # Controllers delegated: cpu, cpuset, io, memory, pids
+  #
+  # Reference: https://github.com/k3d-io/k3d/issues/1439
+  systemd.services."user@".serviceConfig.Delegate = "cpu cpuset io memory pids";
+
   dev.johnrinehart.system.enable = true;
   dev.johnrinehart.desktop = {
     enable = true;
