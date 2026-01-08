@@ -99,7 +99,7 @@
   },
   "clock": {
     "timezone": "America/New_York",
-    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+    "tooltip-format": "<span size='200%'>{:%Y %B}</span>\n<tt><span size='200%'>{calendar}</span></tt>",
     "format-alt": "{:%Y-%m-%d}"
   },
   "disk": {
