@@ -1,0 +1,60 @@
+From: John Rinehart <john@example.com>
+Date: Wed, 8 Jan 2026 10:30:00 -0500
+Subject: [PATCH 3/3] thunderbolt: Harmonize freeze_noirq with suspend_noirq for hibernate
+
+The tb_freeze_noirq() function only disables hotplug handling, while
+tb_suspend_noirq() properly prepares the hardware for power loss by:
+- Disconnecting and releasing DisplayPort resources
+- Exiting redrive mode
+- Suspending the root switch
+
+During hibernation, the system will lose power just like during suspend,
+but the freeze path doesn't prepare the hardware appropriately. This can
+leave DisplayPort tunnels in an inconsistent state when the system
+resumes from hibernate.
+
+Make tb_freeze_noirq() perform the same hardware preparation as
+tb_suspend_noirq() to ensure consistent state across all sleep modes.
+The restore path already uses tb_resume_noirq() via the connection
+manager ops, so it will properly re-establish tunnels.
+
+This change ensures that:
+1. DisplayPort resources are properly released before hibernate
+2. The root switch is put into a known state
+3. Resume from hibernate can cleanly re-establish tunnels
+
+Tested on Framework Laptop 13 (11th Gen Intel) with Dell U3225QE
+Thunderbolt monitor.
+
+Signed-off-by: John Rinehart <john@example.com>
+---
+ drivers/thunderbolt/tb.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index 4a94cb406bdfb..a6b6c2b022adf 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -3197,7 +3197,19 @@ static int tb_freeze_noirq(struct tb *tb)
+ {
+ 	struct tb_cm *tcm = tb_priv(tb);
+
+-	tcm->hotplug_active = false;
++	tb_dbg(tb, "freezing...\n");
++
++	/*
++	 * Prepare hardware for hibernation. The system will lose power,
++	 * so we need to properly release resources and suspend hardware
++	 * just like we do for regular suspend.
++	 */
++	tb_disconnect_and_release_dp(tb);
++	tb_switch_exit_redrive(tb->root_switch);
++	tb_switch_suspend(tb->root_switch, false);
++	tcm->hotplug_active = false; /* signal tb_handle_hotplug to quit */
++
++	tb_dbg(tb, "freeze finished\n");
+ 	return 0;
+ }
+
+--
+2.43.0

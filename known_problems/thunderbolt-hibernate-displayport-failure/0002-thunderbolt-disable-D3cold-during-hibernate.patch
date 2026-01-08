@@ -1,0 +1,66 @@
+From: John Rinehart <john@example.com>
+Date: Wed, 8 Jan 2026 10:30:00 -0500
+Subject: [PATCH 2/3] thunderbolt: Disable D3cold during hibernate poweroff
+
+Some platforms have issues resuming Thunderbolt controllers from D3cold
+after hibernate. The PCIe bridges become inaccessible, causing:
+
+  pcieport 0000:80:00.0: Unable to change power state from D3cold to D0, device inaccessible
+
+This prevents DisplayPort tunneling from being re-established after
+hibernate resume, even though USB devices on the same connection recover.
+
+Disable D3cold for the Thunderbolt NHI device during hibernate poweroff
+and re-enable it on resume. This keeps the controller in D3hot instead,
+which resumes more reliably at the cost of slightly higher hibernate
+power consumption.
+
+This is a targeted workaround for platforms where the D3cold exit timing
+is problematic. It trades power efficiency for reliability.
+
+Tested on Framework Laptop 13 (11th Gen Intel) with Dell U3225QE
+Thunderbolt monitor.
+
+Signed-off-by: John Rinehart <john@example.com>
+---
+ drivers/thunderbolt/nhi.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/thunderbolt/nhi.c b/drivers/thunderbolt/nhi.c
+index addb4a20d5ead..f50d13c50bf97 100644
+--- a/drivers/thunderbolt/nhi.c
++++ b/drivers/thunderbolt/nhi.c
+@@ -1030,9 +1030,20 @@ static int nhi_poweroff_noirq(struct device *dev)
+ {
+ 	struct pci_dev *pdev = to_pci_dev(dev);
+ 	bool wakeup;
++	int ret;
+
+ 	wakeup = device_may_wakeup(dev) && nhi_wake_supported(pdev);
+-	return __nhi_suspend_noirq(dev, wakeup);
++	ret = __nhi_suspend_noirq(dev, wakeup);
++
++	/*
++	 * Prevent the device from entering D3cold during hibernation.
++	 * Some platforms have issues resuming Thunderbolt controllers
++	 * from D3cold, causing DisplayPort tunnel failures.
++	 */
++	if (!ret)
++		pci_d3cold_disable(pdev);
++
++	return ret;
+ }
+
+ static void nhi_enable_int_throttling(struct tb_nhi *nhi)
+@@ -1058,6 +1069,9 @@ static int nhi_resume_noirq(struct device *dev)
+ 	struct tb_nhi *nhi = tb->nhi;
+ 	int ret;
+
++	/* Re-enable D3cold that may have been disabled during poweroff */
++	pci_d3cold_enable(pdev);
++
+ 	/*
+ 	 * Check that the device is still there. It may be that the user
+ 	 * unplugged last device which causes the host controller to go
+--
+2.43.0
