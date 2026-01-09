@@ -123,18 +123,16 @@
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.extraModulePackages = [ config.boot.kernelPackages.v4l2loopback ];
 
-  # Fix Thunderbolt DisplayPort tunnel failure after hibernate resume.
-  # The PCIe subsystem doesn't wait for devices to become accessible after
-  # D3cold exit - this patch adds retry logic with exponential backoff.
+  # Fix Thunderbolt DisplayPort tunnel failures during suspend/hibernate.
   # See: known_problems/thunderbolt-hibernate-displayport-failure/
-  # If hibernate resume still fails, try: options thunderbolt power_save=0
+  # Use `tb-debug on` to enable runtime debugging, or set bootVerbose = true
+  # If issues persist, try: options thunderbolt power_save=0
   # in boot.extraModprobeConfig (disables TB power saving as a workaround).
-  boot.kernelPatches = [
-    {
-      name = "pci-d3cold-retry";
-      patch = ../../known_problems/thunderbolt-hibernate-displayport-failure/0001-PCI-Add-retry-logic-for-D3cold-resume.patch;
-    }
-  ];
+  dev.johnrinehart.thunderbolt-debug = {
+    enable = true;
+    kernelPatches = true;  # Apply D3cold/D3hot retry patches
+    bootVerbose = true;   # Set true for boot-time verbose logging
+  };
 
   environment.etc."modprobe.d/v4l2loopback.conf".text = ''
     options v4l2loopback video_nr=0,1,2 card_label="Virtual Video 0,Virtual Video 1,Virtual Video 2" exclusive_caps=1

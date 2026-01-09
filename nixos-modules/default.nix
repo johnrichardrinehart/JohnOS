@@ -20,6 +20,7 @@
     ./sound.nix
     ./ssh.nix
     ./system.nix
+    ./thunderbolt-debug.nix
     ./virtualisation.nix
 
     ./desktop/default.nix
