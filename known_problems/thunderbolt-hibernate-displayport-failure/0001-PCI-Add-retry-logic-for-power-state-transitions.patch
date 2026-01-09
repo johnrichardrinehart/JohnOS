@@ -1,0 +1,81 @@
+diff --git a/drivers/pci/pci.c b/drivers/pci/pci.c
+index b14dd064006cc..35b0292f1d0ec 100644
+--- a/drivers/pci/pci.c
++++ b/drivers/pci/pci.c
+@@ -1303,7 +1303,9 @@ static int pci_dev_wait(struct pci_dev *dev, char *reset_type, int timeout)
+ int pci_power_up(struct pci_dev *dev)
+ {
+ 	bool need_restore;
++	pci_power_t prev_state = dev->current_state;
+ 	pci_power_t state;
++	int retries;
+ 	u16 pmcsr;
+ 
+ 	platform_pci_set_power_state(dev, PCI_D0);
+@@ -1323,10 +1325,28 @@ int pci_power_up(struct pci_dev *dev)
+ 		return -EIO;
+ 	}
+ 
+-	pci_read_config_word(dev, dev->pm_cap + PCI_PM_CTRL, &pmcsr);
++	/*
++	 * Devices resuming from D3cold may need significant time to become
++	 * accessible after platform power-on. This is particularly common
++	 * with Thunderbolt controllers after hibernate resume where the
++	 * controller needs time to initialize after power rails stabilize.
++	 * Retry with exponential backoff (100ms, 200ms, 400ms, 800ms, 1600ms,
++	 * 3200ms) for a total of approximately 10 seconds before giving up.
++	 */
++	for (retries = 0; retries < 7; retries++) {
++		if (retries > 0 && prev_state == PCI_D3cold) {
++			unsigned int delay_ms = 100 << (retries - 1);
++			pci_dbg(dev, "D3cold resume: retry %d, waiting %u ms\n",
++				retries, delay_ms);
++			msleep(delay_ms);
++		}
++		pci_read_config_word(dev, dev->pm_cap + PCI_PM_CTRL, &pmcsr);
++		if (!PCI_POSSIBLE_ERROR(pmcsr))
++			break;
++	}
+ 	if (PCI_POSSIBLE_ERROR(pmcsr)) {
+-		pci_err(dev, "Unable to change power state from %s to D0, device inaccessible\n",
+-			pci_power_name(dev->current_state));
++		pci_err(dev, "Unable to change power state from %s to D0, device inaccessible after %d retries\n",
++			pci_power_name(prev_state), retries);
+ 		dev->current_state = PCI_D3cold;
+ 		return -EIO;
+ 	}
+@@ -1466,6 +1486,7 @@ static void __pci_bus_set_current_state(struct pci_bus *bus, pci_power_t state,
+ static int pci_set_low_power_state(struct pci_dev *dev, pci_power_t state, bool locked)
+ {
+ 	u16 pmcsr;
++	int retries;
+ 
+ 	if (!dev->pm_cap)
+ 		return -EIO;
+@@ -1488,7 +1509,25 @@ static int pci_set_low_power_state(struct pci_dev *dev, pci_power_t state, bool
+ 	   || (state == PCI_D2 && !dev->d2_support))
+ 		return -EIO;
+ 
+-	pci_read_config_word(dev, dev->pm_cap + PCI_PM_CTRL, &pmcsr);
++	/*
++	 * Some devices, particularly Thunderbolt PCIe bridges, may be
++	 * transiently inaccessible when entering low power states. This
++	 * can occur during suspend when the PCIe link is in a transitional
++	 * state or ASPM is causing momentary link unavailability.
++	 * Retry with exponential backoff (100ms, 200ms, 400ms, 800ms, 1600ms,
++	 * 3200ms) for a total of approximately 10 seconds before giving up.
++	 */
++	for (retries = 0; retries < 7; retries++) {
++		if (retries > 0) {
++			unsigned int delay_ms = 100 << (retries - 1);
++			pci_dbg(dev, "low power transition: retry %d, waiting %u ms\n",
++				retries, delay_ms);
++			msleep(delay_ms);
++		}
++		pci_read_config_word(dev, dev->pm_cap + PCI_PM_CTRL, &pmcsr);
++		if (!PCI_POSSIBLE_ERROR(pmcsr))
++			break;
++	}
+ 	if (PCI_POSSIBLE_ERROR(pmcsr)) {
+ 		pci_err(dev, "Unable to change power state from %s to %s, device inaccessible\n",
+ 			pci_power_name(dev->current_state),

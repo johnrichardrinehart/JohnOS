@@ -150,6 +150,13 @@
   #   options thunderbolt power_save=0
   # '';
 
+  # Another option for Thunderbolt/PCIe issues: use kernel-native PCIe port
+  # services instead of firmware (ACPI). This gives the kernel full control
+  # over hotplug, AER, and PME handling, which can help avoid races between
+  # firmware and kernel during suspend/resume. May help if the retry patches
+  # in dev.johnrinehart.thunderbolt-debug aren't sufficient.
+  # boot.kernelParams = [ "pcie_ports=native" ];
+
   boot.kernelModules = [
     "kvm-intel" # detected automatically
   ];

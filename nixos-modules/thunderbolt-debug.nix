@@ -53,15 +53,16 @@ in
   config = lib.mkIf cfg.enable {
     # Kernel config for PCI debugging
     boot.kernelPatches = lib.optionals cfg.kernelPatches [
-      # Fix D3cold->D0 transition failures (hibernate resume)
+      # Fix D3cold->D0 and D0->D3hot transition failures (hibernate/suspend)
+      # Adds retry logic with exponential backoff (~10s total) for Thunderbolt
       {
-        name = "pci-d3cold-retry";
-        patch = ../known_problems/thunderbolt-hibernate-displayport-failure/0001-PCI-Add-retry-logic-for-D3cold-resume.patch;
+        name = "pci-power-state-retry";
+        patch = ../known_problems/thunderbolt-hibernate-displayport-failure/0001-PCI-Add-retry-logic-for-power-state-transitions.patch;
       }
-      # Fix D0->D3hot transition failures (suspend entry)
+      # Fix NULL pointer dereference in Device Tree code when hotplug races with failed resume
       {
-        name = "pci-d3hot-retry";
-        patch = ../known_problems/thunderbolt-hibernate-displayport-failure/0004-PCI-Add-retry-logic-for-D3hot-suspend.patch;
+        name = "pci-of-null-check";
+        patch = ../known_problems/thunderbolt-hibernate-displayport-failure/0002-PCI-OF-Check-subordinate-before-accessing-bus-range.patch;
       }
       # Enable PCI debug output (useful with dyndbg)
       {
