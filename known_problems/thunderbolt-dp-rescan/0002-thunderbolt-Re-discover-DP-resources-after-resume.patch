@@ -1,0 +1,106 @@
+From 945e10d3ef4951f760c2f97d72868f3804a265a2 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Fri, 9 Jan 2026 16:06:52 -0500
+Subject: [PATCH 2/2] thunderbolt: Re-discover DP resources after resume
+
+After suspend (S3), hibernate (S4), or runtime suspend (D3), DP tunnels
+are intentionally torn down and the dp_resources list is cleared by
+tb_disconnect_and_release_dp(). However, the resume paths do not
+re-discover or re-create DP tunnels.
+
+The current code expects DP tunnels to be re-created via hotplug events.
+But if the display was already connected before suspend, the hardware
+may not generate a new hotplug event on resume, leaving the display
+non-functional.
+
+This patch adds explicit DP resource re-discovery and tunnel creation
+to both the system resume (tb_resume_noirq) and runtime resume
+(tb_runtime_resume) paths. This ensures DP tunnels are properly
+re-established regardless of whether hotplug events are generated.
+
+The fix:
+1. After restoring children switches, query all DP IN/OUT ports
+2. Add available ports to the dp_resources list
+3. Call tb_tunnel_dp() to establish tunnels for any available pairs
+
+This matches the behavior of tb_start() which also calls tb_tunnel_dp()
+after initial discovery.
+
+Signed-off-by: John Googol Rinehart <john@rinehart.blog>
+---
+ drivers/thunderbolt/tb.c | 45 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index 49123fd65b4d9..41479b3b0ae0b 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -3150,6 +3150,32 @@ static void tb_restore_children(struct tb_switch *sw)
+ 	}
+ }
+ 
++/*
++ * Re-discover DP resources on a switch after resume.
++ * This is needed because tb_disconnect_and_release_dp() clears the
++ * dp_resources list during suspend, and we may not receive hotplug
++ * events for already-connected displays.
++ */
++static void tb_rediscover_dp_resources(struct tb_switch *sw)
++{
++	struct tb *tb = sw->tb;
++	struct tb_port *port;
++
++	tb_switch_for_each_port(sw, port) {
++		if (tb_port_is_dpin(port) || tb_port_is_dpout(port)) {
++			if (tb_switch_query_dp_resource(sw, port)) {
++				tb_port_dbg(port, "DP %s resource available after resume\n",
++					    tb_port_is_dpin(port) ? "IN" : "OUT");
++				tb_dp_resource_available(tb, port);
++			}
++		}
++
++		/* Recurse into downstream switches */
++		if (tb_port_has_remote(port))
++			tb_rediscover_dp_resources(port->remote->sw);
++	}
++}
++
+ static int tb_resume_noirq(struct tb *tb)
+ {
+ 	struct tb_cm *tcm = tb_priv(tb);
+@@ -3203,6 +3229,15 @@ static int tb_resume_noirq(struct tb *tb)
+ 		tb_dbg(tb, "tunnels restarted, sleeping for 100ms\n");
+ 		msleep(100);
+ 	}
++
++	/*
++	 * Re-discover DP resources and create tunnels. This is needed
++	 * because suspend cleared the dp_resources list and we may not
++	 * receive hotplug events for already-connected displays.
++	 */
++	tb_rediscover_dp_resources(tb->root_switch);
++	tb_tunnel_dp(tb);
++
+ 	tb_switch_enter_redrive(tb->root_switch);
+ 	 /* Allow tb_handle_hotplug to progress events */
+ 	tcm->hotplug_active = true;
+@@ -3305,6 +3340,16 @@ static int tb_runtime_resume(struct tb *tb)
+ 	list_for_each_entry_safe(tunnel, n, &tcm->tunnel_list, list)
+ 		tb_tunnel_activate(tunnel);
+ 	tb_switch_enter_redrive(tb->root_switch);
++
++	/*
++	 * Re-discover DP resources and create tunnels. This is needed
++	 * because runtime suspend cleared the dp_resources list and we
++	 * may not receive hotplug events for already-connected displays.
++	 * Do this before enabling hotplug to avoid races.
++	 */
++	tb_rediscover_dp_resources(tb->root_switch);
++	tb_tunnel_dp(tb);
++
+ 	tcm->hotplug_active = true;
+ 	mutex_unlock(&tb->lock);
+ 
+-- 
+2.51.2
+

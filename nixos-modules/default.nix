@@ -22,6 +22,7 @@
     ./ssh.nix
     ./system.nix
     ./thunderbolt-debug.nix
+    ./thunderbolt-dp-rescan.nix
     ./virtualisation.nix
 
     ./desktop/default.nix

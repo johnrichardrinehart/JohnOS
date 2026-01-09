@@ -311,4 +311,6 @@
   hardware.keyboard.zsa.enable = true;
 
   services.hardware.bolt.enable = true;
+
+  dev.johnrinehart.thunderbolt-dp-rescan.enable = true;
 }

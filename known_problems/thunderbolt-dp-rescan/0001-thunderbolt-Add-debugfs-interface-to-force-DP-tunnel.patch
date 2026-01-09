@@ -1,0 +1,236 @@
+From 6ff0e3581a88773b69831e991c2e0be9f1002849 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Fri, 9 Jan 2026 16:05:53 -0500
+Subject: [PATCH 1/2] thunderbolt: Add debugfs interface to force DP tunnel
+ re-discovery
+
+Add a per-switch debugfs file "dp_rescan" that allows userspace to
+force re-discovery and re-establishment of DisplayPort tunnels. This is
+useful for recovering USB4/Thunderbolt DP tunnels after hibernate or
+runtime suspend (D3hot/D3cold) when the tunnel state becomes
+inconsistent.
+
+After hibernate resume or runtime resume from D3 states, the Thunderbolt
+connection manager may fail to properly re-establish DP tunnels even
+though the hardware is connected. This debugfs interface provides a way
+to manually trigger the tunnel discovery and creation process.
+
+Supported commands:
+  "1" or "rescan"    - rescan DP resources and attempt to create tunnels
+  "0" or "release"   - release all DP tunnels and resources
+
+The debugfs file is created for each Thunderbolt switch at:
+  /sys/kernel/debug/thunderbolt/<switch>/dp_rescan
+
+Example usage:
+  # Force DP tunnel re-discovery on root switch 0-0
+  echo 1 | sudo tee /sys/kernel/debug/thunderbolt/0-0/dp_rescan
+
+  # Release all DP tunnels
+  echo release | sudo tee /sys/kernel/debug/thunderbolt/0-0/dp_rescan
+
+Signed-off-by: John Googol Rinehart <john@rinehart.blog>
+---
+ drivers/thunderbolt/debugfs.c | 104 ++++++++++++++++++++++++++++++++++
+ drivers/thunderbolt/tb.c      |  40 +++++++++++++
+ drivers/thunderbolt/tb.h      |   4 ++
+ 3 files changed, 148 insertions(+)
+
+diff --git a/drivers/thunderbolt/debugfs.c b/drivers/thunderbolt/debugfs.c
+index 46a2a3550be71..1b3342be15f41 100644
+--- a/drivers/thunderbolt/debugfs.c
++++ b/drivers/thunderbolt/debugfs.c
+@@ -2399,6 +2399,104 @@ static int port_sb_regs_show(struct seq_file *s, void *not_used)
+ }
+ DEBUGFS_ATTR_RW(port_sb_regs);
+ 
++/*
++ * DP tunnel rescan interface for recovering tunnels after suspend/hibernate
++ */
++
++static int dp_rescan_show(struct seq_file *s, void *data)
++{
++	struct tb_switch *sw = s->private;
++	struct tb *tb = sw->tb;
++
++	seq_puts(s, "Write a command to control DP tunnel discovery:\n");
++	seq_puts(s, "  '1' or 'rescan'   - force DP tunnel re-discovery\n");
++	seq_puts(s, "  '0' or 'release'  - release all DP tunnels\n");
++	seq_puts(s, "\n");
++	seq_printf(s, "Switch: %s\n", dev_name(&sw->dev));
++	seq_printf(s, "Domain: %s\n", dev_name(&tb->dev));
++	seq_puts(s, "\n");
++	seq_puts(s, "This is useful for recovering USB4/Thunderbolt DP tunnels after\n");
++	seq_puts(s, "hibernate (S4), suspend (S3), or runtime suspend (D3hot/D3cold)\n");
++	seq_puts(s, "when the tunnel state becomes inconsistent.\n");
++
++	return 0;
++}
++
++static bool dp_rescan_str_is(const char *input, const char *match)
++{
++	size_t len = strlen(match);
++
++	if (strncmp(input, match, len) == 0) {
++		if (input[len] == '\0' || input[len] == '\n')
++			return true;
++	}
++	return false;
++}
++
++static ssize_t dp_rescan_write(struct file *file, const char __user *user_buf,
++			       size_t count, loff_t *ppos)
++{
++	struct seq_file *s = file->private_data;
++	struct tb_switch *sw = s->private;
++	struct tb *tb = sw->tb;
++	char *buf;
++	bool do_rescan;
++	int ret;
++
++	buf = validate_and_copy_from_user(user_buf, &count);
++	if (IS_ERR(buf))
++		return PTR_ERR(buf);
++
++	if (dp_rescan_str_is(buf, "1") || dp_rescan_str_is(buf, "rescan"))
++		do_rescan = true;
++	else if (dp_rescan_str_is(buf, "0") || dp_rescan_str_is(buf, "release"))
++		do_rescan = false;
++	else
++		do_rescan = true; /* default to rescan */
++
++	/* Wake up the domain from runtime suspend if needed */
++	pm_runtime_get_sync(&tb->dev);
++	pm_runtime_get_sync(&sw->dev);
++
++	if (mutex_lock_interruptible(&tb->lock)) {
++		ret = -ERESTARTSYS;
++		goto out_rpm;
++	}
++
++	if (do_rescan) {
++		tb_sw_dbg(sw, "dp_rescan: forcing DP tunnel re-discovery\n");
++
++		/*
++		 * Query all DP IN/OUT ports on this switch and add newly
++		 * available ones to the dp_resources list. This handles
++		 * both D3hot (runtime) and S4 (hibernate) resume cases
++		 * where the resource may not have been re-added.
++		 */
++		ret = tb_dp_resources_scan(sw);
++		if (ret)
++			tb_sw_warn(sw, "dp_rescan: resource scan failed: %d\n", ret);
++
++		/* Now attempt to create DP tunnels */
++		tb_dp_tunnel_rescan(tb);
++	} else {
++		tb_sw_dbg(sw, "dp_rescan: releasing all DP tunnels and resources\n");
++		tb_dp_tunnel_release(tb);
++	}
++
++	ret = count;
++	mutex_unlock(&tb->lock);
++
++out_rpm:
++	pm_runtime_mark_last_busy(&sw->dev);
++	pm_runtime_put_autosuspend(&sw->dev);
++	pm_runtime_mark_last_busy(&tb->dev);
++	pm_runtime_put_autosuspend(&tb->dev);
++	free_page((unsigned long)buf);
++
++	return ret;
++}
++DEBUGFS_ATTR_RW(dp_rescan);
++
+ /**
+  * tb_switch_debugfs_init() - Add debugfs entries for router
+  * @sw: Pointer to the router
+@@ -2441,6 +2539,11 @@ void tb_switch_debugfs_init(struct tb_switch *sw)
+ 	}
+ 
+ 	margining_switch_init(sw);
++
++	/* Add dp_rescan only for root switch - DP resources are managed per-domain */
++	if (!tb_route(sw))
++		debugfs_create_file("dp_rescan", 0644, sw->debugfs_dir, sw,
++				    &dp_rescan_fops);
+ }
+ 
+ /**
+@@ -2451,6 +2554,7 @@ void tb_switch_debugfs_init(struct tb_switch *sw)
+  */
+ void tb_switch_debugfs_remove(struct tb_switch *sw)
+ {
++	debugfs_lookup_and_remove("dp_rescan", sw->debugfs_dir);
+ 	margining_switch_remove(sw);
+ 	debugfs_remove_recursive(sw->debugfs_dir);
+ }
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index 4a94cb406bdfb..49123fd65b4d9 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -2251,6 +2251,46 @@ static void tb_disconnect_and_release_dp(struct tb *tb)
+ 	}
+ }
+ 
++/*
++ * Exported functions for debugfs DP rescan interface.
++ * These must be called with tb->lock held.
++ */
++
++/**
++ * tb_dp_resources_scan() - Scan for available DP resources on a switch
++ * @sw: Switch to scan
++ *
++ * Queries all DP IN/OUT ports on the switch and adds available ones
++ * to the dp_resources list. This is useful after suspend/resume when
++ * the resource list may be stale.
++ *
++ * Return: 0 on success
++ */
++int tb_dp_resources_scan(struct tb_switch *sw)
++{
++	struct tb *tb = sw->tb;
++	struct tb_port *port;
++
++	tb_switch_for_each_port(sw, port) {
++		if (tb_port_is_dpin(port) || tb_port_is_dpout(port)) {
++			if (tb_switch_query_dp_resource(sw, port))
++				tb_dp_resource_available(tb, port);
++		}
++	}
++
++	return 0;
++}
++
++void tb_dp_tunnel_rescan(struct tb *tb)
++{
++	tb_tunnel_dp(tb);
++}
++
++void tb_dp_tunnel_release(struct tb *tb)
++{
++	tb_disconnect_and_release_dp(tb);
++}
++
+ static int tb_disconnect_pci(struct tb *tb, struct tb_switch *sw)
+ {
+ 	struct tb_tunnel *tunnel;
+diff --git a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
+index 8e2762ff8d517..c6a58f842bed8 100644
+--- a/drivers/thunderbolt/tb.h
++++ b/drivers/thunderbolt/tb.h
+@@ -1031,6 +1031,10 @@ bool tb_switch_query_dp_resource(struct tb_switch *sw, struct tb_port *in);
+ int tb_switch_alloc_dp_resource(struct tb_switch *sw, struct tb_port *in);
+ void tb_switch_dealloc_dp_resource(struct tb_switch *sw, struct tb_port *in);
+ 
++int tb_dp_resources_scan(struct tb_switch *sw);
++void tb_dp_tunnel_rescan(struct tb *tb);
++void tb_dp_tunnel_release(struct tb *tb);
++
+ int tb_switch_tmu_init(struct tb_switch *sw);
+ int tb_switch_tmu_post_time(struct tb_switch *sw);
+ int tb_switch_tmu_disable(struct tb_switch *sw);
+-- 
+2.51.2
+
