@@ -5,6 +5,7 @@
   imports = [
     ./auto-suspend.nix
     ./bluetooth.nix
+    ./hibernate-resume-optimization.nix
     ./droidcam.nix
     ./filepicker.nix
     ./fonts.nix

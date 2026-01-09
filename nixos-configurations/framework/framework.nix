@@ -134,6 +134,32 @@
     bootVerbose = true;   # Set true for boot-time verbose logging
   };
 
+  # Optimize hibernate resume for faster session interactivity
+  # Without this, there's a 30-60s delay after resume where display renders
+  # but keyboard/mouse input is unresponsive due to resource contention
+  dev.johnrinehart.hibernate-resume-optimization = {
+    enable = true;
+
+    # HIGH impact (~20-30s): Defer network services to prevent D-Bus flooding
+    deferNetworking.enable = true;
+    deferNetworking.delaySeconds = 3;
+
+    # MEDIUM impact (~5-10s): Defer bluetooth reconnection attempts
+    deferBluetooth.enable = true;
+    deferBluetooth.delaySeconds = 5;
+
+    # MEDIUM impact (~10-15s): Prioritize compositor over system services
+    prioritizeUserSession.enable = true;
+    prioritizeUserSession.userSliceCPUWeight = 200;
+
+    # LOW-MEDIUM impact: Smaller hibernate image = faster write/read
+    # Disabled by default - enable if hibernate/resume itself is slow
+    reduceHibernateImageSize.enable = false;
+
+    # Diagnostic: Enable to debug slow resume with PM timing
+    debugTiming.enable = false;
+  };
+
   environment.etc."modprobe.d/v4l2loopback.conf".text = ''
     options v4l2loopback video_nr=0,1,2 card_label="Virtual Video 0,Virtual Video 1,Virtual Video 2" exclusive_caps=1
   '';
