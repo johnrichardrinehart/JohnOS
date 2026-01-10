@@ -1,0 +1,64 @@
+From 55d88c5e17b096187981518aba0cb5b832ead23f Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Sat, 10 Jan 2026 09:44:32 -0500
+Subject: [PATCH] thunderbolt: Re-scan for lost devices after resume
+
+After suspend (S3) or hibernate (S4), Thunderbolt devices may fail to
+reconnect in time during tb_switch_resume(). The function tb_wait_for_port()
+only waits ~1 second for the port PHY to come up, and if the port is still
+in TB_PORT_UNPLUGGED state, the device is marked unplugged and removed by
+tb_free_unplugged_children().
+
+This is particularly problematic after hibernate (S4) where the controller
+may need more time to reinitialize, or the device might not generate a
+hotplug event because it was already connected before suspend.
+
+Add a tb_scan_switch() call after tb_restore_children() in both
+tb_resume_noirq() and tb_runtime_resume() to give devices that were
+removed a chance to be rediscovered. This complements the existing
+tb_rediscover_dp_resources() fix by ensuring the underlying Thunderbolt
+device is present before attempting to establish DP tunnels.
+
+Signed-off-by: John Googol Rinehart <john@rinehart.blog>
+---
+ drivers/thunderbolt/tb.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index 41479b3b0ae0b..98bd565784fa9 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -3197,6 +3197,16 @@ static int tb_resume_noirq(struct tb *tb)
+ 	tb_free_unplugged_children(tb->root_switch);
+ 	tb_restore_children(tb->root_switch);
+ 
++	/*
++	 * Re-scan for devices that may have been lost during suspend but
++	 * are still physically connected. After hibernate (S4), the port
++	 * PHY state might not come up in time during tb_switch_resume(),
++	 * causing devices to be marked unplugged and removed. Scanning
++	 * here gives them another chance to be discovered.
++	 */
++	tb_dbg(tb, "scanning for devices lost during suspend\n");
++	tb_scan_switch(tb->root_switch);
++
+ 	/*
+ 	 * If we get here from suspend to disk the boot firmware or the
+ 	 * restore kernel might have created tunnels of its own. Since
+@@ -3341,6 +3351,13 @@ static int tb_runtime_resume(struct tb *tb)
+ 		tb_tunnel_activate(tunnel);
+ 	tb_switch_enter_redrive(tb->root_switch);
+ 
++	/*
++	 * Re-scan for devices that may have been lost during runtime
++	 * suspend. This gives devices that didn't come up in time during
++	 * tb_switch_resume() another chance to be discovered.
++	 */
++	tb_scan_switch(tb->root_switch);
++
+ 	/*
+ 	 * Re-discover DP resources and create tunnels. This is needed
+ 	 * because runtime suspend cleared the dp_resources list and we
+-- 
+2.51.2
+

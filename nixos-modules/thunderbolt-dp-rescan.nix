@@ -3,16 +3,21 @@
 # Adds kernel patches that:
 # 1. Provide a debugfs interface to manually trigger DP tunnel re-discovery
 # 2. Fix the resume path to automatically re-discover DP resources
+# 3. Re-scan for lost Thunderbolt devices after resume
 #
 # This is useful for recovering USB4/Thunderbolt DisplayPort tunnels after
 # hibernate (S4), suspend (S3), or runtime suspend (D3hot/D3cold) when
-# the tunnel state becomes inconsistent.
+# the tunnel state becomes inconsistent or devices fail to re-enumerate.
+#
+# The problem: After hibernate, tb_switch_resume() only waits ~1 second for
+# the port PHY to come up. If the port is still in TB_PORT_UNPLUGGED state,
+# the device is marked unplugged and removed. No re-scan happens afterward.
 #
 # Usage:
 #   dev.johnrinehart.thunderbolt-dp-rescan.enable = true;
 #
 # When enabled:
-#   - Kernel is patched with DP tunnel recovery fixes
+#   - Kernel is patched with DP tunnel recovery and device rescan fixes
 #   - A debugfs interface is available at /sys/kernel/debug/thunderbolt/0-0/dp_rescan
 #   - A helper script 'tb-dp-rescan' is installed
 #
@@ -23,8 +28,9 @@
 #   # Or use the helper script
 #   tb-dp-rescan
 #
-# The automatic fix in patch 0002 should handle most cases without manual
-# intervention. The debugfs interface is for debugging or edge cases.
+# The automatic fixes in patches 0002 and 0003 should handle most cases
+# without manual intervention. The debugfs interface is for debugging or
+# edge cases.
 {
   config,
   lib,
@@ -162,6 +168,10 @@ in
       {
         name = "thunderbolt-dp-resume-fix";
         patch = ../known_problems/thunderbolt-dp-rescan/0002-thunderbolt-Re-discover-DP-resources-after-resume.patch;
+      }
+      {
+        name = "thunderbolt-rescan-lost-devices";
+        patch = ../known_problems/thunderbolt-dp-rescan/0003-thunderbolt-Re-scan-for-lost-devices-after-resume.patch;
       }
     ];
 
