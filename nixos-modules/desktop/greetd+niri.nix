@@ -130,8 +130,12 @@ in
         myMako = pkgs.mako.overrideAttrs (old: {
           patches = old.patches or [ ] ++ [ ./0001-feat-support-etc-mako-config.patch ];
         });
+        niri-gather-windows = pkgs.callPackage ./niri-gather-windows.nix {
+          niri = config.programs.niri.package;
+        };
       in
       [
+        niri-gather-windows
         pkgs.alacritty
         pkgs.brightnessctl
         pkgs.cliphist
