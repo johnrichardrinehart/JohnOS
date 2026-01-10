@@ -1,7 +1,7 @@
 From 6ff0e3581a88773b69831e991c2e0be9f1002849 Mon Sep 17 00:00:00 2001
 From: John Rinehart <johnrichardrinehart@gmail.com>
 Date: Fri, 9 Jan 2026 16:05:53 -0500
-Subject: [PATCH 1/2] thunderbolt: Add debugfs interface to force DP tunnel
+Subject: [PATCH 1/4] thunderbolt: Add debugfs interface to force DP tunnel
  re-discovery
 
 Add a per-switch debugfs file "dp_rescan" that allows userspace to

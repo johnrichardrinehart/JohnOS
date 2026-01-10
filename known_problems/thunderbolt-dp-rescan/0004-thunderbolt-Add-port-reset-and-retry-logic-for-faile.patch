@@ -1,0 +1,83 @@
+From 0bb7ba20cc89705c55c54cdec0f7850e819ca160 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Sat, 10 Jan 2026 12:23:53 -0500
+Subject: [PATCH 4/4] thunderbolt: Add port reset and retry logic for failed
+ device init
+
+After hibernate resume, downstream Thunderbolt devices may fail to
+initialize with EIO errors even though they are detected. This happens
+because the device is not fully ready when tb_switch_alloc() tries to
+read its configuration space and DROM.
+
+A physical unplug/replug cycle works because it triggers a proper
+device reset. Emulate this by:
+
+1. Calling usb4_port_reset() to issue a downstream port reset
+2. Waiting with increasing delays (500ms to 2500ms) between retries
+3. Retrying up to 6 times for a total of ~10 seconds
+
+This is specifically targeted at the resume path where devices are
+being re-scanned after hibernate.
+
+Signed-off-by: John Googol Rinehart <john@rinehart.blog>
+---
+ drivers/thunderbolt/tb.c | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index 98bd565784fa9..b13020e24d914 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -1324,6 +1324,41 @@ static void tb_scan_port(struct tb_port *port)
+ 
+ 	sw = tb_switch_alloc(port->sw->tb, &port->sw->dev,
+ 			     tb_downstream_route(port));
++	/*
++	 * After hibernate resume, the downstream device may not be fully
++	 * ready when we first try to access it. If we get an I/O error,
++	 * try resetting the port and retrying with increasing delays.
++	 * Total retry time is about 10 seconds (500+1000+1500+2000+2500+2500ms).
++	 */
++	if (IS_ERR(sw) && PTR_ERR(sw) == -EIO) {
++		int retries;
++		int delay_ms = 500;
++
++		for (retries = 0; retries < 6; retries++) {
++			tb_port_warn(port,
++				     "switch alloc failed with EIO, resetting port and retry %d/6 (delay %dms)\n",
++				     retries + 1, delay_ms);
++
++			/* Try to reset the downstream port to force re-init */
++			if (tb_switch_is_usb4(port->sw) && port->cap_usb4)
++				usb4_port_reset(port);
++
++			msleep(delay_ms);
++			if (delay_ms < 2500)
++				delay_ms += 500;
++
++			/* Wait for port to come back up after reset */
++			if (tb_wait_for_port(port, true) <= 0)
++				continue;
++
++			sw = tb_switch_alloc(port->sw->tb, &port->sw->dev,
++					     tb_downstream_route(port));
++			if (!IS_ERR(sw))
++				break;
++			if (PTR_ERR(sw) != -EIO)
++				break;
++		}
++	}
+ 	if (IS_ERR(sw)) {
+ 		/*
+ 		 * Make the downstream retimers available even if there
+@@ -3346,6 +3381,7 @@ static int tb_runtime_resume(struct tb *tb)
+ 	mutex_lock(&tb->lock);
+ 	tb_switch_resume(tb->root_switch, true);
+ 	tb_free_invalid_tunnels(tb);
++	tb_free_unplugged_children(tb->root_switch);
+ 	tb_restore_children(tb->root_switch);
+ 	list_for_each_entry_safe(tunnel, n, &tcm->tunnel_list, list)
+ 		tb_tunnel_activate(tunnel);
+-- 
+2.51.2
+
