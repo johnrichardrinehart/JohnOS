@@ -179,6 +179,10 @@ in
         name = "thunderbolt-port-reset-retry";
         patch = ../known_problems/thunderbolt-dp-rescan/0004-thunderbolt-Add-port-reset-and-retry-logic-for-faile.patch;
       }
+      {
+        name = "thunderbolt-switch-rescan-debugfs";
+        patch = ../known_problems/thunderbolt-dp-rescan/0005-thunderbolt-Add-tb_switch_rescan-and-use-it-in-debug.patch;
+      }
     ];
 
     environment.systemPackages = [

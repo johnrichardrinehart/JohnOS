@@ -1,0 +1,80 @@
+From 49830be837d5a120162209cb5ab8c99d16d71cad Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Sat, 10 Jan 2026 19:09:00 -0500
+Subject: [PATCH 5/5] thunderbolt: Add tb_switch_rescan and use it in debugfs
+ dp_rescan
+
+Export tb_switch_rescan() wrapper around tb_scan_switch() to allow
+debugfs and other callers to trigger a port scan for lost devices.
+
+Update the dp_rescan debugfs handler to first call tb_switch_rescan()
+before scanning DP resources. This is needed because after hibernate,
+the downstream device (e.g., 1-3) may be completely missing from the
+device tree, not just missing DP resources.
+
+Signed-off-by: John Googol Rinehart <john@rinehart.blog>
+---
+ drivers/thunderbolt/debugfs.c |  9 ++++++++-
+ drivers/thunderbolt/tb.c      | 13 +++++++++++++
+ drivers/thunderbolt/tb.h      |  1 +
+ 3 files changed, 22 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/thunderbolt/debugfs.c b/drivers/thunderbolt/debugfs.c
+index 1b3342be15f41..423509fe05500 100644
+--- a/drivers/thunderbolt/debugfs.c
++++ b/drivers/thunderbolt/debugfs.c
+@@ -2464,7 +2464,14 @@ static ssize_t dp_rescan_write(struct file *file, const char __user *user_buf,
+ 	}
+ 
+ 	if (do_rescan) {
+-		tb_sw_dbg(sw, "dp_rescan: forcing DP tunnel re-discovery\n");
++		tb_sw_dbg(sw, "dp_rescan: forcing device and DP tunnel re-discovery\n");
++
++		/*
++		 * First, scan for any downstream devices that may have been
++		 * lost during suspend/hibernate. This is needed before DP
++		 * resource scanning because the device itself may be missing.
++		 */
++		tb_switch_rescan(sw);
+ 
+ 		/*
+ 		 * Query all DP IN/OUT ports on this switch and add newly
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index b13020e24d914..d96f3ba93b216 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -2326,6 +2326,19 @@ void tb_dp_tunnel_release(struct tb *tb)
+ 	tb_disconnect_and_release_dp(tb);
+ }
+ 
++/**
++ * tb_switch_rescan() - Rescan for downstream devices on a switch
++ * @sw: Switch to rescan
++ *
++ * Scans all ports on the switch for newly connected downstream devices.
++ * This is useful after suspend/resume when devices may have been lost
++ * and need to be re-discovered.
++ */
++void tb_switch_rescan(struct tb_switch *sw)
++{
++	tb_scan_switch(sw);
++}
++
+ static int tb_disconnect_pci(struct tb *tb, struct tb_switch *sw)
+ {
+ 	struct tb_tunnel *tunnel;
+diff --git a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
+index c6a58f842bed8..0a178d84278b7 100644
+--- a/drivers/thunderbolt/tb.h
++++ b/drivers/thunderbolt/tb.h
+@@ -1034,6 +1034,7 @@ void tb_switch_dealloc_dp_resource(struct tb_switch *sw, struct tb_port *in);
+ int tb_dp_resources_scan(struct tb_switch *sw);
+ void tb_dp_tunnel_rescan(struct tb *tb);
+ void tb_dp_tunnel_release(struct tb *tb);
++void tb_switch_rescan(struct tb_switch *sw);
+ 
+ int tb_switch_tmu_init(struct tb_switch *sw);
+ int tb_switch_tmu_post_time(struct tb_switch *sw);
+-- 
+2.51.2
+

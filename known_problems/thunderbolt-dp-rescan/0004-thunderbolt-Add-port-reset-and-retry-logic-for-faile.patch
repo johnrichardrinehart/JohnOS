@@ -1,7 +1,7 @@
 From 0bb7ba20cc89705c55c54cdec0f7850e819ca160 Mon Sep 17 00:00:00 2001
 From: John Rinehart <johnrichardrinehart@gmail.com>
 Date: Sat, 10 Jan 2026 12:23:53 -0500
-Subject: [PATCH 4/4] thunderbolt: Add port reset and retry logic for failed
+Subject: [PATCH 4/5] thunderbolt: Add port reset and retry logic for failed
  device init
 
 After hibernate resume, downstream Thunderbolt devices may fail to

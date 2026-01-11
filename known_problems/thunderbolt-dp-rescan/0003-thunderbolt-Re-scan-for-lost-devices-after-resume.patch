@@ -1,7 +1,7 @@
 From 55d88c5e17b096187981518aba0cb5b832ead23f Mon Sep 17 00:00:00 2001
 From: John Rinehart <johnrichardrinehart@gmail.com>
 Date: Sat, 10 Jan 2026 09:44:32 -0500
-Subject: [PATCH 3/4] thunderbolt: Re-scan for lost devices after resume
+Subject: [PATCH 3/5] thunderbolt: Re-scan for lost devices after resume
 
 After suspend (S3) or hibernate (S4), Thunderbolt devices may fail to
 reconnect in time during tb_switch_resume(). The function tb_wait_for_port()

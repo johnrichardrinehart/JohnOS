@@ -1,7 +1,7 @@
 From 945e10d3ef4951f760c2f97d72868f3804a265a2 Mon Sep 17 00:00:00 2001
 From: John Rinehart <johnrichardrinehart@gmail.com>
 Date: Fri, 9 Jan 2026 16:06:52 -0500
-Subject: [PATCH 2/4] thunderbolt: Re-discover DP resources after resume
+Subject: [PATCH 2/5] thunderbolt: Re-discover DP resources after resume
 
 After suspend (S3), hibernate (S4), or runtime suspend (D3), DP tunnels
 are intentionally torn down and the dp_resources list is cleared by
