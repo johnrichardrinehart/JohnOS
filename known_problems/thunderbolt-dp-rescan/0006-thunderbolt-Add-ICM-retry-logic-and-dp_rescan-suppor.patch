@@ -1,0 +1,270 @@
+From b9b8081fe7529e3656c9ffa72d6744c57a3b596c Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Sat, 10 Jan 2026 20:24:30 -0500
+Subject: [PATCH] thunderbolt: Add ICM retry logic and dp_rescan support
+
+When using ICM (Intel Connection Manager) firmware mode, devices may
+fail to re-enumerate after hibernate (S4). The firmware should send
+device_connected events after __icm_driver_ready(), but sometimes
+fails to do so.
+
+This patch adds:
+
+1. Automatic retry logic in icm_rescan_work(): If after the initial
+   500ms rescan delay any devices are still marked as unplugged, retry
+   the driver_ready sequence up to 3 times with increasing delays
+   (1s, 2s, 3s).
+
+2. Manual rescan via debugfs: Add icm_rescan() function that can be
+   triggered from the dp_rescan debugfs interface to manually request
+   device re-enumeration.
+
+3. New cm_ops->rescan callback: Allows the debugfs handler to trigger
+   device re-enumeration regardless of whether software CM or ICM is
+   in use.
+
+The automatic retries help when firmware is slow to respond after
+hibernate, while the manual interface provides a fallback for cases
+where automatic recovery fails.
+
+Signed-off-by: John Googol Rinehart <john@rinehart.blog>
+---
+ drivers/thunderbolt/debugfs.c | 13 ++++--
+ drivers/thunderbolt/icm.c     | 83 +++++++++++++++++++++++++++++++++++
+ drivers/thunderbolt/tb.c      | 16 +++++++
+ drivers/thunderbolt/tb.h      |  4 ++
+ 4 files changed, 112 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/thunderbolt/debugfs.c b/drivers/thunderbolt/debugfs.c
+index 423509fe05500..d1156caed9fbb 100644
+--- a/drivers/thunderbolt/debugfs.c
++++ b/drivers/thunderbolt/debugfs.c
+@@ -2467,11 +2467,16 @@ static ssize_t dp_rescan_write(struct file *file, const char __user *user_buf,
+ 		tb_sw_dbg(sw, "dp_rescan: forcing device and DP tunnel re-discovery\n");
+ 
+ 		/*
+-		 * First, scan for any downstream devices that may have been
+-		 * lost during suspend/hibernate. This is needed before DP
+-		 * resource scanning because the device itself may be missing.
++		 * First, trigger device re-enumeration using the CM-specific
++		 * rescan function. This works for both software CM and ICM
++		 * (firmware) modes. For ICM, this re-sends driver_ready to
++		 * request the firmware to send fresh device notifications.
++		 * For software CM, this scans ports for new devices.
+ 		 */
+-		tb_switch_rescan(sw);
++		if (tb->cm_ops->rescan)
++			tb->cm_ops->rescan(tb);
++		else
++			tb_sw_dbg(sw, "dp_rescan: no rescan function available\n");
+ 
+ 		/*
+ 		 * Query all DP IN/OUT ports on this switch and add newly
+diff --git a/drivers/thunderbolt/icm.c b/drivers/thunderbolt/icm.c
+index f213d9174dc57..7c5d3f9a610b0 100644
+--- a/drivers/thunderbolt/icm.c
++++ b/drivers/thunderbolt/icm.c
+@@ -66,6 +66,8 @@ struct usb4_switch_nvm_auth {
+  * struct icm - Internal connection manager private data
+  * @request_lock: Makes sure only one message is send to ICM at time
+  * @rescan_work: Work used to rescan the surviving switches after resume
++ * @retry_count: Current retry attempt for device re-enumeration
++ * @max_retries: Maximum number of retries (default: 3)
+  * @upstream_port: Pointer to the PCIe upstream port this host
+  *		   controller is connected. This is only set for systems
+  *		   where ICM needs to be started manually
+@@ -94,6 +96,8 @@ struct usb4_switch_nvm_auth {
+ struct icm {
+ 	struct mutex request_lock;
+ 	struct delayed_work rescan_work;
++	int retry_count;
++	int max_retries;
+ 	struct pci_dev *upstream_port;
+ 	int vnd_cap;
+ 	bool safe_mode;
+@@ -2107,8 +2111,50 @@ static void icm_rescan_work(struct work_struct *work)
+ {
+ 	struct icm *icm = container_of(work, struct icm, rescan_work.work);
+ 	struct tb *tb = icm_to_tb(icm);
++	bool has_unplugged = false;
++	struct tb_port *port;
+ 
+ 	mutex_lock(&tb->lock);
++	if (!tb->root_switch) {
++		mutex_unlock(&tb->lock);
++		return;
++	}
++
++	/*
++	 * Check if any downstream devices are still marked as unplugged.
++	 * If so, and we haven't exhausted retries, try re-enumerating.
++	 */
++	tb_switch_for_each_port(tb->root_switch, port) {
++		if (tb_port_has_remote(port) && port->remote->sw->is_unplugged) {
++			has_unplugged = true;
++			tb_dbg(tb, "ICM: device at %llx still marked unplugged\n",
++			       tb_route(port->remote->sw));
++			break;
++		}
++	}
++
++	if (has_unplugged && icm->retry_count < icm->max_retries) {
++		icm->retry_count++;
++		tb_info(tb, "ICM: devices still missing after resume, retry %d/%d\n",
++			icm->retry_count, icm->max_retries);
++
++		/* Re-send driver ready to request fresh device list */
++		__icm_driver_ready(tb, NULL, NULL, NULL, NULL);
++
++		/* Schedule another check with increasing delay */
++		queue_delayed_work(tb->wq, &icm->rescan_work,
++				   msecs_to_jiffies(1000 * icm->retry_count));
++		mutex_unlock(&tb->lock);
++		return;
++	}
++
++	/* Either no unplugged devices or out of retries - clean up */
++	if (has_unplugged && icm->retry_count >= icm->max_retries)
++		tb_warn(tb, "ICM: giving up on device re-enumeration after %d retries\n",
++			icm->max_retries);
++
++	icm->retry_count = 0;
++
+ 	if (tb->root_switch)
+ 		icm_free_unplugged_children(tb->root_switch);
+ 	mutex_unlock(&tb->lock);
+@@ -2140,10 +2186,42 @@ static void icm_complete(struct tb *tb)
+ 	 * We do not get notifications of devices that have been
+ 	 * unplugged during suspend so schedule rescan to clean them up
+ 	 * if any.
++	 *
++	 * Reset retry counter for new resume cycle.
+ 	 */
++	icm->retry_count = 0;
+ 	queue_delayed_work(tb->wq, &icm->rescan_work, msecs_to_jiffies(500));
+ }
+ 
++/*
++ * icm_rescan() - Request firmware to re-enumerate devices
++ * @tb: Thunderbolt bus
++ *
++ * This can be called from debugfs when devices are missing after resume.
++ * It mimics what icm_complete() does: marks all children as unplugged,
++ * sends driver_ready to firmware to get fresh device notifications,
++ * then schedules rescan work to clean up devices that didn't reconnect.
++ */
++static void icm_rescan(struct tb *tb)
++{
++	struct icm *icm = tb_priv(tb);
++
++	if (tb->nhi->going_away)
++		return;
++
++	tb_info(tb, "ICM: requesting device re-enumeration via debugfs\n");
++
++	/* Reset retry count and mark all downstream devices as potentially unplugged */
++	icm->retry_count = 0;
++	icm_unplug_children(tb->root_switch);
++
++	/* Ask firmware to send us updated device list */
++	__icm_driver_ready(tb, NULL, NULL, NULL, NULL);
++
++	/* Schedule cleanup of devices that don't get re-reported */
++	queue_delayed_work(tb->wq, &icm->rescan_work, msecs_to_jiffies(1000));
++}
++
+ static int icm_runtime_suspend(struct tb *tb)
+ {
+ 	nhi_mailbox_cmd(tb->nhi, NHI_MAILBOX_DRV_UNLOADS, 0);
+@@ -2417,6 +2495,7 @@ static const struct tb_cm_ops icm_ar_ops = {
+ 	.disconnect_pcie_paths = icm_disconnect_pcie_paths,
+ 	.approve_xdomain_paths = icm_fr_approve_xdomain_paths,
+ 	.disconnect_xdomain_paths = icm_fr_disconnect_xdomain_paths,
++	.rescan = icm_rescan,
+ };
+ 
+ /* Titan Ridge */
+@@ -2442,6 +2521,7 @@ static const struct tb_cm_ops icm_tr_ops = {
+ 	.usb4_switch_op = icm_usb4_switch_op,
+ 	.usb4_switch_nvm_authenticate_status =
+ 		icm_usb4_switch_nvm_authenticate_status,
++	.rescan = icm_rescan,
+ };
+ 
+ /* Ice Lake */
+@@ -2458,6 +2538,7 @@ static const struct tb_cm_ops icm_icl_ops = {
+ 	.usb4_switch_op = icm_usb4_switch_op,
+ 	.usb4_switch_nvm_authenticate_status =
+ 		icm_usb4_switch_nvm_authenticate_status,
++	.rescan = icm_rescan,
+ };
+ 
+ struct tb *icm_probe(struct tb_nhi *nhi)
+@@ -2471,6 +2552,8 @@ struct tb *icm_probe(struct tb_nhi *nhi)
+ 
+ 	icm = tb_priv(tb);
+ 	INIT_DELAYED_WORK(&icm->rescan_work, icm_rescan_work);
++	icm->max_retries = 3;
++	icm->retry_count = 0;
+ 	mutex_init(&icm->request_lock);
+ 
+ 	switch (nhi->pdev->device) {
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index d96f3ba93b216..6fa035a8520b0 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -2339,6 +2339,21 @@ void tb_switch_rescan(struct tb_switch *sw)
+ 	tb_scan_switch(sw);
+ }
+ 
++/*
++ * tb_rescan() - Rescan for devices using software CM
++ * @tb: Thunderbolt bus
++ *
++ * Scans all ports on the root switch for newly connected downstream devices.
++ * This is used by debugfs dp_rescan handler.
++ */
++static void tb_rescan(struct tb *tb)
++{
++	tb_info(tb, "software CM: rescanning for devices via debugfs\n");
++	/* Free any devices marked as unplugged, then scan for new ones */
++	tb_free_unplugged_children(tb->root_switch);
++	tb_scan_switch(tb->root_switch);
++}
++
+ static int tb_disconnect_pci(struct tb *tb, struct tb_switch *sw)
+ {
+ 	struct tb_tunnel *tunnel;
+@@ -3444,6 +3459,7 @@ static const struct tb_cm_ops tb_cm_ops = {
+ 	.approve_switch = tb_tunnel_pci,
+ 	.approve_xdomain_paths = tb_approve_xdomain_paths,
+ 	.disconnect_xdomain_paths = tb_disconnect_xdomain_paths,
++	.rescan = tb_rescan,
+ };
+ 
+ /*
+diff --git a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
+index 0a178d84278b7..00882c402ee7d 100644
+--- a/drivers/thunderbolt/tb.h
++++ b/drivers/thunderbolt/tb.h
+@@ -502,6 +502,9 @@ struct tb_path {
+  *					 implementation can be used to
+  *					 return status of USB4 NVM_AUTH
+  *					 router operation.
++ * @rescan: Optional callback to trigger device re-enumeration. Used by
++ *	    debugfs dp_rescan handler to request the CM to re-scan for
++ *	    devices that may have been lost after suspend/hibernate.
+  */
+ struct tb_cm_ops {
+ 	int (*driver_ready)(struct tb *tb);
+@@ -539,6 +542,7 @@ struct tb_cm_ops {
+ 			      void *rx_data, size_t rx_data_len);
+ 	int (*usb4_switch_nvm_authenticate_status)(struct tb_switch *sw,
+ 						   u32 *status);
++	void (*rescan)(struct tb *tb);
+ };
+ 
+ static inline void *tb_priv(struct tb *tb)
+-- 
+2.51.2
+

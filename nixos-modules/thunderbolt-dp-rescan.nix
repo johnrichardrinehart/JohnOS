@@ -2,21 +2,27 @@
 #
 # Adds kernel patches that:
 # 1. Provide a debugfs interface to manually trigger DP tunnel re-discovery
-# 2. Fix the resume path to automatically re-discover DP resources
-# 3. Re-scan for lost Thunderbolt devices after resume
-# 4. Add port reset and retry logic when device init fails with EIO
+# 2. Fix the resume path to automatically re-discover DP resources (software CM)
+# 3. Re-scan for lost Thunderbolt devices after resume (software CM)
+# 4. Add port reset and retry logic when device init fails with EIO (software CM)
+# 5. Add ICM (firmware) mode retry logic for device re-enumeration after hibernate
 #
 # This is useful for recovering USB4/Thunderbolt DisplayPort tunnels after
 # hibernate (S4), suspend (S3), or runtime suspend (D3hot/D3cold) when
 # the tunnel state becomes inconsistent or devices fail to re-enumerate.
 #
-# The problem: After hibernate, devices may be detected but fail during
-# initialization because the downstream device is not fully ready. The kernel
-# gives up after the first EIO error. Patch 0004 adds retry logic with port
-# resets and increasing delays (up to ~10 seconds total) to handle this.
+# Background:
+# There are two Thunderbolt connection manager modes:
+# - Software CM (tb.c): Kernel handles all device enumeration
+# - ICM (icm.c): Intel firmware handles device enumeration
+#
+# Most modern Intel systems use ICM. Patch 0006 adds automatic retry logic
+# for ICM mode: after hibernate, if devices are still missing after 500ms,
+# the driver will retry up to 3 times with increasing delays (1s, 2s, 3s).
 #
 # Usage:
 #   dev.johnrinehart.thunderbolt-dp-rescan.enable = true;
+#   dev.johnrinehart.thunderbolt-dp-rescan.debug = true;  # Optional: verbose logging
 #
 # When enabled:
 #   - Kernel is patched with DP tunnel recovery and device rescan fixes
@@ -30,9 +36,8 @@
 #   # Or use the helper script
 #   tb-dp-rescan
 #
-# The automatic fixes in patches 0002-0004 should handle most cases
-# without manual intervention. The debugfs interface is for debugging or
-# edge cases.
+# The automatic fixes in patches should handle most cases without manual
+# intervention. The debugfs interface is for debugging or edge cases.
 {
   config,
   lib,
@@ -159,9 +164,17 @@ in
 {
   options.dev.johnrinehart.thunderbolt-dp-rescan = {
     enable = lib.mkEnableOption "Thunderbolt DP tunnel rescan fixes and debugfs interface";
+    debug = lib.mkEnableOption "Enable dynamic debug for thunderbolt driver (verbose logging)";
   };
 
   config = lib.mkIf cfg.enable {
+    # Enable dynamic debug for thunderbolt driver if requested
+    boot.kernelParams = lib.mkIf cfg.debug [
+      # Enable all thunderbolt debug messages at boot
+      # This ensures ICM retry messages and other debug output appear in dmesg
+      ''dyndbg="file drivers/thunderbolt/* +p"''
+    ];
+
     boot.kernelPatches = [
       {
         name = "thunderbolt-dp-rescan-debugfs";
@@ -182,6 +195,10 @@ in
       {
         name = "thunderbolt-switch-rescan-debugfs";
         patch = ../known_problems/thunderbolt-dp-rescan/0005-thunderbolt-Add-tb_switch_rescan-and-use-it-in-debug.patch;
+      }
+      {
+        name = "thunderbolt-icm-retry-and-rescan";
+        patch = ../known_problems/thunderbolt-dp-rescan/0006-thunderbolt-Add-ICM-retry-logic-and-dp_rescan-suppor.patch;
       }
     ];
 
