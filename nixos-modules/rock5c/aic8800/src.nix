@@ -2,6 +2,6 @@
 fetchFromGitHub {
   owner = "radxa-pkg";
   repo = "aic8800";
-  rev = "39353303d3f2d7973786d94440c04c6b8008efb6";
-  hash = "sha256-be55KF7qfo5nbwLz7ZXQLh1L51t3On7/O3emBHexsm0=";
+  rev = "7af8ef10bd0222a4e1ee54c25904d5e0e3ca37f7";  # Latest: includes 6.19 fixes (Dec 30, 2025)
+  hash = "sha256-+XH18qxr4lALlm5LR0yBwZpmiweCqi8K0FWfYDxW5CM=";
 }
