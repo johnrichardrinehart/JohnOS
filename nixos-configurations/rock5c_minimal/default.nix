@@ -33,6 +33,7 @@
   networking.hostName = "rock5c-minimal";
   dev.johnrinehart.rock5c.enable = true;
   dev.johnrinehart.rock5c.useMinimalKernel = true;
+  dev.johnrinehart.rock5c.overlayStore.enable = true;
   dev.johnrinehart.system.enable = true;
   dev.johnrinehart.nix.enable = true;
   dev.johnrinehart.desktop.wl-hyprland.enable = true;
