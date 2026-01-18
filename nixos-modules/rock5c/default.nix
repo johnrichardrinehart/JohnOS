@@ -199,24 +199,38 @@ in
         "d ${cfg.overlayStore.mountPoint}/cache 0755 john john -"
       ];
 
-      # Nix settings - enable experimental feature but don't set store here
+      # Nix settings
       nix.settings = {
         experimental-features = [
           "nix-command"
           "flakes"
           "local-overlay-store"
         ];
+        # build-dir is set dynamically via environment file based on SSD availability
       };
 
-      # Helper scripts for safe operations (bypass overlay, use eMMC directly)
+      # Helper scripts for safe eMMC operations
       environment.systemPackages = [
-        (pkgs.writeShellScriptBin "nixos-rebuild-safe" (builtins.readFile ./nixos-rebuild-safe))
+        pkgs.nixos-rebuild-bake
         (pkgs.writeShellScriptBin "nix-collect-garbage-safe" (builtins.readFile ./nix-collect-garbage-safe))
       ];
 
+      # Watch for SSD mount changes and reconfigure nix automatically
+      systemd.services.nix-ssd-watcher = {
+        description = "Reconfigure nix when SSD mount changes";
+        bindsTo = [ "${utils.escapeSystemdPath cfg.overlayStore.mountPoint}.mount" ];
+        after = [ "${utils.escapeSystemdPath cfg.overlayStore.mountPoint}.mount" "nix-overlay-store-setup.service" ];
+        wantedBy = [ "${utils.escapeSystemdPath cfg.overlayStore.mountPoint}.mount" ];
 
-      # Force all users to connect via daemon
-      environment.variables.NIX_REMOTE = "daemon";
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          # Mount appeared → reconfigure to use SSD
+          ExecStart = "${pkgs.bash}/bin/bash -c 'systemctl restart nix-overlay-store-setup || true'";
+          # Mount disappeared → reconfigure to use eMMC only
+          ExecStopPost = "${pkgs.bash}/bin/bash -c 'systemctl restart nix-overlay-store-setup || true'";
+        };
+      };
 
       # Dynamic overlay store setup service
       # This runs before nix-daemon and configures the store based on SSD availability
@@ -258,6 +272,7 @@ in
 
           UPPER_LAYER="${upperLayer}"
           WORK_DIR="${workDir}"
+          BUILD_DIR="${buildDir}"
           NIX_STORE="/nix/store"
           ENV_FILE="/run/nix-overlay-store.env"
 
@@ -282,19 +297,27 @@ in
 
             # Write environment file for nix-daemon
             # check-mount=false disables overlay verification (we manage the mount ourselves)
-            echo "NIX_CONFIG=store = ${overlayStoreUrl}&check-mount=false" > "$ENV_FILE"
+            # NIX_CONFIG supports multiple settings separated by newlines
+            printf 'NIX_CONFIG=store = %s&check-mount=false\nbuild-dir = %s\n' \
+              "${overlayStoreUrl}" "$BUILD_DIR" > "$ENV_FILE"
             echo "Overlay store environment written to $ENV_FILE"
 
           else
             echo "SSD not available, using default store"
 
-            # Write empty environment file
+            # Write empty environment file (no overlay, no custom build-dir)
             echo "# SSD not available" > "$ENV_FILE"
 
             # Unmount overlay if it was mounted (only unmount overlay, not rootfs)
             if findmnt -n -t overlay "$NIX_STORE" > /dev/null 2>&1; then
               umount "$NIX_STORE" || true
             fi
+          fi
+
+          # Restart daemon if it's running so it picks up the new config
+          if systemctl is-active --quiet nix-daemon.service; then
+            echo "Restarting nix-daemon to apply config..."
+            systemctl restart nix-daemon.service
           fi
         '';
       };
