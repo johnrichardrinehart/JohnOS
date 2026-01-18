@@ -81,11 +81,13 @@ paths_to_move=$(comm -12 "$closure_file" "$upper_file")
 if [ -n "$paths_to_move" ]; then
     count=$(echo "$paths_to_move" | wc -l)
     echo "==> Moving $count paths from SSD to eMMC..."
-    rsync -a --remove-source-files \
+    # --ignore-times forces transfer even if files are identical, ensuring --remove-source-files works
+    rsync -a --ignore-times --remove-source-files \
         --files-from=<(echo "$paths_to_move") \
         "$SSD_UPPER/nix/store/" "$EMMC_MNT/nix/store/"
-    # Clean up empty directories left behind
-    find "$SSD_UPPER/nix/store" -mindepth 1 -type d -empty -delete 2>/dev/null || true
+    # --remove-source-files only removes files, not directories
+    # Remove the now-empty source directories
+    echo "$paths_to_move" | sed "s|^|$SSD_UPPER/nix/store/|" | xargs rm -rf
 else
     echo "==> All paths already on eMMC"
 fi
