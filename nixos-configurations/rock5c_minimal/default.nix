@@ -134,6 +134,17 @@
     linkConfig.RequiredForOnline = "no";
   };
 
+  systemd.network.links."10-wlan0" = {
+    matchConfig.OriginalName = "wlan*";
+    linkConfig.MACAddressPolicy = "persistent";
+  };
+
+  systemd.network.networks."wlan0" = {
+    matchConfig.Name = "wlan*";
+    networkConfig.DHCP = "yes";
+    linkConfig.RequiredForOnline = "no";
+  };
+
   networking.networkmanager.enable = true;
 
   nix.package = pkgs.nixVersions.nix_2_32;
