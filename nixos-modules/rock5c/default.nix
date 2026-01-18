@@ -148,7 +148,8 @@ in
       # workdir must be on same mount as upperdir, so put it inside upper
       workDir = "${cfg.overlayStore.mountPoint}/upper/.overlay-work";
       # Mount overlay directly on /nix/store so executed programs work
-      overlayStoreUrl = "local-overlay://?lower-store=local&upper-layer=${upperLayer}";
+      buildDir = "${cfg.overlayStore.mountPoint}/build";
+      overlayStoreUrl = "local-overlay://?lower-store=local&upper-layer=${upperLayer}&build-dir=${buildDir}";
     in {
       # Mount btrfs SSD volume
       fileSystems.${cfg.overlayStore.mountPoint} = {
