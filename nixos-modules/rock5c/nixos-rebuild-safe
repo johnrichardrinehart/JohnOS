@@ -48,12 +48,13 @@ fi
 
 # Check if overlay is active
 overlay_active=false
+overlay_disabled=false
 if findmnt -n -t overlay /nix/store > /dev/null 2>&1; then
     overlay_active=true
 fi
 
 cleanup() {
-    if [[ "$overlay_active" == "true" ]]; then
+    if [[ "$overlay_disabled" == "true" ]]; then
         echo "==> Re-enabling overlay store..."
         systemctl restart nix-overlay-store-setup || true
         systemctl restart nix-daemon || true
@@ -101,6 +102,7 @@ if [[ "$overlay_active" == "true" ]]; then
     # Unmount overlay
     echo "==> Unmounting overlay from /nix/store..."
     umount -l /nix/store || true
+    overlay_disabled=true
 
     # Clear overlay config
     echo "==> Clearing overlay store config..."
