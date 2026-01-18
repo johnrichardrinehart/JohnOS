@@ -141,8 +141,15 @@ in
       ];
     })
 
-    # SSD overlay store config
-    (lib.mkIf cfg.overlayStore.enable {
+    # SSD overlay store config using Nix's local-overlay-store
+    # with graceful degradation when SSD is unavailable
+    (lib.mkIf cfg.overlayStore.enable (let
+      upperLayer = "${cfg.overlayStore.mountPoint}/upper";
+      # workdir must be on same mount as upperdir, so put it inside upper
+      workDir = "${cfg.overlayStore.mountPoint}/upper/.overlay-work";
+      # Mount overlay directly on /nix/store so executed programs work
+      overlayStoreUrl = "local-overlay://?lower-store=local&upper-layer=${upperLayer}";
+    in {
       # Mount btrfs SSD volume
       fileSystems.${cfg.overlayStore.mountPoint} = {
         device = cfg.overlayStore.device;
@@ -163,12 +170,6 @@ in
         options = [ "subvol=@upper" "compress=zstd" "noatime" "nofail" ];
       };
 
-      fileSystems."${cfg.overlayStore.mountPoint}/work" = {
-        device = cfg.overlayStore.device;
-        fsType = "btrfs";
-        options = [ "subvol=@work" "compress=zstd" "noatime" "nofail" ];
-      };
-
       fileSystems."${cfg.overlayStore.mountPoint}/build" = {
         device = cfg.overlayStore.device;
         fsType = "btrfs";
@@ -181,61 +182,144 @@ in
         options = [ "subvol=@cache" "compress=zstd" "noatime" "nofail" ];
       };
 
-      # Overlay mount on /nix/store (post-boot, before nix-daemon)
-      systemd.mounts = [{
-        what = "overlay";
-        where = "/nix/store";
-        type = "overlay";
-        mountConfig.Options = lib.concatStringsSep "," [
-          "lowerdir=/nix/store"
-          "upperdir=${cfg.overlayStore.mountPoint}/upper"
-          "workdir=${cfg.overlayStore.mountPoint}/work"
-        ];
+      # Create directory structure
+      systemd.tmpfiles.rules = [
+        # Upper store directories on SSD
+        "d ${upperLayer}/nix 0755 root root -"
+        "d ${upperLayer}/nix/store 1775 root nixbld -"
+        "d ${upperLayer}/nix/var 0755 root root -"
+        "d ${upperLayer}/nix/var/nix 0755 root root -"
+        "d ${upperLayer}/nix/var/nix/db 0755 root root -"
+        # Overlay workdir (must be on same mount as upperdir)
+        "d ${workDir} 0755 root root -"
+        # Build directory
+        "d ${cfg.overlayStore.mountPoint}/build 1775 root nixbld -"
+      ];
 
-        unitConfig = {
-          ConditionPathIsMountPoint = cfg.overlayStore.mountPoint;
-          DefaultDependencies = false;
-        };
-
-        after = [
-          "local-fs.target"
-          "${utils.escapeSystemdPath cfg.overlayStore.mountPoint}.mount"
-          "${utils.escapeSystemdPath "${cfg.overlayStore.mountPoint}/upper"}.mount"
-          "${utils.escapeSystemdPath "${cfg.overlayStore.mountPoint}/work"}.mount"
-        ];
-        requires = [
-          "${utils.escapeSystemdPath cfg.overlayStore.mountPoint}.mount"
-        ];
-        before = [ "nix-daemon.service" "nix-daemon.socket" ];
-        wantedBy = [ "multi-user.target" ];
-      }];
-
-      # Ensure nix-daemon waits for overlay
-      systemd.services.nix-daemon = {
-        after = [ "nix-store.mount" ];
-        wants = [ "nix-store.mount" ];
-        environment.TMPDIR = "${cfg.overlayStore.mountPoint}/build";
-      };
-
-      systemd.sockets.nix-daemon = {
-        after = [ "nix-store.mount" ];
-        wants = [ "nix-store.mount" ];
-      };
-
-      # Nix settings
+      # Nix settings - enable experimental feature but don't set store here
       nix.settings = {
         experimental-features = [
           "nix-command"
           "flakes"
           "local-overlay-store"
         ];
-        build-dir = "${cfg.overlayStore.mountPoint}/build";
       };
 
-      # Build directory permissions
-      systemd.tmpfiles.rules = [
-        "d ${cfg.overlayStore.mountPoint}/build 1775 root nixbld -"
-      ];
+
+      # Force all users to connect via daemon
+      environment.variables.NIX_REMOTE = "daemon";
+
+      # Dynamic overlay store setup service
+      # This runs before nix-daemon and configures the store based on SSD availability
+      systemd.services.nix-overlay-store-setup = {
+        description = "Setup Nix overlay store if SSD is available";
+        wantedBy = [ "multi-user.target" ];
+        before = [ "nix-daemon.service" "nix-daemon.socket" ];
+        after = [
+          "local-fs.target"
+          "systemd-tmpfiles-setup.service"
+          "${utils.escapeSystemdPath cfg.overlayStore.mountPoint}.mount"
+          "${utils.escapeSystemdPath upperLayer}.mount"
+        ];
+        # Use bindsTo for conditional dependency - if mount fails (nofail), service still runs
+        # but if mount succeeds, we wait for it
+        bindsTo = [];  # Don't bind - we want graceful degradation
+        wants = [
+          "${utils.escapeSystemdPath cfg.overlayStore.mountPoint}.mount"
+          "${utils.escapeSystemdPath upperLayer}.mount"
+        ];
+
+        unitConfig = {
+          # Proper mount dependency - waits for these paths to be mounted
+          RequiresMountsFor = "${cfg.overlayStore.mountPoint} ${upperLayer}";
+          # Disable default dependencies to avoid cycles with basic.target
+          DefaultDependencies = false;
+        };
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+
+        path = [ pkgs.util-linux pkgs.coreutils ];
+
+        script = ''
+          #!/bin/bash
+          set -euo pipefail
+
+          UPPER_LAYER="${upperLayer}"
+          WORK_DIR="${workDir}"
+          NIX_STORE="/nix/store"
+          ENV_FILE="/run/nix-overlay-store.env"
+
+          # Check if SSD is mounted and directories exist
+          # Note: WORK_DIR is inside UPPER_LAYER, not a separate mount
+          if mountpoint -q "${cfg.overlayStore.mountPoint}" && \
+             mountpoint -q "$UPPER_LAYER" && \
+             [ -d "$UPPER_LAYER/nix/store" ]; then
+
+            echo "SSD available, setting up overlay store..."
+
+            # Mount the overlayfs directly on /nix/store
+            # Check if overlay is already mounted (not just any mount)
+            if findmnt -n -t overlay "$NIX_STORE" > /dev/null 2>&1; then
+              echo "OverlayFS already mounted on $NIX_STORE"
+            else
+              mount -t overlay overlay \
+                -o "lowerdir=$NIX_STORE,upperdir=$UPPER_LAYER/nix/store,workdir=$WORK_DIR" \
+                "$NIX_STORE"
+              echo "OverlayFS mounted on $NIX_STORE"
+            fi
+
+            # Write environment file for nix-daemon
+            # check-mount=false disables overlay verification (we manage the mount ourselves)
+            echo "NIX_CONFIG=store = ${overlayStoreUrl}&check-mount=false" > "$ENV_FILE"
+            echo "Overlay store environment written to $ENV_FILE"
+
+          else
+            echo "SSD not available, using default store"
+
+            # Write empty environment file
+            echo "# SSD not available" > "$ENV_FILE"
+
+            # Unmount overlay if it was mounted (only unmount overlay, not rootfs)
+            if findmnt -n -t overlay "$NIX_STORE" > /dev/null 2>&1; then
+              umount "$NIX_STORE" || true
+            fi
+          fi
+        '';
+      };
+
+      # Cleanup service for shutdown
+      systemd.services.nix-overlay-store-cleanup = {
+        description = "Cleanup Nix overlay store on shutdown";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "nix-daemon.service" ];
+        before = [ "shutdown.target" "reboot.target" "halt.target" ];
+
+        path = [ pkgs.util-linux ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStop = "${pkgs.bash}/bin/bash -c 'findmnt -n -t overlay /nix/store && umount /nix/store || true'";
+        };
+
+        script = "true";  # No-op on start
+      };
+
+      # nix-daemon depends on setup service
+      systemd.services.nix-daemon = {
+        after = [ "nix-overlay-store-setup.service" ];
+        requires = [ "nix-overlay-store-setup.service" ];
+        environment.TMPDIR = "${cfg.overlayStore.mountPoint}/build";
+        serviceConfig.EnvironmentFile = "-/run/nix-overlay-store.env";
+      };
+
+      systemd.sockets.nix-daemon = {
+        after = [ "nix-overlay-store-setup.service" ];
+        requires = [ "nix-overlay-store-setup.service" ];
+      };
 
       # Bind mount for user cache (graceful fallback via nofail)
       fileSystems."/home/john/.cache/nix" = {
@@ -247,6 +331,6 @@ in
           "x-systemd.requires=${utils.escapeSystemdPath cfg.overlayStore.mountPoint}.mount"
         ];
       };
-    })
+    }))
   ];
 }
