@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# nix-collect-garbage-safe: Run garbage collection directly on eMMC, bypassing overlay store
+# This actually frees space on eMMC instead of just creating whiteouts.
+
+set -euo pipefail
+
+if [[ $EUID -ne 0 ]]; then
+    echo "This script must be run as root (use sudo)"
+    exit 1
+fi
+
+# Check if overlay is active
+overlay_active=false
+if findmnt -n -t overlay /nix/store > /dev/null 2>&1; then
+    overlay_active=true
+    echo "==> Overlay store detected, temporarily disabling..."
+fi
+
+cleanup() {
+    if [[ "$overlay_active" == "true" ]]; then
+        echo "==> Re-enabling overlay store..."
+        systemctl restart nix-overlay-store-setup || true
+        systemctl restart nix-daemon || true
+    fi
+}
+trap cleanup EXIT
+
+if [[ "$overlay_active" == "true" ]]; then
+    # Stop nix daemon
+    echo "==> Stopping nix-daemon..."
+    systemctl stop nix-daemon.socket nix-daemon.service || true
+
+    # Unmount overlay
+    echo "==> Unmounting overlay from /nix/store..."
+    umount -l /nix/store || true
+
+    # Clear overlay config
+    echo "==> Clearing overlay store config..."
+    echo "# Temporarily disabled for safe garbage collection" > /run/nix-overlay-store.env
+
+    # Restart daemon with default store
+    echo "==> Starting nix-daemon with eMMC store..."
+    systemctl start nix-daemon.socket
+fi
+
+# Show before stats
+echo "==> eMMC store before:"
+df -h /nix/store | tail -1
+
+# Run garbage collection with all passed arguments
+echo ""
+echo "==> Running: nix-collect-garbage $*"
+echo ""
+nix-collect-garbage "$@"
+
+# Show after stats
+echo ""
+echo "==> eMMC store after:"
+df -h /nix/store | tail -1
+
+echo ""
+echo "==> Garbage collection complete (eMMC space freed)"
+# cleanup runs automatically via trap

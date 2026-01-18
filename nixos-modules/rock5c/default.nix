@@ -194,6 +194,8 @@ in
         "d ${workDir} 0755 root root -"
         # Build directory
         "d ${cfg.overlayStore.mountPoint}/build 1775 root nixbld -"
+        # Cache directory (user-owned for nix cache)
+        "d ${cfg.overlayStore.mountPoint}/cache 0755 john john -"
       ];
 
       # Nix settings - enable experimental feature but don't set store here
@@ -204,6 +206,12 @@ in
           "local-overlay-store"
         ];
       };
+
+      # Helper scripts for safe operations (bypass overlay, use eMMC directly)
+      environment.systemPackages = [
+        (pkgs.writeShellScriptBin "nixos-rebuild-safe" (builtins.readFile ./nixos-rebuild-safe))
+        (pkgs.writeShellScriptBin "nix-collect-garbage-safe" (builtins.readFile ./nix-collect-garbage-safe))
+      ];
 
 
       # Force all users to connect via daemon
