@@ -137,4 +137,6 @@
   };
 
   networking.networkmanager.enable = true;
+
+  nix.package = pkgs.nixVersions.nix_2_32;
 }
