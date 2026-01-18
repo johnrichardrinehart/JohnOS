@@ -295,9 +295,12 @@ in
 
             # Write environment file for nix-daemon
             # check-mount=false disables overlay verification (we manage the mount ourselves)
-            # NIX_CONFIG supports multiple settings separated by newlines
-            printf 'NIX_CONFIG=store = %s&check-mount=false\nbuild-dir = %s\n' \
-              "${overlayStoreUrl}" "$BUILD_DIR" > "$ENV_FILE"
+            # TMPDIR for build operations, NIX_CONFIG for store settings
+            cat > "$ENV_FILE" <<ENVEOF
+TMPDIR=$BUILD_DIR
+NIX_CONFIG=store = ${overlayStoreUrl}&check-mount=false
+build-dir = $BUILD_DIR
+ENVEOF
             echo "Overlay store environment written to $ENV_FILE"
 
           else
@@ -339,10 +342,10 @@ in
       };
 
       # nix-daemon depends on setup service (wants, not requires, for graceful degradation)
+      # TMPDIR is set dynamically via EnvironmentFile based on SSD availability
       systemd.services.nix-daemon = {
         after = [ "nix-overlay-store-setup.service" ];
         wants = [ "nix-overlay-store-setup.service" ];
-        environment.TMPDIR = "${cfg.overlayStore.mountPoint}/build";
         serviceConfig.EnvironmentFile = "-/run/nix-overlay-store.env";
       };
 
@@ -351,9 +354,12 @@ in
         wants = [ "nix-overlay-store-setup.service" ];
       };
 
-      # Use SSD for all user caches (nix, cargo, npm, go, etc.)
-      # Falls back gracefully when SSD is not available (apps use default ~/.cache)
-      environment.sessionVariables.XDG_CACHE_HOME = "${cfg.overlayStore.mountPoint}/cache";
+      # Set XDG_CACHE_HOME dynamically based on SSD availability
+      environment.extraInit = ''
+        if mountpoint -q "${cfg.overlayStore.mountPoint}/cache" 2>/dev/null; then
+          export XDG_CACHE_HOME="${cfg.overlayStore.mountPoint}/cache"
+        fi
+      '';
     }))
   ];
 }
