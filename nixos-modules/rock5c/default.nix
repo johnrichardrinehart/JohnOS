@@ -253,8 +253,6 @@ in
         ];
 
         unitConfig = {
-          # Proper mount dependency - waits for these paths to be mounted
-          RequiresMountsFor = "${cfg.overlayStore.mountPoint} ${upperLayer}";
           # Disable default dependencies to avoid cycles with basic.target
           DefaultDependencies = false;
         };
@@ -340,17 +338,17 @@ in
         script = "true";  # No-op on start
       };
 
-      # nix-daemon depends on setup service
+      # nix-daemon depends on setup service (wants, not requires, for graceful degradation)
       systemd.services.nix-daemon = {
         after = [ "nix-overlay-store-setup.service" ];
-        requires = [ "nix-overlay-store-setup.service" ];
+        wants = [ "nix-overlay-store-setup.service" ];
         environment.TMPDIR = "${cfg.overlayStore.mountPoint}/build";
         serviceConfig.EnvironmentFile = "-/run/nix-overlay-store.env";
       };
 
       systemd.sockets.nix-daemon = {
         after = [ "nix-overlay-store-setup.service" ];
-        requires = [ "nix-overlay-store-setup.service" ];
+        wants = [ "nix-overlay-store-setup.service" ];
       };
 
       # Use SSD for all user caches (nix, cargo, npm, go, etc.)
