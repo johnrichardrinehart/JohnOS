@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# nixos-rebuild-bake: Rebuild NixOS and write to eMMC (lower store)
+# This ensures the system can boot without the SSD.
+#
+# Strategy:
+# 1. Build with overlay active (fast SSD builds)
+# 2. Mount eMMC root to separate location
+# 3. Copy closure directly to eMMC's nix store using cp (not nix copy)
+# 4. Update eMMC's system profile
+#
+# Note: We use cp instead of nix copy because the eMMC and overlay share
+# the same nix database (only /nix/store is overlaid, not /nix/var/nix/db).
+# nix copy checks the database and thinks paths already exist on eMMC.
+
+set -euo pipefail
+
+if [[ $EUID -ne 0 ]]; then
+    echo "This script must be run as root (use sudo)"
+    exit 1
+fi
+
+action="${1:-}"
+shift || true
+
+if [[ -z "$action" ]] || [[ ! "$action" =~ ^(switch|boot|test|build)$ ]]; then
+    echo "Usage: nixos-rebuild-bake <switch|boot|test|build> [options]"
+    echo "Example: nixos-rebuild-bake switch --flake .#rock5c_minimal"
+    exit 1
+fi
+
+EMMC_DEV="/dev/disk/by-label/NIXOS_SD"
+EMMC_MNT="/mnt/emmc-root"
+
+# Build with overlay active (fast)
+# Force daemon usage so we get the overlay store config (build-dir on SSD)
+export NIX_REMOTE=daemon
+echo "==> Building system..."
+# Run in subshell to isolate any env changes nixos-rebuild makes
+(nixos-rebuild build "$@")
+toplevel=$(readlink -f ./result)
+rm -f ./result
+echo "==> Built: $toplevel"
+
+if [[ "$action" == "build" ]]; then
+    echo "==> Build complete"
+    exit 0
+fi
+
+# Mount eMMC root partition
+echo "==> Mounting eMMC to $EMMC_MNT..."
+mkdir -p "$EMMC_MNT"
+mount "$EMMC_DEV" "$EMMC_MNT"
+trap 'umount "$EMMC_MNT"' EXIT
+
+# Copy closure to eMMC
+# The nix database is shared between overlay and eMMC, so nix copy thinks paths exist.
+# Instead, we directly copy the files that are missing from eMMC.
+# If the path is on the SSD upper layer, move it to eMMC (copy + delete source).
+#
+# We copy both:
+# 1. Runtime closure (outputs) - needed to run the system
+# 2. Build closure (derivations + inputs) - needed to rebuild offline
+SSD_UPPER="/mnt/nix-ssd/upper"
+echo "==> Collecting closures (runtime + build inputs + their outputs)..."
+drv=$(nix-store -qd "$toplevel")
+closure=$(nix-store -qR --include-outputs "$drv" "$toplevel" | sort -u)
+for path in $closure; do
+    dest="$EMMC_MNT$path"
+    upper_path="$SSD_UPPER$path"
+    if [ ! -e "$dest" ]; then
+        name=$(basename "$path")
+        if [ -e "$upper_path" ]; then
+            # Path is on SSD - move to eMMC
+            echo "Moving: $name"
+            rsync -a --remove-source-files "$upper_path" "$(dirname $dest)/"
+            # rsync --remove-source-files only removes files, not directories
+            rmdir "$upper_path" 2>/dev/null || rm -rf "$upper_path" 2>/dev/null || true
+        else
+            # Path is elsewhere (cache?) - just copy
+            echo "Copying: $name"
+            rsync -a "$path" "$(dirname $dest)/"
+        fi
+    fi
+done
+if ! ls "$EMMC_MNT/nix/store/$(basename $toplevel)" > /dev/null 2>&1; then
+    echo "ERROR: Copy failed - path not found on eMMC!"
+    exit 1
+fi
+echo "==> Verified: path exists on eMMC"
+
+# Update system profile on eMMC
+if [[ "$action" == "switch" || "$action" == "boot" ]]; then
+    echo "==> Setting system profile on eMMC..."
+    nix-env --store "local?root=$EMMC_MNT" \
+        -p "$EMMC_MNT/nix/var/nix/profiles/system" \
+        --set "$toplevel"
+fi
+
+# Activate if switch or test
+if [[ "$action" == "switch" || "$action" == "test" ]]; then
+    echo "==> Activating system..."
+    "$toplevel/bin/switch-to-configuration" "$action"
+fi
+
+echo "==> Done (system written to eMMC)"
