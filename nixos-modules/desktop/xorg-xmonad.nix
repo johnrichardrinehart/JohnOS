@@ -40,7 +40,13 @@ in
     dev.johnrinehart = {
       xorg.enable = true;
       sound.enable = true;
-      systemPackages.enable = true;
+      packages.shell.enable = true;
+      packages.editors.enable = true;
+      packages.gui.enable = true;
+      packages.devops.enable = true;
+      packages.media.enable = true;
+      packages.system.enable = true;
+      packages.archive.enable = true;
       xmonad.enable = true;
       bluetooth.enable = true;
     };

@@ -5,89 +5,112 @@
   ...
 }:
 let
-  cfg = config.dev.johnrinehart.systemPackages;
+  cfg = config.dev.johnrinehart.packages;
 in
 {
-  options.dev.johnrinehart.systemPackages = {
-    enable = lib.mkEnableOption "John's systemPackages";
+  options.dev.johnrinehart.packages = {
+    shell.enable = lib.mkEnableOption "Shell tools (zoxide, tmux, fzf, ripgrep, fd, etc.)";
+    editors.enable = lib.mkEnableOption "Text editors (vim, helix, neovim)";
+    gui.enable = lib.mkEnableOption "GUI apps (brave, vscodium, rofi, keepassxc, etc.)";
+    devops.enable = lib.mkEnableOption "DevOps tools (minikube, kubectl)";
+    media.enable = lib.mkEnableOption "Media tools (mpv, ffmpeg, obs-studio, etc.)";
+    system.enable = lib.mkEnableOption "System utilities (htop, tree, lsof, etc.)";
+    archive.enable = lib.mkEnableOption "Archive tools (zip, unzip)";
   };
 
-  config = lib.mkIf cfg.enable {
-    environment.systemPackages = [
-      pkgs.pciutils
-      pkgs.openconnect
-      pkgs.alsa-tools # https://askubuntu.com/a/1293623
-      pkgs.alsa-utils # https://askubuntu.com/a/1293623
-      # editors
-      pkgs.vim
-      pkgs.helix
-      pkgs.neovim
-      # gui configuration
-      pkgs.dconf
-      pkgs.libnotify
-      pkgs.gnome-icon-theme
-      # gui apps
-      pkgs.rofi
-      #pkgs.slack
-      pkgs.vscodium
-      #pkgs.vscode
-      pkgs.brave
-      pkgs.keepassxc
-      pkgs.stalonetray
-      #pkgs.peek # GIF/webp screen recording
-      pkgs.mpv # mplayer replacement
-      pkgs.simplescreenrecorder
-      # shell tools
-      pkgs.zoxide
-      pkgs.tmux
-      pkgs.xdg-utils # `open`
-      pkgs.fd
-      pkgs.bc # needed for adjusting screen brightness
-      pkgs.libqalculate
-      pkgs.ncdu # ncurses disk usage (tree+du, basically)
-      pkgs.dive # docker image analyzer
-      pkgs.xsel
-      pkgs.ripgrep
-      pkgs.fzf
-      # language tools
-      pkgs.gnumake
-      pkgs.jq
-      pkgs.nixpkgs-fmt
-      pkgs.tokei
-      ## rust stuff
-      # os tools
-      pkgs.dig
-      pkgs.htop
-      pkgs.tree
-      pkgs.killall
-      pkgs.lsof
-      pkgs.pstree
-      pkgs.nethogs
-      pkgs.pavucontrol
-      pkgs.file
-      pkgs.pv # useful for dd operations (e.g. `dd if=infile | pv | sudo dd of=outfile bs=512`)
-      # archive tools
-      pkgs.zip
-      pkgs.unzip
-      # communication tools
-      pkgs.obs-studio
-      # multimedia tools
-      #      pkgs.pulseaudioFull
-      pkgs.playerctl
-      # DevOps tools
-      pkgs.minikube
-      pkgs.kubectl
-      # browsers
-      pkgs.libxml2 # needed for alias lkv
-      # media
-      pkgs.ffmpeg_7-full
-      pkgs.ntfs3g
-      pkgs.gparted
-      pkgs.deluge
-      pkgs.wirelesstools
-      pkgs.usbutils
-      # terminal stuff
-      pkgs.zellij
-    ];
-  };
+  config = lib.mkMerge [
+    (lib.mkIf cfg.shell.enable {
+      environment.systemPackages = [
+        pkgs.zoxide
+        pkgs.tmux
+        pkgs.xdg-utils # `open`
+        pkgs.fd
+        pkgs.ripgrep
+        pkgs.fzf
+        pkgs.jq
+        pkgs.bc
+        pkgs.zellij
+        pkgs.htop
+        pkgs.tree
+        pkgs.git
+      ];
+    })
+
+    (lib.mkIf cfg.editors.enable {
+      environment.systemPackages = [
+        pkgs.vim
+        pkgs.helix
+        pkgs.neovim
+      ];
+    })
+
+    (lib.mkIf cfg.gui.enable {
+      environment.systemPackages = [
+        pkgs.dconf
+        pkgs.libnotify
+        pkgs.gnome-icon-theme
+        pkgs.rofi
+        pkgs.vscodium
+        pkgs.brave
+        pkgs.keepassxc
+        pkgs.stalonetray
+        pkgs.pavucontrol
+        pkgs.gparted
+      ];
+    })
+
+    (lib.mkIf cfg.devops.enable {
+      environment.systemPackages = [
+        pkgs.minikube
+        pkgs.kubectl
+        pkgs.dive # docker image analyzer
+      ];
+    })
+
+    (lib.mkIf cfg.media.enable {
+      environment.systemPackages = [
+        pkgs.mpv
+        pkgs.simplescreenrecorder
+        pkgs.obs-studio
+        pkgs.playerctl
+        pkgs.ffmpeg_7-full
+        pkgs.deluge
+      ];
+    })
+
+    (lib.mkIf cfg.system.enable {
+      environment.systemPackages = [
+        pkgs.pciutils
+        pkgs.usbutils
+        pkgs.wirelesstools
+        pkgs.alsa-tools
+        pkgs.alsa-utils
+        pkgs.dig
+        pkgs.htop
+        pkgs.tree
+        pkgs.killall
+        pkgs.lsof
+        pkgs.pstree
+        pkgs.nethogs
+        pkgs.file
+        pkgs.pv
+        pkgs.ncdu
+        pkgs.xsel
+        pkgs.ntfs3g
+        pkgs.libqalculate
+        pkgs.gnumake
+        pkgs.nixpkgs-fmt
+        pkgs.tokei
+        pkgs.libxml2
+        pkgs.openconnect
+      ];
+    })
+
+    (lib.mkIf cfg.archive.enable {
+      environment.systemPackages = [
+        pkgs.zip
+        pkgs.unzip
+      ];
+    })
+  ];
 }

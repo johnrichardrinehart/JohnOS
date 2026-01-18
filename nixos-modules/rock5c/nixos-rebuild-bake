@@ -19,6 +19,9 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
+# Get the original user (for running build without root)
+ORIGINAL_USER="${SUDO_USER:-$USER}"
+
 action="${1:-}"
 shift || true
 
@@ -29,14 +32,13 @@ if [[ -z "$action" ]] || [[ ! "$action" =~ ^(switch|boot|test|build)$ ]]; then
 fi
 
 EMMC_DEV="/dev/disk/by-label/NIXOS_SD"
-EMMC_MNT="/mnt/emmc-root"
+EMMC_MNT=$(mktemp -d --tmpdir nixos-rebuild-bake.XXXXXX)
 
 # Build with overlay active (fast)
+# Run as original user to avoid creating root-owned cache files
 # Force daemon usage so we get the overlay store config (build-dir on SSD)
-export NIX_REMOTE=daemon
 echo "==> Building system..."
-# Run in subshell to isolate any env changes nixos-rebuild makes
-(nixos-rebuild build "$@")
+sudo -u "$ORIGINAL_USER" env NIX_REMOTE=daemon nixos-rebuild build "$@"
 toplevel=$(readlink -f ./result)
 rm -f ./result
 echo "==> Built: $toplevel"
@@ -48,9 +50,8 @@ fi
 
 # Mount eMMC root partition
 echo "==> Mounting eMMC to $EMMC_MNT..."
-mkdir -p "$EMMC_MNT"
 mount "$EMMC_DEV" "$EMMC_MNT"
-trap 'umount "$EMMC_MNT"' EXIT
+trap 'umount "$EMMC_MNT"; rmdir "$EMMC_MNT"' EXIT
 
 # Copy closure to eMMC
 # The nix database is shared between overlay and eMMC, so nix copy thinks paths exist.
@@ -60,28 +61,34 @@ trap 'umount "$EMMC_MNT"' EXIT
 # We copy both:
 # 1. Runtime closure (outputs) - needed to run the system
 # 2. Build closure (derivations + inputs) - needed to rebuild offline
-SSD_UPPER="/mnt/nix-ssd/upper"
+SSD_UPPER="/mnt/nix-ssd/@upper"
 echo "==> Collecting closures (runtime + build inputs + their outputs)..."
 drv=$(nix-store -qd "$toplevel")
-closure=$(nix-store -qR --include-outputs "$drv" "$toplevel" | sort -u)
-for path in $closure; do
-    dest="$EMMC_MNT$path"
-    upper_path="$SSD_UPPER$path"
-    if [ ! -e "$dest" ]; then
-        name=$(basename "$path")
-        if [ -e "$upper_path" ]; then
-            # Path is on SSD - move to eMMC
-            echo "Moving: $name"
-            rsync -a --remove-source-files "$upper_path" "$(dirname $dest)/"
-            # rsync --remove-source-files only removes files, not directories
-            rmdir "$upper_path" 2>/dev/null || rm -rf "$upper_path" 2>/dev/null || true
-        else
-            # Path is elsewhere (cache?) - just copy
-            echo "Copying: $name"
-            rsync -a "$path" "$(dirname $dest)/"
-        fi
-    fi
-done
+# Query closure in background, list SSD upper in parallel
+closure_file=$(mktemp)
+upper_file=$(mktemp)
+trap 'umount "$EMMC_MNT"; rmdir "$EMMC_MNT"; rm -f "$closure_file" "$upper_file"' EXIT
+
+nix-store -qR --include-outputs "$drv" "$toplevel" | sed 's|.*/||' | sort -u > "$closure_file" &
+ls "$SSD_UPPER/nix/store/" 2>/dev/null | sort > "$upper_file" &
+wait
+echo "==> Closure: $(wc -l < "$closure_file") paths, SSD upper: $(wc -l < "$upper_file") paths"
+
+# Find closure paths that exist on SSD upper (need to be moved)
+# Use comm to intersect closure basenames with SSD upper contents
+paths_to_move=$(comm -12 "$closure_file" "$upper_file")
+
+if [ -n "$paths_to_move" ]; then
+    count=$(echo "$paths_to_move" | wc -l)
+    echo "==> Moving $count paths from SSD to eMMC..."
+    rsync -a --remove-source-files \
+        --files-from=<(echo "$paths_to_move") \
+        "$SSD_UPPER/nix/store/" "$EMMC_MNT/nix/store/"
+    # Clean up empty directories left behind
+    find "$SSD_UPPER/nix/store" -mindepth 1 -type d -empty -delete 2>/dev/null || true
+else
+    echo "==> All paths already on eMMC"
+fi
 if ! ls "$EMMC_MNT/nix/store/$(basename $toplevel)" > /dev/null 2>&1; then
     echo "ERROR: Copy failed - path not found on eMMC!"
     exit 1
@@ -97,9 +104,20 @@ if [[ "$action" == "switch" || "$action" == "boot" ]]; then
 fi
 
 # Activate if switch or test
+# Use systemd-run to survive SSH disconnection during service restarts
 if [[ "$action" == "switch" || "$action" == "test" ]]; then
     echo "==> Activating system..."
-    "$toplevel/bin/switch-to-configuration" "$action"
+    systemd-run \
+        -E LOCALE_ARCHIVE \
+        -E NIXOS_INSTALL_BOOTLOADER=0 \
+        --collect \
+        --no-ask-password \
+        --pipe \
+        --quiet \
+        --service-type=exec \
+        --unit=nixos-rebuild-switch-to-configuration \
+        --wait \
+        "$toplevel/bin/switch-to-configuration" "$action"
 fi
 
 echo "==> Done (system written to eMMC)"

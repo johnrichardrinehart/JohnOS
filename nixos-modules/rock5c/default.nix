@@ -353,16 +353,9 @@ in
         requires = [ "nix-overlay-store-setup.service" ];
       };
 
-      # Bind mount for user cache (graceful fallback via nofail)
-      fileSystems."/home/john/.cache/nix" = {
-        device = "${cfg.overlayStore.mountPoint}/cache";
-        fsType = "none";
-        options = [
-          "bind"
-          "nofail"
-          "x-systemd.requires=${utils.escapeSystemdPath cfg.overlayStore.mountPoint}.mount"
-        ];
-      };
+      # Use SSD for all user caches (nix, cargo, npm, go, etc.)
+      # Falls back gracefully when SSD is not available (apps use default ~/.cache)
+      environment.sessionVariables.XDG_CACHE_HOME = "${cfg.overlayStore.mountPoint}/cache";
     }))
   ];
 }

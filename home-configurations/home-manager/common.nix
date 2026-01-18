@@ -453,7 +453,7 @@ in
             fi
 
         # zoxide - smarter cd (uses 'j' command like jump did)
-            eval "$(zoxide init zsh --cmd j)"
+            command -v zoxide &>/dev/null && eval "$(zoxide init zsh --cmd j)"
 
 
         # https://github.com/nix-community/nix-direnv

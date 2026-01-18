@@ -37,6 +37,8 @@
   dev.johnrinehart.system.enable = true;
   dev.johnrinehart.nix.enable = true;
   dev.johnrinehart.desktop.wl-hyprland.enable = true;
+  dev.johnrinehart.packages.shell.enable = true;
+  dev.johnrinehart.packages.editors.enable = true;
 
   boot.consoleLogLevel = 7;
 
@@ -74,11 +76,7 @@
   '';
 
   environment.systemPackages = [
-    pkgs.vim
-    pkgs.git
-    pkgs.tmux
     pkgs.thin-provisioning-tools # for cache_check
-    pkgs.htop
   ];
 
   boot.kernelModules = [ "dm_cache" ];

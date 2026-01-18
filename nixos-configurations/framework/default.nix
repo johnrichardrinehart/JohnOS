@@ -38,7 +38,13 @@
     variant = "greetd+niri";
   };
 
-  dev.johnrinehart.systemPackages.enable = true;
+  dev.johnrinehart.packages.shell.enable = true;
+  dev.johnrinehart.packages.editors.enable = true;
+  dev.johnrinehart.packages.gui.enable = true;
+  dev.johnrinehart.packages.devops.enable = true;
+  dev.johnrinehart.packages.media.enable = true;
+  dev.johnrinehart.packages.system.enable = true;
+  dev.johnrinehart.packages.archive.enable = true;
 
   services.fprintd.enable = true;
 
