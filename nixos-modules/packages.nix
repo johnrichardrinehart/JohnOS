@@ -38,7 +38,7 @@ in
       pkgs.mpv # mplayer replacement
       pkgs.simplescreenrecorder
       # shell tools
-      pkgs.jump
+      pkgs.zoxide
       pkgs.tmux
       pkgs.xdg-utils # `open`
       pkgs.fd
