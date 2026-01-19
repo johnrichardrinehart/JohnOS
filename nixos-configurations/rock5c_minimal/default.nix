@@ -136,7 +136,8 @@
 
   systemd.network.links."10-wlan0" = {
     matchConfig.OriginalName = "wlan*";
-    linkConfig.MACAddressPolicy = "persistent";
+    # eFUSE not programmed on this device, so set MAC explicitly
+    linkConfig.MACAddress = "88:00:03:00:10:55";
   };
 
   systemd.network.networks."wlan0" = {
@@ -151,7 +152,8 @@
     enable = true;
     settings = {
       General = {
-        # Use permanent MAC address, no randomization
+        # AIC8800 eFUSE not programmed, driver randomizes MAC - override it
+        AddressOverride = "88:00:03:00:10:55";
         AddressRandomization = "disabled";
       };
       Network = {
