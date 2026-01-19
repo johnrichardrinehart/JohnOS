@@ -149,55 +149,105 @@ in
     })
 
     # SSD-backed independent store for configured users
+    # All mounting is done dynamically - no fileSystems declarations that could affect boot
     (lib.mkIf cfg.ssdStore.enable (let
       ssdMount = cfg.ssdStore.mountPoint;
       buildDir = "${ssdMount}/build";
       cacheDir = "${ssdMount}/cache";
       storeDir = "${ssdMount}/store";
+      device = cfg.ssdStore.device;
     in {
-      # Mount base btrfs volume
-      fileSystems.${ssdMount} = {
-        device = cfg.ssdStore.device;
-        fsType = "btrfs";
-        options = [ "subvol=/" "compress=zstd" "noatime" "nofail" "x-systemd.device-timeout=10s" ];
+      # Service to mount SSD if available - runs late, never fails, doesn't block boot
+      systemd.services.nix-ssd-mount = {
+        description = "Mount Nix SSD if available";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "local-fs.target" ];
+        path = [ pkgs.util-linux pkgs.coreutils pkgs.btrfs-progs ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
+          set -euo pipefail
+
+          # Check if device exists
+          if [ ! -e "${device}" ]; then
+            echo "SSD device ${device} not found, skipping"
+            exit 0
+          fi
+
+          # Create mount points
+          mkdir -p "${ssdMount}" "${buildDir}" "${cacheDir}" "${storeDir}"
+
+          # Mount base volume and subvolumes (ignore failures)
+          mount -t btrfs -o subvol=/,compress=zstd,noatime "${device}" "${ssdMount}" || {
+            echo "Failed to mount base volume, skipping SSD setup"
+            exit 0
+          }
+
+          mount -t btrfs -o subvol=@build,compress=zstd,noatime "${device}" "${buildDir}" || echo "Warning: failed to mount @build"
+          mount -t btrfs -o subvol=@cache,compress=zstd,noatime "${device}" "${cacheDir}" || echo "Warning: failed to mount @cache"
+          mount -t btrfs -o subvol=@store,compress=zstd,noatime "${device}" "${storeDir}" || echo "Warning: failed to mount @store"
+
+          # Set up directory permissions if mounts succeeded
+          if mountpoint -q "${buildDir}"; then
+            chown root:nixbld "${buildDir}"
+            chmod 1775 "${buildDir}"
+          fi
+
+          if mountpoint -q "${cacheDir}"; then
+            chmod 0755 "${cacheDir}"
+            # Create per-user cache directories
+            ${lib.concatMapStringsSep "\n" (user: ''
+              mkdir -p "${cacheDir}/${user}"
+              chown ${user}:${user} "${cacheDir}/${user}"
+              chmod 0755 "${cacheDir}/${user}"
+            '') cfg.ssdStore.users}
+          fi
+
+          if mountpoint -q "${storeDir}"; then
+            mkdir -p "${storeDir}/nix/store" "${storeDir}/nix/var/nix/db" "${storeDir}/nix/var/log/nix"
+            chown root:nixbld "${storeDir}/nix/store"
+            chmod 1775 "${storeDir}/nix/store"
+          fi
+
+          # Write nix-daemon environment file if build dir is available
+          ENV_FILE="/var/lib/nix-daemon-ssd.env"
+          if mountpoint -q "${buildDir}"; then
+            echo "TMPDIR=${buildDir}" > "$ENV_FILE"
+          else
+            rm -f "$ENV_FILE"
+          fi
+
+          echo "SSD setup complete"
+        '';
       };
 
-      # Mount @build subvolume
-      fileSystems.${buildDir} = {
-        device = cfg.ssdStore.device;
-        fsType = "btrfs";
-        options = [ "subvol=@build" "compress=zstd" "noatime" "nofail" "x-systemd.device-timeout=5s" ];
+      # Unmount on shutdown
+      systemd.services.nix-ssd-unmount = {
+        description = "Unmount Nix SSD";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "nix-ssd-mount.service" ];
+        requires = [ "nix-ssd-mount.service" ];
+        path = [ pkgs.util-linux ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStop = pkgs.writeShellScript "nix-ssd-unmount" ''
+            # Unmount in reverse order, ignore failures
+            umount "${storeDir}" 2>/dev/null || true
+            umount "${cacheDir}" 2>/dev/null || true
+            umount "${buildDir}" 2>/dev/null || true
+            umount "${ssdMount}" 2>/dev/null || true
+          '';
+        };
+        script = "true";  # ExecStart does nothing, ExecStop does the work
       };
 
-      # Mount @cache subvolume
-      fileSystems.${cacheDir} = {
-        device = cfg.ssdStore.device;
-        fsType = "btrfs";
-        options = [ "subvol=@cache" "compress=zstd" "noatime" "nofail" "x-systemd.device-timeout=5s" ];
-      };
-
-      # Mount @store subvolume
-      fileSystems.${storeDir} = {
-        device = cfg.ssdStore.device;
-        fsType = "btrfs";
-        options = [ "subvol=@store" "compress=zstd" "noatime" "nofail" "x-systemd.device-timeout=5s" ];
-      };
-
-      # Directory permissions - shared dirs + per-user cache dirs
-      # These only run if the mount points exist (tmpfiles is tolerant of missing paths)
-      systemd.tmpfiles.rules = [
-        "d ${buildDir} 1775 root nixbld -"
-        "d ${cacheDir} 0755 root root -"
-        "d ${storeDir} 0755 root root -"
-        "d ${storeDir}/nix 0755 root root -"
-        "d ${storeDir}/nix/store 1775 root nixbld -"
-        "d ${storeDir}/nix/var 0755 root root -"
-        "d ${storeDir}/nix/var/nix 0755 root root -"
-        "d ${storeDir}/nix/var/nix/db 0755 root root -"
-      ] ++ (map (user: "d ${cacheDir}/${user} 0755 ${user} ${user} -") cfg.ssdStore.users);
-
-      # DO NOT set nix.settings.build-dir - it would fail if path doesn't exist
-      # Instead, TMPDIR is set dynamically via EnvironmentFile when SSD is available
+      # nix-daemon uses SSD build dir when available (- prefix means ignore if file missing)
+      systemd.services.nix-daemon.serviceConfig.EnvironmentFile = [
+        "-%S/nix-daemon-ssd.env"
+      ];
 
       # Environment for configured users (XDG_CACHE_HOME + independent store with system store as substituter)
       # Only activates if SSD is actually mounted
@@ -217,32 +267,6 @@ in
           esac
         fi
       '';
-
-      # nix-daemon uses SSD build dir when available (- prefix means ignore if file missing)
-      systemd.services.nix-daemon.serviceConfig.EnvironmentFile = [
-        "-%S/nix-daemon-ssd.env"
-      ];
-
-      # Service to configure nix-daemon env based on SSD availability
-      # This service always succeeds - it just checks if SSD is mounted and writes env file accordingly
-      systemd.services.nix-ssd-env = {
-        description = "Configure nix-daemon environment for SSD";
-        wantedBy = [ "multi-user.target" ];
-        after = [ "local-fs.target" ];
-        unitConfig.DefaultDependencies = false;
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-        };
-        script = ''
-          ENV_FILE="/var/lib/nix-daemon-ssd.env"
-          if mountpoint -q "${buildDir}" 2>/dev/null; then
-            echo "TMPDIR=${buildDir}" > "$ENV_FILE"
-          else
-            rm -f "$ENV_FILE"
-          fi
-        '';
-      };
     }))
   ];
 }
