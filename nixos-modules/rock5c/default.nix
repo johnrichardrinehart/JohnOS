@@ -166,9 +166,17 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          ExecStop = pkgs.writeShellScript "nix-ssd-unmount" ''
+            # Unmount in reverse order, ignore failures
+            umount "${storeDir}" 2>/dev/null || true
+            umount "${cacheDir}" 2>/dev/null || true
+            umount "${buildDir}" 2>/dev/null || true
+            umount "${ssdMount}" 2>/dev/null || true
+            rm -f /var/lib/nix-daemon-ssd.env
+          '';
         };
         script = ''
-          set -euo pipefail
+          # No set -e: we handle all errors explicitly and always exit 0
 
           # Check if device exists
           if [ ! -e "${device}" ]; then
@@ -177,71 +185,50 @@ in
           fi
 
           # Create mount points
-          mkdir -p "${ssdMount}" "${buildDir}" "${cacheDir}" "${storeDir}"
+          mkdir -p "${ssdMount}" "${buildDir}" "${cacheDir}" "${storeDir}" || exit 0
 
-          # Mount base volume and subvolumes (ignore failures)
-          mount -t btrfs -o subvol=/,compress=zstd,noatime "${device}" "${ssdMount}" || {
+          # Mount base volume - if this fails, skip everything
+          if ! mount -t btrfs -o subvol=/,compress=zstd,noatime "${device}" "${ssdMount}"; then
             echo "Failed to mount base volume, skipping SSD setup"
             exit 0
-          }
+          fi
 
+          # Mount subvolumes - continue even if some fail
           mount -t btrfs -o subvol=@build,compress=zstd,noatime "${device}" "${buildDir}" || echo "Warning: failed to mount @build"
           mount -t btrfs -o subvol=@cache,compress=zstd,noatime "${device}" "${cacheDir}" || echo "Warning: failed to mount @cache"
           mount -t btrfs -o subvol=@store,compress=zstd,noatime "${device}" "${storeDir}" || echo "Warning: failed to mount @store"
 
           # Set up directory permissions if mounts succeeded
-          if mountpoint -q "${buildDir}"; then
-            chown root:nixbld "${buildDir}"
-            chmod 1775 "${buildDir}"
+          if mountpoint -q "${buildDir}" 2>/dev/null; then
+            chown root:nixbld "${buildDir}" || true
+            chmod 1775 "${buildDir}" || true
           fi
 
-          if mountpoint -q "${cacheDir}"; then
-            chmod 0755 "${cacheDir}"
+          if mountpoint -q "${cacheDir}" 2>/dev/null; then
+            chmod 0755 "${cacheDir}" || true
             # Create per-user cache directories
             ${lib.concatMapStringsSep "\n" (user: ''
-              mkdir -p "${cacheDir}/${user}"
-              chown ${user}:${user} "${cacheDir}/${user}"
-              chmod 0755 "${cacheDir}/${user}"
+              mkdir -p "${cacheDir}/${user}" || true
+              chown ${user}:${user} "${cacheDir}/${user}" || true
+              chmod 0755 "${cacheDir}/${user}" || true
             '') cfg.ssdStore.users}
           fi
 
-          if mountpoint -q "${storeDir}"; then
-            mkdir -p "${storeDir}/nix/store" "${storeDir}/nix/var/nix/db" "${storeDir}/nix/var/log/nix"
-            chown root:nixbld "${storeDir}/nix/store"
-            chmod 1775 "${storeDir}/nix/store"
+          if mountpoint -q "${storeDir}" 2>/dev/null; then
+            mkdir -p "${storeDir}/nix/store" "${storeDir}/nix/var/nix/db" "${storeDir}/nix/var/log/nix" || true
+            chown root:nixbld "${storeDir}/nix/store" || true
+            chmod 1775 "${storeDir}/nix/store" || true
           fi
 
           # Write nix-daemon environment file if build dir is available
-          ENV_FILE="/var/lib/nix-daemon-ssd.env"
-          if mountpoint -q "${buildDir}"; then
-            echo "TMPDIR=${buildDir}" > "$ENV_FILE"
+          if mountpoint -q "${buildDir}" 2>/dev/null; then
+            echo "TMPDIR=${buildDir}" > /var/lib/nix-daemon-ssd.env || true
           else
-            rm -f "$ENV_FILE"
+            rm -f /var/lib/nix-daemon-ssd.env || true
           fi
 
           echo "SSD setup complete"
         '';
-      };
-
-      # Unmount on shutdown
-      systemd.services.nix-ssd-unmount = {
-        description = "Unmount Nix SSD";
-        wantedBy = [ "multi-user.target" ];
-        after = [ "nix-ssd-mount.service" ];
-        requires = [ "nix-ssd-mount.service" ];
-        path = [ pkgs.util-linux ];
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          ExecStop = pkgs.writeShellScript "nix-ssd-unmount" ''
-            # Unmount in reverse order, ignore failures
-            umount "${storeDir}" 2>/dev/null || true
-            umount "${cacheDir}" 2>/dev/null || true
-            umount "${buildDir}" 2>/dev/null || true
-            umount "${ssdMount}" 2>/dev/null || true
-          '';
-        };
-        script = "true";  # ExecStart does nothing, ExecStop does the work
       };
 
       # nix-daemon uses SSD build dir when available (- prefix means ignore if file missing)
