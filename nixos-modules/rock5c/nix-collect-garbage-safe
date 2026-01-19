@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# nix-collect-garbage-safe: Run garbage collection directly on eMMC, bypassing overlay store
-# This actually frees space on eMMC instead of just creating whiteouts.
+# nix-collect-garbage-safe: Run garbage collection with overlay enabled
+# This ensures GC sees both lower (SD card) and upper (SSD) store paths,
+# preventing deletion of dependencies needed by the upper store.
 
 set -euo pipefail
 
@@ -9,42 +10,20 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# Check if overlay is active
-overlay_active=false
-if findmnt -n -t overlay /nix/store > /dev/null 2>&1; then
-    overlay_active=true
-    echo "==> Overlay store detected, temporarily disabling..."
-fi
-
-cleanup() {
-    if [[ "$overlay_active" == "true" ]]; then
-        echo "==> Re-enabling overlay store..."
-        systemctl restart nix-overlay-store-setup || true
-        systemctl restart nix-daemon || true
-    fi
-}
-trap cleanup EXIT
-
-if [[ "$overlay_active" == "true" ]]; then
-    # Stop nix daemon
-    echo "==> Stopping nix-daemon..."
-    systemctl stop nix-daemon.socket nix-daemon.service || true
-
-    # Unmount overlay
-    echo "==> Unmounting overlay from /nix/store..."
-    umount -l /nix/store || true
-
-    # Clear overlay config
-    echo "==> Clearing overlay store config..."
-    echo "# Temporarily disabled for safe garbage collection" > /run/nix-overlay-store.env
-
-    # Restart daemon with default store
-    echo "==> Starting nix-daemon with eMMC store..."
-    systemctl start nix-daemon.socket
+# Require overlay to be active so GC sees all paths
+if ! findmnt -n -t overlay /nix/store > /dev/null 2>&1; then
+    echo "Error: Overlay store not active."
+    echo ""
+    echo "Garbage collection must run with the overlay enabled so it sees"
+    echo "paths in both the lower store (SD card) and upper store (SSD)."
+    echo "Otherwise, dependencies needed by SSD paths may be deleted."
+    echo ""
+    echo "Run 'nix-overlay-enable' first, then retry."
+    exit 1
 fi
 
 # Show before stats
-echo "==> eMMC store before:"
+echo "==> Store before (overlay active):"
 df -h /nix/store | tail -1
 
 # Run garbage collection with all passed arguments
@@ -55,9 +34,8 @@ nix-collect-garbage "$@"
 
 # Show after stats
 echo ""
-echo "==> eMMC store after:"
+echo "==> Store after:"
 df -h /nix/store | tail -1
 
 echo ""
-echo "==> Garbage collection complete (eMMC space freed)"
-# cleanup runs automatically via trap
+echo "==> Garbage collection complete"
