@@ -56,11 +56,13 @@ else
 fi
 
 # Write environment file for nix-daemon
-cat > "$ENV_FILE" <<EOF
-TMPDIR=$BUILD_DIR
-NIX_CONFIG=store = ${OVERLAY_STORE_URL}&check-mount=false
-build-dir = $BUILD_DIR
-EOF
+# NIX_CONFIG supports multiple settings separated by newlines within the value
+# Use printf to properly embed a newline character
+printf 'TMPDIR=%s\nNIX_CONFIG=store = %s&check-mount=false\nbuild-dir = %s\n' \
+  "$BUILD_DIR" \
+  "$OVERLAY_STORE_URL" \
+  "$BUILD_DIR" \
+  > "$ENV_FILE"
 
 # Mark state
 echo "overlay" > "$STATE_FILE"
