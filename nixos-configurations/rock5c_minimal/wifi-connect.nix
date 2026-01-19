@@ -5,9 +5,10 @@ pkgs.writeShellApplication {
   name = "wifi-connect";
 
   runtimeInputs = with pkgs; [
-    wpa_supplicant
+    iwd
     systemd
     coreutils
+    iproute2
   ];
 
   text = ''
@@ -22,7 +23,7 @@ pkgs.writeShellApplication {
       exit 1
     fi
 
-    echo "==> Wi-Fi Setup for ''$INTERFACE"
+    echo "==> Wi-Fi Setup for ''$INTERFACE (using iwd)"
     echo ""
 
     read -rp "SSID: " SSID
@@ -38,32 +39,52 @@ pkgs.writeShellApplication {
       exit 1
     fi
 
-    CONFIG_FILE="/tmp/wpa_supplicant_''$INTERFACE.conf"
-
-    echo "==> Generating wpa_supplicant config..."
-    wpa_passphrase "''$SSID" "''$PASSWORD" > "''$CONFIG_FILE"
-    chmod 600 "''$CONFIG_FILE"
-
-    # Kill any existing wpa_supplicant for this interface
-    echo "==> Stopping any existing wpa_supplicant on ''$INTERFACE..."
-    pkill -f "wpa_supplicant.*''$INTERFACE" || true
+    # Ensure iwd is running
+    echo "==> Starting iwd service..."
+    systemctl start iwd.service || true
     sleep 1
 
     echo "==> Bringing up ''$INTERFACE..."
     ip link set "''$INTERFACE" up
 
-    echo "==> Starting wpa_supplicant..."
-    wpa_supplicant -B -i "''$INTERFACE" -c "''$CONFIG_FILE"
+    echo "==> Scanning for networks..."
+    iwctl station "''$INTERFACE" scan
+    sleep 2
+
+    echo "==> Connecting to ''$SSID..."
+    # iwd stores the passphrase, use expect-style input or iwctl's passphrase agent
+    # For non-interactive use, we can create the network config directly
+    IWD_DIR="/var/lib/iwd"
+    mkdir -p "''$IWD_DIR"
+
+    # Create network config file (SSID with special chars needs encoding, but simple SSIDs work as-is)
+    # For PSK networks, iwd expects the file to be named SSID.psk
+    CONFIG_FILE="''$IWD_DIR/''$SSID.psk"
+    cat > "''$CONFIG_FILE" <<EOF
+[Security]
+Passphrase=''$PASSWORD
+EOF
+    chmod 600 "''$CONFIG_FILE"
+
+    echo "==> Network config written to ''$CONFIG_FILE"
+
+    # Connect using iwctl
+    iwctl station "''$INTERFACE" connect "''$SSID" || true
 
     echo "==> Waiting for association..."
     for i in $(seq 1 10); do
-      if iw dev "''$INTERFACE" link 2>/dev/null | grep -q "Connected"; then
+      if iwctl station "''$INTERFACE" show 2>/dev/null | grep -q "connected"; then
         echo "    Connected!"
         break
       fi
       sleep 1
       echo "    Attempt ''$i/10..."
     done
+
+    # Ensure systemd-networkd picks up the interface
+    echo "==> Ensuring systemd-networkd manages the interface..."
+    networkctl reload || true
+    sleep 1
 
     echo "==> Requesting DHCP lease..."
     networkctl renew "''$INTERFACE" || true
@@ -72,6 +93,8 @@ pkgs.writeShellApplication {
 
     echo ""
     echo "==> Status:"
+    iwctl station "''$INTERFACE" show
+    echo ""
     ip addr show "''$INTERFACE"
   '';
 }

@@ -145,7 +145,21 @@
     linkConfig.RequiredForOnline = "no";
   };
 
-  networking.networkmanager.enable = true;
+  # Use iwd for WiFi (lighter than NetworkManager, integrates with systemd-networkd)
+  networking.networkmanager.enable = false;
+  networking.wireless.iwd = {
+    enable = true;
+    settings = {
+      General = {
+        # Use permanent MAC address, no randomization
+        AddressRandomization = "disabled";
+      };
+      Network = {
+        # Let systemd-networkd handle DHCP
+        EnableIPv6 = true;
+      };
+    };
+  };
 
   nix.package = pkgs.nixVersions.nix_2_32;
 }
