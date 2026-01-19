@@ -24,8 +24,8 @@ in
       default = false;
     };
 
-    overlayStore = {
-      enable = lib.mkEnableOption "SSD-backed overlay store for Nix";
+    ssdStore = {
+      enable = lib.mkEnableOption "SSD-backed independent Nix store and build cache";
 
       device = lib.mkOption {
         type = lib.types.str;
@@ -37,6 +37,13 @@ in
         type = lib.types.path;
         default = "/mnt/nix-ssd";
         description = "Base mount point for SSD btrfs volume";
+      };
+
+      users = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        example = [ "john" "alice" ];
+        description = "Users who should use the SSD-backed store, cache, and build directory";
       };
     };
   };
@@ -141,157 +148,103 @@ in
       ];
     })
 
-    # SSD overlay store config using Nix's local-overlay-store
-    # with graceful degradation when SSD is unavailable
-    (lib.mkIf cfg.overlayStore.enable (let
-      upperLayer = "${cfg.overlayStore.mountPoint}/upper";
-      # workdir must be on same mount as upperdir, so put it inside upper
-      workDir = "${cfg.overlayStore.mountPoint}/upper/.overlay-work";
-      # Mount overlay directly on /nix/store so executed programs work
-      buildDir = "${cfg.overlayStore.mountPoint}/build";
-      overlayStoreUrl = "local-overlay://?lower-store=local&upper-layer=${upperLayer}&build-dir=${buildDir}";
+    # SSD-backed independent store for configured users
+    (lib.mkIf cfg.ssdStore.enable (let
+      ssdMount = cfg.ssdStore.mountPoint;
+      buildDir = "${ssdMount}/build";
+      cacheDir = "${ssdMount}/cache";
+      storeDir = "${ssdMount}/store";
     in {
-      # Mount btrfs SSD volume
-      fileSystems.${cfg.overlayStore.mountPoint} = {
-        device = cfg.overlayStore.device;
+      # Mount base btrfs volume
+      fileSystems.${ssdMount} = {
+        device = cfg.ssdStore.device;
         fsType = "btrfs";
-        options = [
-          "subvol=/"
-          "compress=zstd"
-          "noatime"
-          "nofail"
-          "x-systemd.device-timeout=10s"
-        ];
+        options = [ "subvol=/" "compress=zstd" "noatime" "nofail" "x-systemd.device-timeout=10s" ];
       };
 
-      # Mount subvolumes
-      fileSystems."${cfg.overlayStore.mountPoint}/upper" = {
-        device = cfg.overlayStore.device;
+      # Mount @build subvolume
+      fileSystems.${buildDir} = {
+        device = cfg.ssdStore.device;
         fsType = "btrfs";
-        options = [ "subvol=@upper" "compress=zstd" "noatime" "nofail" ];
+        options = [ "subvol=@build" "compress=zstd" "noatime" "nofail" "x-systemd.device-timeout=5s" ];
       };
 
-      fileSystems."${cfg.overlayStore.mountPoint}/build" = {
-        device = cfg.overlayStore.device;
+      # Mount @cache subvolume
+      fileSystems.${cacheDir} = {
+        device = cfg.ssdStore.device;
         fsType = "btrfs";
-        options = [ "subvol=@build" "compress=zstd" "noatime" "nofail" ];
+        options = [ "subvol=@cache" "compress=zstd" "noatime" "nofail" "x-systemd.device-timeout=5s" ];
       };
 
-      fileSystems."${cfg.overlayStore.mountPoint}/cache" = {
-        device = cfg.overlayStore.device;
+      # Mount @store subvolume
+      fileSystems.${storeDir} = {
+        device = cfg.ssdStore.device;
         fsType = "btrfs";
-        options = [ "subvol=@cache" "compress=zstd" "noatime" "nofail" ];
+        options = [ "subvol=@store" "compress=zstd" "noatime" "nofail" "x-systemd.device-timeout=5s" ];
       };
 
-      # Create directory structure
+      # Directory permissions - shared dirs + per-user cache dirs
       systemd.tmpfiles.rules = [
-        # Upper store directories on SSD
-        "d ${upperLayer}/nix 0755 root root -"
-        "d ${upperLayer}/nix/store 1775 root nixbld -"
-        "d ${upperLayer}/nix/var 0755 root root -"
-        "d ${upperLayer}/nix/var/nix 0755 root root -"
-        "d ${upperLayer}/nix/var/nix/db 0755 root root -"
-        # Overlay workdir (must be on same mount as upperdir)
-        "d ${workDir} 0755 root root -"
-        # Build directory
-        "d ${cfg.overlayStore.mountPoint}/build 1775 root nixbld -"
-        # Cache directory (user-owned for nix cache)
-        "d ${cfg.overlayStore.mountPoint}/cache 0755 john john -"
+        "d ${buildDir} 1775 root nixbld -"
+        "d ${cacheDir} 0755 root root -"
+        "d ${storeDir} 0755 root root -"
+        "d ${storeDir}/nix 0755 root root -"
+        "d ${storeDir}/nix/store 1775 root nixbld -"
+        "d ${storeDir}/nix/var 0755 root root -"
+        "d ${storeDir}/nix/var/nix 0755 root root -"
+        "d ${storeDir}/nix/var/nix/db 0755 root root -"
+      ] ++ (map (user: "d ${cacheDir}/${user} 0755 ${user} ${user} -") cfg.ssdStore.users);
+
+      # System-wide build-dir on SSD
+      nix.settings.build-dir = lib.mkDefault buildDir;
+
+      # Environment for configured users (XDG_CACHE_HOME + independent store with system store as substituter)
+      # Generate a case statement for all configured users
+      environment.extraInit = let
+        userList = lib.concatStringsSep "|" cfg.ssdStore.users;
+      in ''
+        if mountpoint -q "${ssdMount}" 2>/dev/null; then
+          case "$USER" in
+            ${userList})
+              export XDG_CACHE_HOME="${cacheDir}/$USER"
+              export NIX_STORE_DIR="${storeDir}/nix/store"
+              export NIX_STATE_DIR="${storeDir}/nix/var/nix"
+              export NIX_LOG_DIR="${storeDir}/nix/var/log/nix"
+              # Use system store as substituter so builds can copy from /nix/store
+              export NIX_CONFIG="extra-substituters = /nix/store"
+              ;;
+          esac
+        fi
+      '';
+
+      # nix-daemon uses SSD build dir when available
+      systemd.services.nix-daemon.serviceConfig.EnvironmentFile = [
+        "-%S/nix-daemon-ssd.env"
       ];
 
-      # Nix settings
-      nix.settings = {
-        experimental-features = [
-          "nix-command"
-          "flakes"
-          "local-overlay-store"
-        ];
-        # build-dir is set dynamically via environment file based on SSD availability
-      };
-
-      # Helper scripts
-      environment.systemPackages = let
-        overlayScripts = pkgs.nix-overlay-scripts {
-          mountPoint = cfg.overlayStore.mountPoint;
-          inherit upperLayer workDir buildDir overlayStoreUrl;
-          cacheDir = "${cfg.overlayStore.mountPoint}/cache";
-          lowerStoreDev = "/dev/disk/by-label/NIXOS_SD";
-        };
-      in [
-        overlayScripts.nixos-rebuild-local
-      ];
-
-      # Service to mount overlay and configure nix-daemon at boot
-      systemd.services.nix-overlay-store = let
-        overlayScripts = pkgs.nix-overlay-scripts {
-          mountPoint = cfg.overlayStore.mountPoint;
-          inherit upperLayer workDir buildDir overlayStoreUrl;
-          cacheDir = "${cfg.overlayStore.mountPoint}/cache";
-          lowerStoreDev = "/dev/disk/by-label/NIXOS_SD";
-        };
-      in {
-        description = "Mount Nix overlay store on SSD";
+      # Service to configure nix-daemon env based on SSD availability
+      systemd.services.nix-ssd-env = {
+        description = "Configure nix-daemon environment for SSD";
         wantedBy = [ "multi-user.target" ];
         before = [ "nix-daemon.service" "nix-daemon.socket" ];
-        after = [
-          "local-fs.target"
-          "${utils.escapeSystemdPath cfg.overlayStore.mountPoint}.mount"
-          "${utils.escapeSystemdPath upperLayer}.mount"
-          "${utils.escapeSystemdPath buildDir}.mount"
-        ];
-        wants = [
-          "${utils.escapeSystemdPath cfg.overlayStore.mountPoint}.mount"
-          "${utils.escapeSystemdPath upperLayer}.mount"
-          "${utils.escapeSystemdPath buildDir}.mount"
-        ];
-
-        unitConfig = {
-          DefaultDependencies = false;
-          ConditionPathIsMountPoint = "${upperLayer}";
-        };
-
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          ExecStart = "${overlayScripts.nix-overlay-setup}/bin/nix-overlay-setup";
-        };
-      };
-
-      # Cleanup on shutdown
-      systemd.services.nix-overlay-store-cleanup = {
-        description = "Cleanup Nix overlay store on shutdown";
-        wantedBy = [ "multi-user.target" ];
-        after = [ "nix-daemon.service" ];
-        before = [ "shutdown.target" "reboot.target" "halt.target" ];
-
-        path = [ pkgs.util-linux ];
-
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          ExecStop = "${pkgs.bash}/bin/bash -c 'findmnt -n -t overlay /nix/store && umount /nix/store || true'";
-        };
-
-        script = "true";
-      };
-
-      # nix-daemon depends on overlay setup
-      systemd.services.nix-daemon = {
-        after = [ "nix-overlay-store.service" ];
-        wants = [ "nix-overlay-store.service" ];
+        after = [ "local-fs.target" "${utils.escapeSystemdPath ssdMount}.mount" "${utils.escapeSystemdPath buildDir}.mount" ];
+        wants = [ "${utils.escapeSystemdPath ssdMount}.mount" "${utils.escapeSystemdPath buildDir}.mount" ];
+        unitConfig.DefaultDependencies = false;
+        serviceConfig = { Type = "oneshot"; RemainAfterExit = true; };
+        script = ''
+          ENV_FILE="/var/lib/nix-daemon-ssd.env"
+          if mountpoint -q "${buildDir}" 2>/dev/null; then
+            echo "TMPDIR=${buildDir}" > "$ENV_FILE"
+          else
+            rm -f "$ENV_FILE"
+          fi
+        '';
       };
 
       systemd.sockets.nix-daemon = {
-        after = [ "nix-overlay-store.service" ];
-        wants = [ "nix-overlay-store.service" ];
+        after = [ "nix-ssd-env.service" ];
+        wants = [ "nix-ssd-env.service" ];
       };
-
-      # Set XDG_CACHE_HOME dynamically based on SSD availability
-      environment.extraInit = ''
-        if mountpoint -q "${cfg.overlayStore.mountPoint}/cache" 2>/dev/null; then
-          export XDG_CACHE_HOME="${cfg.overlayStore.mountPoint}/cache"
-        fi
-      '';
     }))
   ];
 }
