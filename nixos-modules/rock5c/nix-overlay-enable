@@ -57,14 +57,12 @@ fi
 # Create wrapper script that sets environment and execs nix-daemon
 # This is necessary because systemd can't handle newlines in Environment= values
 WRAPPER="/run/nix-daemon-wrapper"
-cat > "$WRAPPER" <<'WRAPPEREOF'
-#!/bin/bash
-export TMPDIR="@buildDir@"
-export NIX_CONFIG=$'store = @overlayStoreUrl@&check-mount=false\nbuild-dir = @buildDir@'
-exec /nix/var/nix/profiles/default/bin/nix-daemon "$@"
+cat > "$WRAPPER" <<WRAPPEREOF
+#!/run/current-system/sw/bin/bash
+export TMPDIR="$BUILD_DIR"
+export NIX_CONFIG=\$'store = ${OVERLAY_STORE_URL}&check-mount=false\nbuild-dir = $BUILD_DIR'
+exec /run/current-system/sw/bin/nix-daemon "\$@"
 WRAPPEREOF
-# Substitute the actual values
-sed -i "s|@buildDir@|$BUILD_DIR|g; s|@overlayStoreUrl@|$OVERLAY_STORE_URL|g" "$WRAPPER"
 chmod +x "$WRAPPER"
 
 # Create systemd drop-in to use the wrapper
