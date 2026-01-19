@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# These values are replaced at build time by Nix
+MOUNT_POINT="@mountPoint@"
+UPPER_LAYER="@upperLayer@"
+BUILD_DIR="@buildDir@"
+CACHE_DIR="@cacheDir@"
+
+NIX_STORE="/nix/store"
+ENV_FILE="/run/nix-overlay-store.env"
+STATE_FILE="/run/nix-overlay-store.mode"
+
+echo "==> Disabling overlay store..."
+
+# Stop nix-daemon
+echo "Stopping nix-daemon..."
+systemctl stop nix-daemon.socket nix-daemon.service 2>/dev/null || true
+
+# Unmount overlay
+if findmnt -n -t overlay "$NIX_STORE" > /dev/null 2>&1; then
+  echo "Unmounting overlay from $NIX_STORE..."
+  umount "$NIX_STORE" || {
+    echo "Error: Failed to unmount overlay. Processes may be using /nix/store."
+    echo "Try: lsof +D /nix/store"
+    exit 1
+  }
+fi
+
+# Unmount SSD subvolumes
+for mp in "$CACHE_DIR" "$BUILD_DIR" "$UPPER_LAYER" "$MOUNT_POINT"; do
+  if mountpoint -q "$mp" 2>/dev/null; then
+    echo "Unmounting $mp..."
+    umount "$mp" || echo "Warning: Failed to unmount $mp"
+  fi
+done
+
+# Write empty environment file
+echo "# Overlay disabled - using local store" > "$ENV_FILE"
+
+# Mark state
+echo "local" > "$STATE_FILE"
+
+# Start nix-daemon with local store
+echo "Starting nix-daemon with local store..."
+systemctl start nix-daemon.socket
+
+echo "==> Overlay store disabled"
+echo "    System upgrades and profile changes can now be made"
+echo "    Run 'nix-overlay-enable' when done to re-enable SSD acceleration"

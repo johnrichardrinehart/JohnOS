@@ -18,6 +18,38 @@ inputs: {
         buildInputs = [ prev.makeWrapper ];
         postBuild = "wrapProgram $out/bin/nixos-rebuild-bake --prefix PATH : $out/bin";
       };
+
+      # Nix overlay store management scripts
+      # These need configuration values, so they're functions that take config
+      nix-overlay-scripts = { mountPoint, upperLayer, workDir, buildDir, cacheDir, overlayStoreUrl }:
+        let
+          substituteVars = script: builtins.replaceStrings
+            [ "@mountPoint@" "@upperLayer@" "@workDir@" "@buildDir@" "@cacheDir@" "@overlayStoreUrl@" ]
+            [ mountPoint upperLayer workDir buildDir cacheDir overlayStoreUrl ]
+            script;
+
+          mkScript = name: scriptFile: runtimeInputs:
+            let
+              script = prev.writeShellScriptBin name (substituteVars (builtins.readFile scriptFile));
+            in prev.symlinkJoin {
+              inherit name;
+              paths = [ script ] ++ runtimeInputs;
+              buildInputs = [ prev.makeWrapper ];
+              postBuild = "wrapProgram $out/bin/${name} --prefix PATH : $out/bin";
+            };
+        in {
+          nix-overlay-enable = mkScript "nix-overlay-enable"
+            ../nixos-modules/rock5c/nix-overlay-enable
+            [ prev.util-linux prev.coreutils prev.systemd ];
+
+          nix-overlay-disable = mkScript "nix-overlay-disable"
+            ../nixos-modules/rock5c/nix-overlay-disable
+            [ prev.util-linux prev.coreutils prev.systemd ];
+
+          nix-overlay-status = mkScript "nix-overlay-status"
+            ../nixos-modules/rock5c/nix-overlay-status
+            [ prev.util-linux prev.coreutils prev.systemd ];
+        };
     })
   ];
 }

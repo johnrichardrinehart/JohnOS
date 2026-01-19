@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+# These values are replaced at build time by Nix
+MOUNT_POINT="@mountPoint@"
+UPPER_LAYER="@upperLayer@"
+BUILD_DIR="@buildDir@"
+CACHE_DIR="@cacheDir@"
+
+NIX_STORE="/nix/store"
+STATE_FILE="/run/nix-overlay-store.mode"
+
+echo "==> Nix Overlay Store Status"
+echo ""
+
+if [ -f "$STATE_FILE" ]; then
+  echo "Mode: $(cat "$STATE_FILE")"
+else
+  echo "Mode: unknown (no state file)"
+fi
+
+echo ""
+echo "Overlay on /nix/store:"
+if findmnt -n -t overlay "$NIX_STORE" > /dev/null 2>&1; then
+  echo "  MOUNTED"
+  findmnt -n -t overlay "$NIX_STORE"
+else
+  echo "  not mounted"
+fi
+
+echo ""
+echo "SSD mounts:"
+for mp in "$MOUNT_POINT" "$UPPER_LAYER" "$BUILD_DIR" "$CACHE_DIR"; do
+  if mountpoint -q "$mp" 2>/dev/null; then
+    echo "  $mp: MOUNTED"
+  else
+    echo "  $mp: not mounted"
+  fi
+done
+
+echo ""
+echo "nix-daemon:"
+systemctl is-active nix-daemon.service || true
