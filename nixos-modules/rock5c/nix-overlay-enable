@@ -9,7 +9,6 @@ BUILD_DIR="@buildDir@"
 OVERLAY_STORE_URL="@overlayStoreUrl@"
 
 NIX_STORE="/nix/store"
-ENV_FILE="/run/nix-overlay-store.env"
 STATE_FILE="/run/nix-overlay-store.mode"
 
 echo "==> Enabling overlay store..."
@@ -55,20 +54,34 @@ else
   echo "Overlay already mounted"
 fi
 
-# Write environment file for nix-daemon
-# NIX_CONFIG supports multiple settings separated by newlines within the value
-# Use printf to properly embed a newline character
-printf 'TMPDIR=%s\nNIX_CONFIG=store = %s&check-mount=false\nbuild-dir = %s\n' \
-  "$BUILD_DIR" \
-  "$OVERLAY_STORE_URL" \
-  "$BUILD_DIR" \
-  > "$ENV_FILE"
+# Create wrapper script that sets environment and execs nix-daemon
+# This is necessary because systemd can't handle newlines in Environment= values
+WRAPPER="/run/nix-daemon-wrapper"
+cat > "$WRAPPER" <<'WRAPPEREOF'
+#!/bin/bash
+export TMPDIR="@buildDir@"
+export NIX_CONFIG=$'store = @overlayStoreUrl@&check-mount=false\nbuild-dir = @buildDir@'
+exec /nix/var/nix/profiles/default/bin/nix-daemon "$@"
+WRAPPEREOF
+# Substitute the actual values
+sed -i "s|@buildDir@|$BUILD_DIR|g; s|@overlayStoreUrl@|$OVERLAY_STORE_URL|g" "$WRAPPER"
+chmod +x "$WRAPPER"
+
+# Create systemd drop-in to use the wrapper
+DROPIN_DIR="/run/systemd/system/nix-daemon.service.d"
+mkdir -p "$DROPIN_DIR"
+cat > "$DROPIN_DIR/overlay-store.conf" <<DROPINEOF
+[Service]
+ExecStart=
+ExecStart=$WRAPPER
+DROPINEOF
 
 # Mark state
 echo "overlay" > "$STATE_FILE"
 
-# Start nix-daemon
-echo "Starting nix-daemon..."
+# Reload systemd to pick up the drop-in, then start nix-daemon
+echo "Reloading systemd and starting nix-daemon..."
+systemctl daemon-reload
 systemctl start nix-daemon.socket
 
 echo "==> Overlay store enabled"

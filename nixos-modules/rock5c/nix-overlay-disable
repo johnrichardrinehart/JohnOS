@@ -8,7 +8,6 @@ BUILD_DIR="@buildDir@"
 CACHE_DIR="@cacheDir@"
 
 NIX_STORE="/nix/store"
-ENV_FILE="/run/nix-overlay-store.env"
 STATE_FILE="/run/nix-overlay-store.mode"
 
 echo "==> Disabling overlay store..."
@@ -35,14 +34,18 @@ for mp in "$CACHE_DIR" "$BUILD_DIR" "$UPPER_LAYER" "$MOUNT_POINT"; do
   fi
 done
 
-# Write empty environment file
-echo "# Overlay disabled - using local store" > "$ENV_FILE"
+# Remove wrapper and drop-in
+WRAPPER="/run/nix-daemon-wrapper"
+DROPIN_DIR="/run/systemd/system/nix-daemon.service.d"
+rm -f "$WRAPPER"
+rm -rf "$DROPIN_DIR"
 
 # Mark state
 echo "local" > "$STATE_FILE"
 
-# Start nix-daemon with local store
-echo "Starting nix-daemon with local store..."
+# Reload systemd and start nix-daemon with local store
+echo "Reloading systemd and starting nix-daemon with local store..."
+systemctl daemon-reload
 systemctl start nix-daemon.socket
 
 echo "==> Overlay store disabled"

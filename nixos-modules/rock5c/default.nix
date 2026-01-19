@@ -255,11 +255,9 @@ in
         };
 
         script = ''
-          ENV_FILE="/run/nix-overlay-store.env"
           STATE_FILE="/run/nix-overlay-store.mode"
 
           # Default to local store on boot for safety
-          echo "# Boot default - local store" > "$ENV_FILE"
           echo "local" > "$STATE_FILE"
 
           echo "Nix store initialized in local mode"
@@ -286,11 +284,11 @@ in
       };
 
       # nix-daemon depends on setup service (wants, not requires, for graceful degradation)
-      # TMPDIR is set dynamically via EnvironmentFile based on SSD availability
+      # When overlay is enabled, a drop-in unit overrides ExecStart to use a wrapper script
+      # that sets TMPDIR and NIX_CONFIG with the overlay store configuration
       systemd.services.nix-daemon = {
         after = [ "nix-overlay-store-setup.service" ];
         wants = [ "nix-overlay-store-setup.service" ];
-        serviceConfig.EnvironmentFile = "-/run/nix-overlay-store.env";
       };
 
       systemd.sockets.nix-daemon = {
