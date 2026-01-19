@@ -184,6 +184,7 @@ in
       };
 
       # Directory permissions - shared dirs + per-user cache dirs
+      # These only run if the mount points exist (tmpfiles is tolerant of missing paths)
       systemd.tmpfiles.rules = [
         "d ${buildDir} 1775 root nixbld -"
         "d ${cacheDir} 0755 root root -"
@@ -195,11 +196,11 @@ in
         "d ${storeDir}/nix/var/nix/db 0755 root root -"
       ] ++ (map (user: "d ${cacheDir}/${user} 0755 ${user} ${user} -") cfg.ssdStore.users);
 
-      # System-wide build-dir on SSD
-      nix.settings.build-dir = lib.mkDefault buildDir;
+      # DO NOT set nix.settings.build-dir - it would fail if path doesn't exist
+      # Instead, TMPDIR is set dynamically via EnvironmentFile when SSD is available
 
       # Environment for configured users (XDG_CACHE_HOME + independent store with system store as substituter)
-      # Generate a case statement for all configured users
+      # Only activates if SSD is actually mounted
       environment.extraInit = let
         userList = lib.concatStringsSep "|" cfg.ssdStore.users;
       in ''
@@ -217,23 +218,21 @@ in
         fi
       '';
 
-      # nix-daemon uses SSD build dir when available (- prefix means ignore if missing)
+      # nix-daemon uses SSD build dir when available (- prefix means ignore if file missing)
       systemd.services.nix-daemon.serviceConfig.EnvironmentFile = [
         "-%S/nix-daemon-ssd.env"
       ];
 
       # Service to configure nix-daemon env based on SSD availability
-      # Runs after local-fs.target completes (mounts attempted), checks what's available
+      # This service always succeeds - it just checks if SSD is mounted and writes env file accordingly
       systemd.services.nix-ssd-env = {
         description = "Configure nix-daemon environment for SSD";
         wantedBy = [ "multi-user.target" ];
-        before = [ "nix-daemon.service" "nix-daemon.socket" ];
         after = [ "local-fs.target" ];
         unitConfig.DefaultDependencies = false;
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          TimeoutStartSec = "5s";
         };
         script = ''
           ENV_FILE="/var/lib/nix-daemon-ssd.env"
@@ -243,12 +242,6 @@ in
             rm -f "$ENV_FILE"
           fi
         '';
-      };
-
-      # nix-daemon socket should not hard-depend on SSD env service
-      # Use weak ordering only - if nix-ssd-env runs, wait for it; if not, proceed anyway
-      systemd.sockets.nix-daemon = {
-        after = [ "nix-ssd-env.service" ];
       };
     }))
   ];
