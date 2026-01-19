@@ -217,20 +217,24 @@ in
         fi
       '';
 
-      # nix-daemon uses SSD build dir when available
+      # nix-daemon uses SSD build dir when available (- prefix means ignore if missing)
       systemd.services.nix-daemon.serviceConfig.EnvironmentFile = [
         "-%S/nix-daemon-ssd.env"
       ];
 
       # Service to configure nix-daemon env based on SSD availability
+      # Runs after local-fs.target completes (mounts attempted), checks what's available
       systemd.services.nix-ssd-env = {
         description = "Configure nix-daemon environment for SSD";
         wantedBy = [ "multi-user.target" ];
         before = [ "nix-daemon.service" "nix-daemon.socket" ];
-        after = [ "local-fs.target" "${utils.escapeSystemdPath ssdMount}.mount" "${utils.escapeSystemdPath buildDir}.mount" ];
-        wants = [ "${utils.escapeSystemdPath ssdMount}.mount" "${utils.escapeSystemdPath buildDir}.mount" ];
+        after = [ "local-fs.target" ];
         unitConfig.DefaultDependencies = false;
-        serviceConfig = { Type = "oneshot"; RemainAfterExit = true; };
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          TimeoutStartSec = "5s";
+        };
         script = ''
           ENV_FILE="/var/lib/nix-daemon-ssd.env"
           if mountpoint -q "${buildDir}" 2>/dev/null; then
@@ -241,9 +245,10 @@ in
         '';
       };
 
+      # nix-daemon socket should not hard-depend on SSD env service
+      # Use weak ordering only - if nix-ssd-env runs, wait for it; if not, proceed anyway
       systemd.sockets.nix-daemon = {
         after = [ "nix-ssd-env.service" ];
-        wants = [ "nix-ssd-env.service" ];
       };
     }))
   ];
