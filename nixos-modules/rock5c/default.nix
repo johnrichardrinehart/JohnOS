@@ -55,6 +55,13 @@ in
 
       nixpkgs.hostPlatform = "aarch64-linux";
 
+      # Add provision-sd to pkgs via overlay
+      nixpkgs.overlays = [
+        (final: prev: {
+          provision-sd = prev.callPackage ./provision-sd.nix { };
+        })
+      ];
+
       system.build.firmware = pkgs.ubootRock5ModelC;
 
       boot.loader.grub.enable = false;
