@@ -11,6 +11,7 @@ pkgs.writeShellApplication {
     age
     coreutils
     nix
+    sops
   ];
 
   text = ''
@@ -145,6 +146,20 @@ pkgs.writeShellApplication {
       if ! grep -q "^AGE-SECRET-KEY-" "''$AGE_KEY_PATH"; then
         echo "Error: ''$AGE_KEY_PATH does not appear to be a valid age secret key"
         exit 1
+      fi
+
+      # Test decryption against secrets.yaml
+      echo ""
+      echo "==> Testing decryption..."
+      if SOPS_AGE_KEY_FILE="''$AGE_KEY_PATH" sops -d nixos-configurations/rock5c_minimal/secrets.yaml > /dev/null 2>&1; then
+        echo "    Decryption test passed!"
+      else
+        echo "    Warning: Decryption test failed. The key may not match the secrets file."
+        read -rp "    Continue anyway? [y/N] " confirm
+        if [ "''$confirm" != "y" ] && [ "''$confirm" != "Y" ]; then
+          echo "Aborted."
+          exit 1
+        fi
       fi
 
       # Mount the partition
