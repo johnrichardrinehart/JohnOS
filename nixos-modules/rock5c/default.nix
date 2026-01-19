@@ -209,63 +209,55 @@ in
         # build-dir is set dynamically via environment file based on SSD availability
       };
 
-      # Helper scripts for overlay store management
-      # Scripts are built via overlay with configuration baked in
+      # Helper scripts
       environment.systemPackages = let
         overlayScripts = pkgs.nix-overlay-scripts {
           mountPoint = cfg.overlayStore.mountPoint;
           inherit upperLayer workDir buildDir overlayStoreUrl;
           cacheDir = "${cfg.overlayStore.mountPoint}/cache";
+          lowerStoreDev = "/dev/disk/by-label/NIXOS_SD";
         };
       in [
-        pkgs.nixos-rebuild-bake
-        (pkgs.writeShellScriptBin "nix-collect-garbage-safe" (builtins.readFile ./nix-collect-garbage-safe))
-        overlayScripts.nix-overlay-enable
-        overlayScripts.nix-overlay-disable
-        overlayScripts.nix-overlay-status
+        overlayScripts.nixos-rebuild-local
       ];
 
-      # Expose overlay scripts for standalone building
-      # e.g., nix build .#nixosConfigurations.rock5c_minimal.config.system.build.nix-overlay-enable
-      system.build = let
+      # Service to mount overlay and configure nix-daemon at boot
+      systemd.services.nix-overlay-store = let
         overlayScripts = pkgs.nix-overlay-scripts {
           mountPoint = cfg.overlayStore.mountPoint;
           inherit upperLayer workDir buildDir overlayStoreUrl;
           cacheDir = "${cfg.overlayStore.mountPoint}/cache";
+          lowerStoreDev = "/dev/disk/by-label/NIXOS_SD";
         };
       in {
-        inherit (overlayScripts) nix-overlay-enable nix-overlay-disable nix-overlay-status;
-      };
-
-      # Setup service runs at boot - defaults to local store, user enables overlay manually
-      # This ensures system always boots to a known-good state
-      systemd.services.nix-overlay-store-setup = {
-        description = "Initialize Nix store environment (defaults to local)";
+        description = "Mount Nix overlay store on SSD";
         wantedBy = [ "multi-user.target" ];
         before = [ "nix-daemon.service" "nix-daemon.socket" ];
-        after = [ "local-fs.target" ];
+        after = [
+          "local-fs.target"
+          "${utils.escapeSystemdPath cfg.overlayStore.mountPoint}.mount"
+          "${utils.escapeSystemdPath upperLayer}.mount"
+          "${utils.escapeSystemdPath buildDir}.mount"
+        ];
+        wants = [
+          "${utils.escapeSystemdPath cfg.overlayStore.mountPoint}.mount"
+          "${utils.escapeSystemdPath upperLayer}.mount"
+          "${utils.escapeSystemdPath buildDir}.mount"
+        ];
 
         unitConfig = {
           DefaultDependencies = false;
+          ConditionPathIsMountPoint = "${upperLayer}";
         };
 
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          ExecStart = "${overlayScripts.nix-overlay-setup}/bin/nix-overlay-setup";
         };
-
-        script = ''
-          STATE_FILE="/run/nix-overlay-store.mode"
-
-          # Default to local store on boot for safety
-          echo "local" > "$STATE_FILE"
-
-          echo "Nix store initialized in local mode"
-          echo "Run 'nix-overlay-enable' to enable SSD overlay"
-        '';
       };
 
-      # Cleanup service for shutdown
+      # Cleanup on shutdown
       systemd.services.nix-overlay-store-cleanup = {
         description = "Cleanup Nix overlay store on shutdown";
         wantedBy = [ "multi-user.target" ];
@@ -280,20 +272,18 @@ in
           ExecStop = "${pkgs.bash}/bin/bash -c 'findmnt -n -t overlay /nix/store && umount /nix/store || true'";
         };
 
-        script = "true";  # No-op on start
+        script = "true";
       };
 
-      # nix-daemon depends on setup service (wants, not requires, for graceful degradation)
-      # When overlay is enabled, a drop-in unit overrides ExecStart to use a wrapper script
-      # that sets TMPDIR and NIX_CONFIG with the overlay store configuration
+      # nix-daemon depends on overlay setup
       systemd.services.nix-daemon = {
-        after = [ "nix-overlay-store-setup.service" ];
-        wants = [ "nix-overlay-store-setup.service" ];
+        after = [ "nix-overlay-store.service" ];
+        wants = [ "nix-overlay-store.service" ];
       };
 
       systemd.sockets.nix-daemon = {
-        after = [ "nix-overlay-store-setup.service" ];
-        wants = [ "nix-overlay-store-setup.service" ];
+        after = [ "nix-overlay-store.service" ];
+        wants = [ "nix-overlay-store.service" ];
       };
 
       # Set XDG_CACHE_HOME dynamically based on SSD availability
