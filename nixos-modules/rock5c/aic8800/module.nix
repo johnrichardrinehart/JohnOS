@@ -16,6 +16,7 @@ in
   config = lib.mkIf cfg.enable {
     boot.extraModprobeConfig = ''
       options aic_load_fw aic_fw_path="${aic8800Src}/src/USB/driver_fw/fw/aic8800D80"
+      options aic8800_fdrv wifi_mac_addr="88:00:03:00:10:55"
     '';
 
     nixpkgs.overlays = [
