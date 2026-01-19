@@ -169,7 +169,7 @@ in
         description = "Mount Nix SSD if available";
         wantedBy = [ "multi-user.target" ];
         after = [ "local-fs.target" ];
-        path = [ pkgs.util-linux pkgs.coreutils pkgs.btrfs-progs ];
+        path = [ pkgs.util-linux pkgs.coreutils pkgs.btrfs-progs pkgs.lvm2 ];
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
@@ -184,6 +184,11 @@ in
         };
         script = ''
           # No set -e: we handle all errors explicitly and always exit 0
+
+          # Try to activate LVM VG in degraded mode (for when NAS disks are unavailable)
+          # This allows the nix_ssd LV to be activated even if the NAS storage PV is missing
+          echo "Attempting to activate LVM VG 'nas' in degraded mode..."
+          vgchange -ay --activationmode degraded nas 2>/dev/null || true
 
           # Check if device exists
           if [ ! -e "${device}" ]; then
