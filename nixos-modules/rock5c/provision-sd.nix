@@ -9,25 +9,33 @@ pkgs.writeShellApplication {
     e2fsprogs
     parted
     age
+    coreutils
+    nix
   ];
 
   text = ''
     set -euo pipefail
 
     usage() {
-      echo "Usage: provision-sd <block-device>"
+      echo "Usage: provision-sd <block-device> [sd-image]"
       echo ""
       echo "Provision a Rock 5C SD card:"
-      echo "  1. Resize the first partition to fill the disk"
-      echo "  2. Optionally copy an age secret key to /boot/age.secret"
+      echo "  1. Write the SD image to the block device"
+      echo "  2. Resize the first partition to fill the disk"
+      echo "  3. Optionally copy an age secret key to /boot/age.secret"
+      echo ""
+      echo "Arguments:"
+      echo "  block-device  Target device (e.g., /dev/sda)"
+      echo "  sd-image      Path to SD image (default: builds from flake)"
       echo ""
       echo "The partition must start at sector 32768 (0x8000) as per the sdImage layout."
       echo ""
       echo "Example: provision-sd /dev/sda"
+      echo "         provision-sd /dev/sda ./my-image.img"
       exit 1
     }
 
-    if [ $# -ne 1 ]; then
+    if [ $# -lt 1 ] || [ $# -gt 2 ]; then
       usage
     fi
 
@@ -38,6 +46,51 @@ pkgs.writeShellApplication {
       exit 1
     fi
 
+    # Find SD image
+    if [ $# -eq 2 ]; then
+      IMAGE="''$2"
+      if [ ! -f "''$IMAGE" ]; then
+        echo "Error: ''$IMAGE does not exist or is not a file"
+        exit 1
+      fi
+    else
+      echo "==> Building SD image..."
+      IMAGE=$(nix build .#nixosConfigurations.rock5c_minimal.config.system.build.sdImage --print-out-paths --no-link)
+      if [ ! -f "''$IMAGE" ]; then
+        echo "Error: Build did not produce an image file"
+        exit 1
+      fi
+      echo "    Built: ''$IMAGE"
+    fi
+
+    IMAGE_SIZE=$(stat -c%s "''$IMAGE")
+    IMAGE_SIZE_HUMAN=$(numfmt --to=iec-i --suffix=B "''$IMAGE_SIZE")
+
+    echo "==> Provisioning Rock 5C SD card"
+    echo "    Device: ''$DEVICE"
+    echo "    Image:  ''$IMAGE (''$IMAGE_SIZE_HUMAN)"
+    echo ""
+    echo "    WARNING: This will ERASE ALL DATA on ''$DEVICE!"
+    echo ""
+    read -rp "Continue? [y/N] " confirm
+    if [ "''$confirm" != "y" ] && [ "''$confirm" != "Y" ]; then
+      echo "Aborted."
+      exit 0
+    fi
+
+    # Write the image
+    echo ""
+    echo "==> Writing SD image to ''$DEVICE..."
+    dd if="''$IMAGE" of="''$DEVICE" bs=4M conv=fsync status=progress
+
+    # Force kernel to re-read partition table
+    echo ""
+    echo "==> Re-reading partition table..."
+    sync
+    partprobe "''$DEVICE" || blockdev --rereadpt "''$DEVICE" || true
+    sleep 2
+
+    # Find partition
     PART="''${DEVICE}1"
     if [ ! -b "''$PART" ]; then
       # Handle nvme style naming (nvme0n1p1)
@@ -48,19 +101,10 @@ pkgs.writeShellApplication {
       fi
     fi
 
-    echo "==> Provisioning Rock 5C SD card on ''$DEVICE"
-    echo "    Partition ''$PART will be expanded to fill the disk"
-    echo ""
-    read -rp "Continue? [y/N] " confirm
-    if [ "''$confirm" != "y" ] && [ "''$confirm" != "Y" ]; then
-      echo "Aborted."
-      exit 0
-    fi
-
     # Delete and recreate partition 1 starting at sector 32768
     # This preserves data since only the end sector changes
     echo ""
-    echo "==> Recreating partition with start sector 32768..."
+    echo "==> Resizing partition to fill disk..."
     sfdisk --delete "''$DEVICE" 1
     echo "32768,,L,*" | sfdisk --append "''$DEVICE"
 
