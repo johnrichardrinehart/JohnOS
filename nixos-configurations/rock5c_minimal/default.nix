@@ -2,18 +2,20 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 {
+  imports = [
+    inputs.sops-nix.nixosModules.default
+    ./swap.nix
+    ./tmpfs.nix
+  ];
+
   # just for passing literal values to imported modules
   system.build.literals = {
     secondsToWaitForNAS = 10;
   };
-
-  imports = [
-    ./swap.nix
-    ./tmpfs.nix
-  ];
 
   nixpkgs.overlays = [
     (final: prev: {
@@ -167,4 +169,38 @@
   };
 
   nix.package = pkgs.nixVersions.nix_2_32;
+
+  # SOPS configuration - key is manually provisioned to /boot/age.secret before first boot
+  sops.age.keyFile = "/boot/age.secret";
+  sops.defaultSopsFile = ./secrets.yaml;
+  sops.secrets.wifi-ssid = { };
+  sops.secrets.wifi-psk = { };
+
+  # Copy WiFi secret to iwd config directory with SSID-based filename
+  systemd.services.iwd-wifi-secret = {
+    description = "Set up iwd WiFi credentials from sops secrets";
+    wantedBy = [ "multi-user.target" ];
+    before = [ "iwd.service" ];
+    script = ''
+      # Wait for secrets to be available (sops-nix decrypts them at activation)
+      for i in $(seq 1 30); do
+        [ -f /run/secrets/wifi-ssid ] && [ -f /run/secrets/wifi-psk ] && break
+        sleep 1
+      done
+
+      if [ ! -f /run/secrets/wifi-ssid ] || [ ! -f /run/secrets/wifi-psk ]; then
+        echo "WiFi secrets not found, skipping"
+        exit 0
+      fi
+
+      SSID=$(cat /run/secrets/wifi-ssid)
+      mkdir -p /var/lib/iwd
+      cp /run/secrets/wifi-psk "/var/lib/iwd/$SSID.psk"
+      chmod 600 "/var/lib/iwd/$SSID.psk"
+    '';
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+  };
 }
