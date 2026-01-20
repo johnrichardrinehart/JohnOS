@@ -230,10 +230,15 @@ in
           fi
 
           if mountpoint -q "${storeDir}" 2>/dev/null; then
-            mkdir -p "${storeDir}/nix/store" "${storeDir}/nix/var/nix/db" "${storeDir}/nix/var/log/nix" || true
-            chown root:ssdstore "${storeDir}/nix/store" || true
-            chmod 1775 "${storeDir}/nix/store" || true
+            # Store directory is the mount point itself
+            chown root:ssdstore "${storeDir}" || true
+            chmod 1775 "${storeDir}" || true
           fi
+
+          # Set up state and log directories (on base SSD mount, not store subvolume)
+          mkdir -p "${ssdMount}/var/nix/profiles" "${ssdMount}/var/nix/db" "${ssdMount}/var/log/nix" || true
+          chown -R root:ssdstore "${ssdMount}/var" || true
+          chmod -R g+w "${ssdMount}/var" || true
 
           # Write nix-daemon environment file if build dir is available
           if mountpoint -q "${buildDir}" 2>/dev/null; then
@@ -251,7 +256,7 @@ in
         "-%S/nix-daemon-ssd.env"
       ];
 
-      # Environment for configured users (XDG_CACHE_HOME + independent store with system store as substituter)
+      # Environment for configured users (Nix store, state, cache on SSD)
       # Only activates if SSD is actually mounted and not running as a systemd service
       environment.extraInit = let
         userList = lib.concatStringsSep "|" cfg.ssdStore.users;
@@ -260,12 +265,10 @@ in
         if [ -z "''${INVOCATION_ID:-}" ] && mountpoint -q "${ssdMount}" 2>/dev/null; then
           case "$USER" in
             ${userList})
-              export XDG_CACHE_HOME="${cacheDir}/$USER"
-              export NIX_STORE_DIR="${storeDir}/nix/store"
-              export NIX_STATE_DIR="${storeDir}/nix/var/nix"
-              export NIX_LOG_DIR="${storeDir}/nix/var/log/nix"
-              # Use system store as substituter so builds can copy from /nix/store
-              export NIX_CONFIG="extra-substituters = /nix/store"
+              export NIX_STORE_DIR="${storeDir}"
+              export NIX_STATE_DIR="${ssdMount}/var/nix"
+              export NIX_LOG_DIR="${ssdMount}/var/log/nix"
+              export NIX_CACHE_HOME="${cacheDir}/$USER"
               ;;
           esac
         fi
