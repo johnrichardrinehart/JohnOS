@@ -179,7 +179,7 @@ in
             umount "${cacheDir}" 2>/dev/null || true
             umount "${buildDir}" 2>/dev/null || true
             umount "${ssdMount}" 2>/dev/null || true
-            rm -f /run/nix/ssd.conf
+            rm -f /run/nix/ssd.conf /run/nix/ssd.env
           '';
         };
         script = ''
@@ -235,6 +235,9 @@ in
           mkdir -p /run/nix
           echo "build-dir = ${buildDir}" > /run/nix/ssd.conf
 
+          # Write environment file for nix-daemon TMPDIR
+          echo "TMPDIR=${buildDir}" > /run/nix/ssd.env
+
           echo "SSD setup complete"
         '';
       };
@@ -245,9 +248,11 @@ in
       '';
 
       # nix-daemon waits for SSD mount to complete (success or failure) before starting
+      # Uses SSD for TMPDIR if available (env file is optional with leading -)
       systemd.services.nix-daemon = {
         after = [ "nix-ssd-mount.service" ];
         wants = [ "nix-ssd-mount.service" ];
+        serviceConfig.EnvironmentFile = [ "-/run/nix/ssd.env" ];
       };
 
       # Environment for configured users (Nix cache on SSD)
