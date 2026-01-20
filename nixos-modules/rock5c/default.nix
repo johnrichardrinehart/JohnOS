@@ -161,7 +161,6 @@ in
       ssdMount = cfg.ssdStore.mountPoint;
       buildDir = "${ssdMount}/build";
       cacheDir = "${ssdMount}/cache";
-      storeDir = "${ssdMount}/store";
       device = cfg.ssdStore.device;
     in {
       # Service to mount SSD if available - runs late, never fails, doesn't block boot
@@ -175,7 +174,6 @@ in
           RemainAfterExit = true;
           ExecStop = pkgs.writeShellScript "nix-ssd-unmount" ''
             # Unmount in reverse order, ignore failures
-            umount "${storeDir}" 2>/dev/null || true
             umount "${cacheDir}" 2>/dev/null || true
             umount "${buildDir}" 2>/dev/null || true
             umount "${ssdMount}" 2>/dev/null || true
@@ -206,16 +204,15 @@ in
           fi
 
           # Create subdirectory mount points (inside the mounted btrfs)
-          mkdir -p "${buildDir}" "${cacheDir}" "${storeDir}" || true
+          mkdir -p "${buildDir}" "${cacheDir}" || true
 
           # Mount subvolumes - continue even if some fail
           mount -t btrfs -o subvol=@build,compress=zstd,noatime "${device}" "${buildDir}" || echo "Warning: failed to mount @build"
           mount -t btrfs -o subvol=@cache,compress=zstd,noatime "${device}" "${cacheDir}" || echo "Warning: failed to mount @cache"
-          mount -t btrfs -o subvol=@store,compress=zstd,noatime "${device}" "${storeDir}" || echo "Warning: failed to mount @store"
 
           # Set up directory permissions if mounts succeeded
           if mountpoint -q "${buildDir}" 2>/dev/null; then
-            chown root:ssdstore "${buildDir}" || true
+            chown root:nixbld "${buildDir}" || true
             chmod 1775 "${buildDir}" || true
           fi
 
@@ -228,17 +225,6 @@ in
               chmod 0755 "${cacheDir}/${user}" || true
             '') cfg.ssdStore.users}
           fi
-
-          if mountpoint -q "${storeDir}" 2>/dev/null; then
-            # Store directory is the mount point itself
-            chown root:ssdstore "${storeDir}" || true
-            chmod 1775 "${storeDir}" || true
-          fi
-
-          # Set up state and log directories (on base SSD mount, not store subvolume)
-          mkdir -p "${ssdMount}/var/nix/profiles" "${ssdMount}/var/nix/db" "${ssdMount}/var/log/nix" || true
-          chown -R root:ssdstore "${ssdMount}/var" || true
-          chmod -R g+w "${ssdMount}/var" || true
 
           # Write nix-daemon environment file if build dir is available
           if mountpoint -q "${buildDir}" 2>/dev/null; then
@@ -256,44 +242,19 @@ in
         "-%S/nix-daemon-ssd.env"
       ];
 
-      # Environment for configured users (Nix store, state, cache on SSD)
-      # Only activates if SSD is actually mounted and not running as a systemd service
+      # Environment for configured users (Nix cache on SSD)
+      # Only activates if SSD is actually mounted
       environment.extraInit = let
         userList = lib.concatStringsSep "|" cfg.ssdStore.users;
       in ''
-        # Skip if running as a systemd service (home-manager activation sets these empty)
-        if [ -z "''${INVOCATION_ID:-}" ] && mountpoint -q "${ssdMount}" 2>/dev/null; then
+        if mountpoint -q "${ssdMount}" 2>/dev/null; then
           case "$USER" in
             ${userList})
-              export NIX_STORE_DIR="${storeDir}"
-              export NIX_STATE_DIR="${ssdMount}/var/nix"
-              export NIX_LOG_DIR="${ssdMount}/var/log/nix"
               export NIX_CACHE_HOME="${cacheDir}/$USER"
               ;;
           esac
         fi
       '';
     }))
-
-    # home-manager should use system store, not user's SSD store
-    (lib.mkIf cfg.ssdStore.enable {
-      systemd.services = lib.listToAttrs (map (user: {
-        name = "home-manager-${user}";
-        value = {
-          environment = {
-            NIX_STORE_DIR = "";
-            NIX_STATE_DIR = "";
-            NIX_LOG_DIR = "";
-          };
-        };
-      }) cfg.ssdStore.users);
-
-      # Create ssdstore group and add configured users
-      users.groups.ssdstore = {};
-      users.users = lib.listToAttrs (map (user: {
-        name = user;
-        value = { extraGroups = [ "ssdstore" ]; };
-      }) cfg.ssdStore.users);
-    })
   ];
 }
