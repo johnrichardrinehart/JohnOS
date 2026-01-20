@@ -196,14 +196,17 @@ in
             exit 0
           fi
 
-          # Create mount points
-          mkdir -p "${ssdMount}" "${buildDir}" "${cacheDir}" "${storeDir}" || exit 0
+          # Create base mount point only
+          mkdir -p "${ssdMount}" || exit 0
 
           # Mount base volume - if this fails, skip everything
           if ! mount -t btrfs -o subvol=/,compress=zstd,noatime "${device}" "${ssdMount}"; then
             echo "Failed to mount base volume, skipping SSD setup"
             exit 0
           fi
+
+          # Create subdirectory mount points (inside the mounted btrfs)
+          mkdir -p "${buildDir}" "${cacheDir}" "${storeDir}" || true
 
           # Mount subvolumes - continue even if some fail
           mount -t btrfs -o subvol=@build,compress=zstd,noatime "${device}" "${buildDir}" || echo "Warning: failed to mount @build"
