@@ -160,7 +160,7 @@ in
     (lib.mkIf cfg.ssdStore.enable (let
       ssdMount = cfg.ssdStore.mountPoint;
       buildDir = "${ssdMount}/build";
-      cacheDir = "${ssdMount}/cache";
+      cacheDir = "${ssdMount}/nix-cache";
       device = cfg.ssdStore.device;
     in {
       # Service to mount SSD if available - runs late, never fails, doesn't block boot
