@@ -163,21 +163,23 @@ in
       cacheDir = "${ssdMount}/nix-cache";
       device = cfg.ssdStore.device;
     in {
-      # Service to mount SSD if available - runs late, never fails, doesn't block boot
+      # Service to mount SSD if available - runs early, never fails, has 10s timeout
       systemd.services.nix-ssd-mount = {
         description = "Mount Nix SSD if available";
         wantedBy = [ "multi-user.target" ];
+        before = [ "nix-daemon.service" ];
         after = [ "local-fs.target" ];
         path = [ pkgs.util-linux pkgs.coreutils pkgs.btrfs-progs pkgs.lvm2 ];
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          TimeoutStartSec = "10s";
           ExecStop = pkgs.writeShellScript "nix-ssd-unmount" ''
             # Unmount in reverse order, ignore failures
             umount "${cacheDir}" 2>/dev/null || true
             umount "${buildDir}" 2>/dev/null || true
             umount "${ssdMount}" 2>/dev/null || true
-            rm -f /var/lib/nix-daemon-ssd.env
+            rm -f /run/nix/ssd.conf
           '';
         };
         script = ''
@@ -228,9 +230,9 @@ in
 
           # Write nix config snippet if build dir is available
           if mountpoint -q "${buildDir}" 2>/dev/null; then
-            echo "build-dir = ${buildDir}" > /etc/nix/ssd.conf || true
+            echo "build-dir = ${buildDir}" > /run/nix/ssd.conf || true
           else
-            rm -f /etc/nix/ssd.conf || true
+            rm -f /run/nix/ssd.conf || true
           fi
 
           echo "SSD setup complete"
@@ -239,8 +241,14 @@ in
 
       # Include SSD-specific nix config if present
       nix.extraOptions = ''
-        !include /etc/nix/ssd.conf
+        !include /run/nix/ssd.conf
       '';
+
+      # nix-daemon waits for SSD mount to complete (success or failure) before starting
+      systemd.services.nix-daemon = {
+        after = [ "nix-ssd-mount.service" ];
+        wants = [ "nix-ssd-mount.service" ];
+      };
 
       # Environment for configured users (Nix cache on SSD)
       # Only activates if SSD is actually mounted
