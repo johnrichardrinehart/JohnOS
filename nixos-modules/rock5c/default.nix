@@ -163,7 +163,7 @@ in
       cacheDir = "${ssdMount}/nix-cache";
       device = cfg.ssdStore.device;
     in {
-      # Service to mount SSD if available - runs early, never fails, has 10s timeout
+      # Service to mount SSD if available - runs early, 10s timeout, nix-daemon uses soft dependency
       systemd.services.nix-ssd-mount = {
         description = "Mount Nix SSD if available";
         wantedBy = [ "multi-user.target" ];
