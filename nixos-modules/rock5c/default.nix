@@ -183,7 +183,7 @@ in
           '';
         };
         script = ''
-          # No set -e: we handle all errors explicitly and always exit 0
+          set -e
 
           # Try to activate LVM VG in degraded mode (for when NAS disks are unavailable)
           # This allows the nix_ssd LV to be activated even if the NAS storage PV is missing
@@ -192,48 +192,48 @@ in
 
           # Check if device exists
           if [ ! -e "${device}" ]; then
-            echo "SSD device ${device} not found, skipping"
-            exit 0
+            echo "SSD device ${device} not found"
+            exit 1
           fi
 
           # Create base mount point only
-          mkdir -p "${ssdMount}" || exit 0
+          mkdir -p "${ssdMount}"
 
-          # Mount base volume - if this fails, skip everything
+          # Mount base volume
           if ! mount -t btrfs -o subvol=/,compress=zstd,noatime "${device}" "${ssdMount}"; then
-            echo "Failed to mount base volume, skipping SSD setup"
-            exit 0
+            echo "Failed to mount base volume"
+            exit 1
           fi
 
           # Create subdirectory mount points (inside the mounted btrfs)
-          mkdir -p "${buildDir}" "${cacheDir}" || true
+          mkdir -p "${buildDir}" "${cacheDir}"
 
-          # Mount subvolumes - continue even if some fail
-          mount -t btrfs -o subvol=@build,compress=zstd,noatime "${device}" "${buildDir}" || echo "Warning: failed to mount @build"
-          mount -t btrfs -o subvol=@cache,compress=zstd,noatime "${device}" "${cacheDir}" || echo "Warning: failed to mount @cache"
-
-          # Set up directory permissions if mounts succeeded
-          if mountpoint -q "${buildDir}" 2>/dev/null; then
-            chown root:nixbld "${buildDir}" || true
-            chmod 1775 "${buildDir}" || true
+          # Mount subvolumes
+          if ! mount -t btrfs -o subvol=@build,compress=zstd,noatime "${device}" "${buildDir}"; then
+            echo "Failed to mount @build subvolume"
+            exit 1
           fi
 
-          if mountpoint -q "${cacheDir}" 2>/dev/null; then
-            chmod 0755 "${cacheDir}" || true
-            # Create per-user cache directories
-            ${lib.concatMapStringsSep "\n" (user: ''
-              mkdir -p "${cacheDir}/${user}" || true
-              chown ${user}:${user} "${cacheDir}/${user}" || true
-              chmod 0755 "${cacheDir}/${user}" || true
-            '') cfg.ssdStore.users}
+          if ! mount -t btrfs -o subvol=@cache,compress=zstd,noatime "${device}" "${cacheDir}"; then
+            echo "Failed to mount @cache subvolume"
+            exit 1
           fi
 
-          # Write nix config snippet if build dir is available
-          if mountpoint -q "${buildDir}" 2>/dev/null; then
-            echo "build-dir = ${buildDir}" > /run/nix/ssd.conf || true
-          else
-            rm -f /run/nix/ssd.conf || true
-          fi
+          # Set up directory permissions
+          chown root:nixbld "${buildDir}"
+          chmod 1775 "${buildDir}"
+
+          chmod 0755 "${cacheDir}"
+          # Create per-user cache directories
+          ${lib.concatMapStringsSep "\n" (user: ''
+            mkdir -p "${cacheDir}/${user}"
+            chown ${user}:${user} "${cacheDir}/${user}"
+            chmod 0755 "${cacheDir}/${user}"
+          '') cfg.ssdStore.users}
+
+          # Write nix config snippet
+          mkdir -p /run/nix
+          echo "build-dir = ${buildDir}" > /run/nix/ssd.conf
 
           echo "SSD setup complete"
         '';
