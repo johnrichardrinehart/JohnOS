@@ -252,11 +252,12 @@ in
       ];
 
       # Environment for configured users (XDG_CACHE_HOME + independent store with system store as substituter)
-      # Only activates if SSD is actually mounted
+      # Only activates if SSD is actually mounted and not running as a systemd service
       environment.extraInit = let
         userList = lib.concatStringsSep "|" cfg.ssdStore.users;
       in ''
-        if mountpoint -q "${ssdMount}" 2>/dev/null; then
+        # Skip if running as a systemd service (home-manager activation sets these empty)
+        if [ -z "''${INVOCATION_ID:-}" ] && mountpoint -q "${ssdMount}" 2>/dev/null; then
           case "$USER" in
             ${userList})
               export XDG_CACHE_HOME="${cacheDir}/$USER"
@@ -270,5 +271,19 @@ in
         fi
       '';
     }))
+
+    # home-manager should use system store, not user's SSD store
+    (lib.mkIf cfg.ssdStore.enable {
+      systemd.services = lib.listToAttrs (map (user: {
+        name = "home-manager-${user}";
+        value = {
+          environment = {
+            NIX_STORE_DIR = "";
+            NIX_STATE_DIR = "";
+            NIX_LOG_DIR = "";
+          };
+        };
+      }) cfg.ssdStore.users);
+    })
   ];
 }
