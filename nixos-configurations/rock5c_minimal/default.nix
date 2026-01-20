@@ -47,6 +47,9 @@
 
   boot.consoleLogLevel = 7;
 
+  # Disable NCQ to stabilize flaky Penta SATA HAT PCIe link
+  boot.kernelParams = [ "libata.force=noncq" ];
+
   fileSystems = {
     "/" = {
       device = "/dev/disk/by-label/NIXOS_SD";
