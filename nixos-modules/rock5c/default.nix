@@ -215,7 +215,7 @@ in
 
           # Set up directory permissions if mounts succeeded
           if mountpoint -q "${buildDir}" 2>/dev/null; then
-            chown root:nixbld "${buildDir}" || true
+            chown root:ssdstore "${buildDir}" || true
             chmod 1775 "${buildDir}" || true
           fi
 
@@ -231,7 +231,7 @@ in
 
           if mountpoint -q "${storeDir}" 2>/dev/null; then
             mkdir -p "${storeDir}/nix/store" "${storeDir}/nix/var/nix/db" "${storeDir}/nix/var/log/nix" || true
-            chown root:nixbld "${storeDir}/nix/store" || true
+            chown root:ssdstore "${storeDir}/nix/store" || true
             chmod 1775 "${storeDir}/nix/store" || true
           fi
 
@@ -283,6 +283,13 @@ in
             NIX_LOG_DIR = "";
           };
         };
+      }) cfg.ssdStore.users);
+
+      # Create ssdstore group and add configured users
+      users.groups.ssdstore = {};
+      users.users = lib.listToAttrs (map (user: {
+        name = user;
+        value = { extraGroups = [ "ssdstore" ]; };
       }) cfg.ssdStore.users);
     })
   ];
