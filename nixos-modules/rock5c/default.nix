@@ -212,7 +212,7 @@ in
 
           # Set up directory permissions if mounts succeeded
           if mountpoint -q "${buildDir}" 2>/dev/null; then
-            chown root:ssdbld "${buildDir}" || true
+            chown root:nixbld "${buildDir}" || true
             chmod 1775 "${buildDir}" || true
           fi
 
@@ -255,17 +255,6 @@ in
           esac
         fi
       '';
-
-      # Create ssdbld group for SSD build directory access
-      users.groups.ssdbld = {};
-
-      # Add nix build users to ssdbld group so daemon can write to SSD build dir
-      users.users = lib.listToAttrs (
-        map (n: {
-          name = "nixbld${toString n}";
-          value = { extraGroups = [ "ssdbld" ]; };
-        }) (lib.range 1 32)
-      );
     }))
   ];
 }
