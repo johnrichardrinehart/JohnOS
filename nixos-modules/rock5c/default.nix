@@ -226,21 +226,21 @@ in
             '') cfg.ssdStore.users}
           fi
 
-          # Write nix-daemon environment file if build dir is available
+          # Write nix config snippet if build dir is available
           if mountpoint -q "${buildDir}" 2>/dev/null; then
-            echo "TMPDIR=${buildDir}" > /var/lib/nix-daemon-ssd.env || true
+            echo "build-dir = ${buildDir}" > /etc/nix/ssd.conf || true
           else
-            rm -f /var/lib/nix-daemon-ssd.env || true
+            rm -f /etc/nix/ssd.conf || true
           fi
 
           echo "SSD setup complete"
         '';
       };
 
-      # nix-daemon uses SSD build dir when available (- prefix means ignore if file missing)
-      systemd.services.nix-daemon.serviceConfig.EnvironmentFile = [
-        "-%S/nix-daemon-ssd.env"
-      ];
+      # Include SSD-specific nix config if present
+      nix.extraOptions = ''
+        !include /etc/nix/ssd.conf
+      '';
 
       # Environment for configured users (Nix cache on SSD)
       # Only activates if SSD is actually mounted
