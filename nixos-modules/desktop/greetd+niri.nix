@@ -8,6 +8,10 @@
 let
   cfg = config.dev.johnrinehart.desktop.greetd_niri;
 
+  # Cursor theme settings (single source of truth)
+  xcursorTheme = "Adwaita";
+  xcursorSize = 24;
+
   # Shared PAM configuration for fingerprint + password authentication
   fprintPamConfig = ''
     # Account management
@@ -44,7 +48,11 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    environment.sessionVariables.NIXOS_OZONE_WL = "1";
+    environment.sessionVariables = {
+      NIXOS_OZONE_WL = "1";
+      XCURSOR_THEME = xcursorTheme;
+      XCURSOR_SIZE = toString xcursorSize;
+    };
 
     programs.niri.enable = true;
 
@@ -136,6 +144,7 @@ in
       in
       [
         niri-gather-windows
+        pkgs.adwaita-icon-theme # cursor theme
         pkgs.alacritty
         pkgs.brightnessctl
         pkgs.cliphist
@@ -165,6 +174,8 @@ in
         lock_command = "${lib.getExe' pkgs.systemd "loginctl"} lock-session";
         suspend = "${lib.getExe' pkgs.systemd "systemctl"} suspend-then-hibernate";
         wl-kbptr = lib.getExe pkgs.wl-kbptr;
+        xcursor_theme = xcursorTheme;
+        xcursor_size = toString xcursorSize;
       }).overrideAttrs
         (_: {
           checkPhase = null;

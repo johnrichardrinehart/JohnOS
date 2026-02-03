@@ -71,6 +71,13 @@ input {
     disable-power-key-handling
 }
 
+// Cursor theme configuration.
+// This sets XCURSOR_THEME and XCURSOR_SIZE for spawned processes.
+cursor {
+    xcursor-theme "@xcursor_theme@"
+    xcursor-size @xcursor_size@
+}
+
 // You can configure outputs by their name, which you can find
 // by running `niri msg outputs` while inside a niri instance.
 // The built-in laptop monitor is usually called "eDP-1".
