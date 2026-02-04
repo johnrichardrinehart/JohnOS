@@ -199,6 +199,19 @@
   services.tailscale.enable = true;
   networking.firewall.checkReversePath = "loose";
 
+  # WireGuard to neocache k3s server
+  networking.wg-quick.interfaces.nc = {
+    address = [ "10.100.0.10/24" ];
+    privateKeyFile = "/var/lib/wireguard/neocache-private-key";
+
+    peers = [{
+      publicKey = "Atr/U/uxf3pfLhrIFZz6SD6qxlO4GvT0kZBht+r1oEk=";  # k3s server
+      endpoint = "k8s.neocache.io:51820";
+      allowedIPs = [ "10.100.0.0/24" ];
+      persistentKeepalive = 25;
+    }];
+  };
+
   # Fix tailscaled hanging during shutdown when trying to cleanup UPnP port mappings
   # The daemon has an internal 45s watchdog timeout when closing, which blocks shutdown.
   # It tries to delete port mappings from the router, but this hangs if the network
