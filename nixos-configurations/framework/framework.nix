@@ -256,8 +256,6 @@
 
   networking.timeServers = options.networking.timeServers.default ++ [ "time.facebook.com" ];
 
-  programs.noisetorch.enable = true;
-
   networking.networkmanager.enable = true;
   systemd.services.NetworkManager-wait-online.enable = false;
 

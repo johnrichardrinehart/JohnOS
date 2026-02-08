@@ -6,6 +6,14 @@
 }:
 let
   cfg = config.dev.johnrinehart.sound;
+
+  # USB microphone identity — used to build the ALSA node name for PipeWire targeting
+  mic = {
+    manufacturer = "Samson_Technologies";
+    model = "Samson_Q9U";
+    serial = "39F22D1619113B00";
+  };
+  micNodeName = "alsa_input.usb-${mic.manufacturer}_${mic.model}_${mic.serial}-00.pro-input-0";
 in
 {
   options.dev.johnrinehart.sound = {
@@ -54,6 +62,68 @@ in
             "default.clock.min-quantum" = 256;
             "default.clock.max-quantum" = 1024;
           };
+        };
+
+        # RNNoise noise suppression — replaces NoiseTorch
+        # Targets the Samson Q9U when connected; idles silently when absent.
+        "20-noise-suppression" = {
+          "context.modules" = [
+            {
+              name = "libpipewire-module-filter-chain";
+              args = {
+                "node.description" = "Noise Canceled Microphone";
+                "media.name" = "Noise Canceled Microphone";
+                "filter.graph" = {
+                  "nodes" = [
+                    {
+                      type = "ladspa";
+                      name = "rnnoise";
+                      plugin = "${pkgs.rnnoise-plugin}/lib/ladspa/librnnoise_ladspa.so";
+                      label = "noise_suppressor_mono";
+                      control = {
+                        "VAD Threshold (%)" = 50.0;
+                      };
+                    }
+                  ];
+                };
+                "capture.props" = {
+                  "node.name" = "capture.rnnoise";
+                  "node.passive" = true;
+                  "target.object" = micNodeName;
+                  "audio.rate" = 48000;
+                };
+                "playback.props" = {
+                  "node.name" = "rnnoise_source";
+                  "node.description" = "Noise Canceled Microphone";
+                  "media.class" = "Audio/Source";
+                  "audio.rate" = 48000;
+                };
+              };
+            }
+          ];
+        };
+
+        # Loopback for hearing your own mic through headphones (via noise suppression)
+        "30-mic-monitor" = {
+          "context.modules" = [
+            {
+              name = "libpipewire-module-loopback";
+              args = {
+                "capture.props" = {
+                  "node.name" = "mic-monitor-capture";
+                  "node.description" = "Mic Monitor";
+                  "node.passive" = true;
+                  "target.object" = "rnnoise_source";
+                  "audio.position" = [ "MONO" ];
+                };
+                "playback.props" = {
+                  "node.name" = "mic-monitor-playback";
+                  "node.description" = "Mic Monitor";
+                  "audio.position" = [ "FL" "FR" ];
+                };
+              };
+            }
+          ];
         };
       };
     };
