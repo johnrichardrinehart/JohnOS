@@ -39,6 +39,10 @@
   };
 
   dev.johnrinehart.systemPackages.enable = true;
+  dev.johnrinehart.bluetooth = {
+    enable = true;
+    autoSuspend.enable = true;
+  };
 
   services.fprintd.enable = true;
 

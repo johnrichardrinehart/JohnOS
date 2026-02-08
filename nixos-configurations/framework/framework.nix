@@ -112,12 +112,6 @@
 
   security.rtkit.enable = true;
 
-  # bluetooth stuff
-  services.blueman.enable = true;
-  hardware = {
-    bluetooth.enable = true;
-  };
-
   ## Below v4l2loopback stuff stolen from https://gist.github.com/TheSirC/93130f70cc280cdcdff89faf8d4e98ab
   # Extra kernel modules
   boot.kernelPackages = pkgs.linuxPackages_latest;
