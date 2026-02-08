@@ -47,4 +47,6 @@
   services.fprintd.enable = true;
 
   dev.johnrinehart.terminal.filepicker.enable = true;
+
+  environment.systemPackages = [ pkgs.intel-gpu-tools ];
 }
