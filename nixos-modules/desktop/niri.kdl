@@ -647,6 +647,9 @@ binds {
 
     Mod+Alt+C { spawn-sh "@wl-kbptr@"; }
 
+    // Save OBS replay buffer via obs-websocket
+    Ctrl+Shift+S { spawn "@obs-cmd@" "replay" "save"; }
+
 }
 
 recent-windows {

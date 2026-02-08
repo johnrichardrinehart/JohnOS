@@ -174,6 +174,7 @@ in
         lock_command = "${lib.getExe' pkgs.systemd "loginctl"} lock-session";
         suspend = "${lib.getExe' pkgs.systemd "systemctl"} suspend-then-hibernate";
         wl-kbptr = lib.getExe pkgs.wl-kbptr;
+        obs-cmd = lib.getExe pkgs.obs-cmd;
         xcursor_theme = xcursorTheme;
         xcursor_size = toString xcursorSize;
       }).overrideAttrs

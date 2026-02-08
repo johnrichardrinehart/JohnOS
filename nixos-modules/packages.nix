@@ -71,6 +71,7 @@ in
       pkgs.unzip
       # communication tools
       pkgs.obs-studio
+      pkgs.obs-cmd
       # multimedia tools
       #      pkgs.pulseaudioFull
       pkgs.playerctl
