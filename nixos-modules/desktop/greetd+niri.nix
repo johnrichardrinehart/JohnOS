@@ -12,6 +12,10 @@ let
   xcursorTheme = "Adwaita";
   xcursorSize = 24;
 
+  niri-screenshot = pkgs.callPackage ./niri-screenshot.nix {
+    niri = config.programs.niri.package;
+  };
+
   # Shared PAM configuration for fingerprint + password authentication
   fprintPamConfig = ''
     # Account management
@@ -144,6 +148,7 @@ in
       in
       [
         niri-gather-windows
+        niri-screenshot
         pkgs.adwaita-icon-theme # cursor theme
         pkgs.alacritty
         pkgs.brightnessctl
@@ -174,6 +179,7 @@ in
         lock_command = "${lib.getExe' pkgs.systemd "loginctl"} lock-session";
         suspend = "${lib.getExe' pkgs.systemd "systemctl"} suspend-then-hibernate";
         wl-kbptr = lib.getExe pkgs.wl-kbptr;
+        niri_screenshot = lib.getExe niri-screenshot;
         obs-cmd = lib.getExe pkgs.obs-cmd;
         xcursor_theme = xcursorTheme;
         xcursor_size = toString xcursorSize;
