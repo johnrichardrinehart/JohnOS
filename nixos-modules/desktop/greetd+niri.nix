@@ -132,6 +132,9 @@ in
     users.users.john.extraGroups = [ "seat" ];
 
     services.greetd.enable = true;
+    # Raise the fd soft limit so children (waybar, etc.) don't hit the
+    # default 1024 and fail with "Too many open files" on boot.
+    systemd.services.greetd.serviceConfig.LimitNOFILE = "524288";
     services.greetd.settings.default_session = {
       command = "${lib.getExe' config.programs.niri.package "niri-session"}";
       user = "john";
