@@ -262,6 +262,10 @@ in
         enable_audio_bell no
         scrollback_lines 250000
 
+        # Use -r instead of default -R so less passes all escape sequences through,
+        # preventing oh-my-posh prompt garbling in scrollback.
+        scrollback_pager less --raw-control-chars +INPUT_LINE_NUMBER
+
         # Send a newline literal for claude-code CLI
         # See: https://github.com/anthropics/claude-code/issues/3853
         map shift+enter send_text all \n
