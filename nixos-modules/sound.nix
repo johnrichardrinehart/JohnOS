@@ -128,13 +128,22 @@ in
       };
     };
 
+    # Allow the systemd user manager to grant realtime priority and memlock
+    # to child services. user@.service doesn't go through PAM, so the
+    # security.pam.loginLimits for @audio don't apply here.
+    systemd.services."user@".serviceConfig = {
+      LimitRTPRIO = 95;
+      LimitNICE = "-15";
+      LimitMEMLOCK = "infinity";
+    };
+
     # Harden PipeWire against swap and resource starvation
     systemd.user.services.pipewire.serviceConfig = lib.mkMerge [
       {
         LimitMEMLOCK = "infinity";
         LimitRTPRIO = 95;
         OOMScoreAdjust = -500;
-        IOSchedulingClass = "realtime";
+        IOSchedulingClass = "best-effort";
         IOSchedulingPriority = 0;
         Nice = -11;
         MemorySwapMax = "0";
@@ -149,7 +158,7 @@ in
       LimitMEMLOCK = "infinity";
       LimitRTPRIO = 95;
       OOMScoreAdjust = -500;
-      IOSchedulingClass = "realtime";
+      IOSchedulingClass = "best-effort";
       IOSchedulingPriority = 0;
       Nice = -11;
       MemorySwapMax = "0";
