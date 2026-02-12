@@ -115,6 +115,23 @@
   ## Below v4l2loopback stuff stolen from https://gist.github.com/TheSirC/93130f70cc280cdcdff89faf8d4e98ab
   # Extra kernel modules
   boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPatches = [
+    {
+      # On MST resume failure for TC (Thunderbolt) ports, schedule deferred
+      # hotplug detection so the port gets re-probed once the TB tunnel is up.
+      name = "i915-mst-resume-tc-hotplug";
+      patch = ./i915-mst-resume-tc-hotplug.patch;
+    }
+    {
+      # On MST resume success for TC ports, schedule a delayed (3s) re-detection.
+      # The initial synchronous probe may read incomplete EDID for downstream MST
+      # devices (daisy-chained monitors) because their DP link hasn't stabilized.
+      # The delayed re-detection gives them time, then re-reads EDID.
+      # Depends on: i915-mst-resume-tc-hotplug (patches the same function).
+      name = "i915-mst-resume-tc-delayed-redetect";
+      patch = ./i915-mst-resume-tc-delayed-redetect.patch;
+    }
+  ];
   boot.extraModulePackages = [ config.boot.kernelPackages.v4l2loopback ];
 
   # Fix Thunderbolt DisplayPort tunnel failures during suspend/hibernate.
@@ -295,6 +312,17 @@
   };
 
   services.getty.loginOptions = "-- \\u TMOUT=10";
+
+  # Fix Unknown MST monitor positioning after hibernate resume
+  # The Dell U2520D (25", 2560x1440) via Thunderbolt daisy-chain often loses EDID
+  dev.johnrinehart.niri-output-fixup = {
+    enable = true;
+    expectedOutputs = [
+      { width = 3840; height = 2160; x = 0;    y = 0;    }  # Dell U3225QE (32")
+      { width = 2560; height = 1440; x = 3840; y = 360;  }  # Dell U2520D (25") via MST
+      { width = 2256; height = 1504; x = 3840; y = 1800; }  # eDP-1 (laptop)
+    ];
+  };
 
   dev.johnrinehart.sound.enable = true;
 

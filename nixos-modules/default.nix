@@ -12,6 +12,7 @@
     ./laptop.nix
     ./locale.nix
     ./network.nix
+    ./niri-output-fixup.nix
     ./nix.nix
     ./packages.nix
     ./s3_mount.nix

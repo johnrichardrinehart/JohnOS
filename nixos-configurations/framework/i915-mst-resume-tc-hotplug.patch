@@ -1,0 +1,37 @@
+diff --git a/drivers/gpu/drm/i915/display/intel_dp.c b/drivers/gpu/drm/i915/display/intel_dp.c
+index 2eab591a8ef56..80b25e00ad4ce 100644
+--- a/drivers/gpu/drm/i915/display/intel_dp.c
++++ b/drivers/gpu/drm/i915/display/intel_dp.c
+@@ -6854,6 +6854,32 @@ void intel_dp_mst_resume(struct intel_display *display)
+ 		if (ret) {
+ 			intel_dp->is_mst = false;
+ 			drm_dp_mst_topology_mgr_set_mst(&intel_dp->mst.mgr, false);
++
++			/*
++			 * On TC (Thunderbolt) ports, MST resume can fail
++			 * because the DP tunnel over Thunderbolt has not been
++			 * re-established yet after hibernation. The TB
++			 * controllers may still be powering up while we
++			 * attempt the DPCD read in
++			 * drm_dp_mst_topology_mgr_resume().
++			 *
++			 * Schedule a hotplug detection event for this port so
++			 * that when detection work is enabled later in the
++			 * resume sequence, the port will be re-probed. The
++			 * existing TC port retry logic in intel_ddi_hotplug()
++			 * will retry detection up to 5 times with 1-second
++			 * delays, giving the TB tunnel time to come up.
++			 */
++			if (intel_encoder_is_tc(encoder)) {
++				drm_dbg_kms(display->drm,
++					    "[ENCODER:%d:%s] MST resume failed on TC port, "
++					    "scheduling deferred detection\n",
++					    encoder->base.base.id,
++					    encoder->base.name);
++				spin_lock_irq(&display->irq.lock);
++				display->hotplug.event_bits |= BIT(encoder->hpd_pin);
++				spin_unlock_irq(&display->irq.lock);
++			}
+ 		}
+ 	}
+ }

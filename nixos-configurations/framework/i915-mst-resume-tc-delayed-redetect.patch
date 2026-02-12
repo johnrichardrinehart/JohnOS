@@ -1,0 +1,99 @@
+diff --git a/drivers/gpu/drm/i915/display/intel_hotplug.c b/drivers/gpu/drm/i915/display/intel_hotplug.c
+index 4451a792600a0..d7a85628720eb 100644
+--- a/drivers/gpu/drm/i915/display/intel_hotplug.c
++++ b/drivers/gpu/drm/i915/display/intel_hotplug.c
+@@ -1173,6 +1173,21 @@ bool intel_hpd_schedule_detection(struct intel_display *display)
+ 	return ret;
+ }
+
++bool intel_hpd_schedule_detection_delayed(struct intel_display *display,
++					  unsigned long delay_ms)
++{
++	unsigned long flags;
++	bool ret;
++
++	spin_lock_irqsave(&display->irq.lock, flags);
++	ret = queue_delayed_detection_work(display,
++					   &display->hotplug.hotplug_work,
++					   msecs_to_jiffies(delay_ms));
++	spin_unlock_irqrestore(&display->irq.lock, flags);
++
++	return ret;
++}
++
+ static int i915_hpd_storm_ctl_show(struct seq_file *m, void *data)
+ {
+ 	struct intel_display *display = m->private;
+diff --git a/drivers/gpu/drm/i915/display/intel_hotplug.h b/drivers/gpu/drm/i915/display/intel_hotplug.h
+index edc41c9d3d65f..975d28e909b7c 100644
+--- a/drivers/gpu/drm/i915/display/intel_hotplug.h
++++ b/drivers/gpu/drm/i915/display/intel_hotplug.h
+@@ -34,5 +34,7 @@ void intel_hpd_debugfs_register(struct intel_display *display);
+ void intel_hpd_enable_detection_work(struct intel_display *display);
+ void intel_hpd_disable_detection_work(struct intel_display *display);
+ bool intel_hpd_schedule_detection(struct intel_display *display);
++bool intel_hpd_schedule_detection_delayed(struct intel_display *display,
++					  unsigned long delay_ms);
+
+ #endif /* __INTEL_HOTPLUG_H__ */
+diff --git a/drivers/gpu/drm/i915/display/intel_dp.c b/drivers/gpu/drm/i915/display/intel_dp.c
+index 80b25e00ad4ce..f41bf62de4283 100644
+--- a/drivers/gpu/drm/i915/display/intel_dp.c
++++ b/drivers/gpu/drm/i915/display/intel_dp.c
+@@ -6834,6 +6834,7 @@ void intel_dp_mst_suspend(struct intel_display *display)
+ void intel_dp_mst_resume(struct intel_display *display)
+ {
+ 	struct intel_encoder *encoder;
++	bool tc_mst_needs_delayed_detect = false;
+
+ 	if (!HAS_DISPLAY(display))
+ 		return;
+@@ -6880,6 +6881,47 @@ void intel_dp_mst_resume(struct intel_display *display)
+ 				display->hotplug.event_bits |= BIT(encoder->hpd_pin);
+ 				spin_unlock_irq(&display->irq.lock);
++				tc_mst_needs_delayed_detect = true;
+ 			}
+-		}
++		} else if (intel_encoder_is_tc(encoder)) {
++			/*
++			 * MST resume succeeded on this TC port — the
++			 * upstream DPCD was readable and the topology
++			 * probe work ran synchronously. However,
++			 * downstream MST branch devices (behind a
++			 * daisy-chain) may not have fully initialized
++			 * yet. The synchronous probe reads EDID for
++			 * downstream ports via sideband messages, which
++			 * can return incomplete data (missing
++			 * manufacturer/model/serial) if the downstream
++			 * DP link hasn't stabilized.
++			 *
++			 * Schedule both an immediate and a delayed
++			 * re-detection. The immediate one picks up any
++			 * changes from the probe. The delayed one (3s)
++			 * gives downstream devices time to fully
++			 * initialize, then re-probes to get correct EDID.
++			 */
++			drm_dbg_kms(display->drm,
++				    "[ENCODER:%d:%s] MST resume succeeded on TC port, "
++				    "scheduling delayed re-detection for downstream EDID\n",
++				    encoder->base.base.id,
++				    encoder->base.name);
++			spin_lock_irq(&display->irq.lock);
++			display->hotplug.event_bits |= BIT(encoder->hpd_pin);
++			spin_unlock_irq(&display->irq.lock);
++			tc_mst_needs_delayed_detect = true;
++		}
+ 	}
++
++	/*
++	 * For TC (Thunderbolt) MST ports, schedule a delayed hotplug
++	 * detection 3 seconds after resume. This gives downstream MST
++	 * devices time to fully initialize their DP links and become
++	 * responsive to sideband EDID reads. Without this delay,
++	 * downstream monitors can appear with missing EDID identity
++	 * data ("Unknown" make/model) even though the MST topology
++	 * itself was successfully re-established.
++	 */
++	if (tc_mst_needs_delayed_detect)
++		intel_hpd_schedule_detection_delayed(display, 3000);
+ }
