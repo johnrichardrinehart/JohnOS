@@ -426,7 +426,6 @@ in
         in
         {
           lt = "ls -lhrtc";
-          ssh = "kitty +kitten ssh";
           # from https://stackoverflow.com/a/47285611
           gbbd = "git for-each-ref --sort=committerdate refs/heads/ --format='%(color: red)%(committerdate:short) %(color: cyan)%(refname:short)'";
           # latest kernel version
@@ -451,6 +450,11 @@ in
       };
 
       initContent = ''
+        # Use a function instead of an alias so zsh uses _ssh completion
+        # rather than expanding to "kitty +kitten ssh" and hitting kitty's
+        # broken anchor-based matcher handling.
+        ssh() { kitty +kitten ssh "$@" }
+
             export BGIMG="${../../static/full-moon-forest-night-dark-starry-sky-5k-8k-7952x5304-1684.jpg}"
             if [ ! -f $BGIMG ]; then
             curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
