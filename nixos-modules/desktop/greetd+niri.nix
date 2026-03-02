@@ -68,11 +68,11 @@ in
       src = pkgs.fetchFromGitHub {
         owner = "johnrichardrinehart";
         repo = "niri";
-        rev = "e1b394ce9ad51a6892c8df4eb15605cb71f7dc0a";
-        hash = "sha256-gvCF+DaFeR2siWMdl3reM9tuvuNewJW5TiafRGvaH9I=";
+        rev = "4477efc34b78b3eaa9fbaab7f71fd753498ba215";
+        hash = "sha256-OVC4bMh1acUjd+w4Uk78na5/qAMSIU/LwzqpjAbO2Jw=";
       };
 
-      cargoHash = "sha256-CXRI9LBmP2YXd2Kao9Z2jpON+98n2h7m0zQVVTuwqYQ=";
+      cargoHash = "sha256-DXa4GjnCaodtEiv0xzYKZpXKnR8ruMkdH+xbs2m4ziw=";
 
       postPatch = ''
         patchShebangs resources/niri-session
