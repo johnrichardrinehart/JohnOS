@@ -6,6 +6,9 @@ lib.mapAttrs (
   dir: _:
   lib.nixosSystem {
     modules = [
+      {
+        nixpkgs.overlays = [ inputs.self.overlays.default ];
+      }
       ./${dir}
       ../nixos-modules
     ];
