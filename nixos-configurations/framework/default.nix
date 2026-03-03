@@ -48,5 +48,8 @@
 
   dev.johnrinehart.terminal.filepicker.enable = true;
 
-  environment.systemPackages = [ pkgs.intel-gpu-tools ];
+  environment.systemPackages = [
+    pkgs.intel-gpu-tools
+    pkgs.agent-deck
+  ];
 }

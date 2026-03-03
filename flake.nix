@@ -29,7 +29,11 @@
     inputs:
     let
       system = "x86_64-linux";
-      pkgs = inputs.nixpkgs.legacyPackages.${system};
+      overlays = import ./overlays inputs;
+      pkgs = import inputs.nixpkgs {
+        inherit system;
+        overlays = [ overlays.default ];
+      };
     in
     {
       nixosConfigurations = import ./nixos-configurations inputs;
@@ -40,6 +44,6 @@
 
       devShells.${system} = import ./dev-shells.nix { inherit pkgs; };
 
-      overlays = import ./overlays inputs;
+      inherit overlays;
     };
 }
