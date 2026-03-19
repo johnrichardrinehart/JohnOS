@@ -29,6 +29,10 @@
     inputs:
     let
       system = "x86_64-linux";
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
       pkgs = inputs.nixpkgs.legacyPackages.${system};
     in
     {
@@ -36,7 +40,14 @@
 
       homeConfigurations = import ./home-configurations inputs;
 
-      packages.${system} = import ./packages { inherit pkgs; };
+      packages = builtins.listToAttrs (
+        map (pkgSystem: {
+          name = pkgSystem;
+          value = import ./packages {
+            pkgs = inputs.nixpkgs.legacyPackages.${pkgSystem};
+          };
+        }) systems
+      );
 
       devShells.${system} = import ./dev-shells.nix { inherit pkgs; };
 
