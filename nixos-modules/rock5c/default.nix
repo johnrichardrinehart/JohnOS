@@ -8,6 +8,89 @@
 }:
 let
   cfg = config.dev.johnrinehart.rock5c;
+  makeRock5cImage =
+    {
+      name,
+      volumeLabel ? cfg.rootfsLabel,
+    }:
+    pkgs.callPackage (
+      { ... }:
+      let
+        runtimeRootDevice = "/dev/disk/by-label/${cfg.rootfsLabel}";
+        imageRootDevice = "/dev/disk/by-label/${volumeLabel}";
+        rootfsImage = pkgs.callPackage "${modulesPath}/../lib/make-ext4-fs.nix" ({
+          storePaths = [ config.system.build.toplevel ];
+          inherit volumeLabel;
+          populateImageCommands = ''
+            ${config.boot.loader.generic-extlinux-compatible.populateCmd} \
+              -c ${config.system.build.toplevel} \
+              -d ./files/boot \
+              -n "rockchip/rk3588s-rock-5c.dtb" \
+            ;
+
+            if [ "${imageRootDevice}" != "${runtimeRootDevice}" ]; then
+              matchingFiles=$(grep -rl -- "${runtimeRootDevice}" ./files/boot || true)
+              for bootFile in $matchingFiles; do
+                substituteInPlace "$bootFile" \
+                  --replace-fail "${runtimeRootDevice}" "${imageRootDevice}"
+              done
+            fi
+          '';
+        });
+      in
+      pkgs.stdenv.mkDerivation {
+        inherit name;
+        nativeBuildInputs = [ pkgs.util-linux ];
+        buildCommand = ''
+          set -x
+          export img=$out;
+          root_fs=${rootfsImage};
+
+          rootSizeSectors=$(du -B 512 --apparent-size $root_fs | awk '{print $1}');
+          imageSize=$((512*(rootSizeSectors + 0x8000)));
+
+          # provision img
+          truncate -s $imageSize $img;
+
+          ls -lh $img;
+
+          # create partition table
+          echo "$((0x8000)),,,*" | sfdisk $img
+
+          # write TPL+SPL
+          dd \
+            if=${config.system.build.firmware}/idbloader.img \
+            of=$img \
+            seek=$((0x40)) \
+            oflag=sync \
+            status=progress \
+          ;
+
+          # write U-Boot
+          dd \
+            if=${config.system.build.firmware}/u-boot.itb \
+            of=$img \
+            seek=$((0x4000)) \
+            oflag=sync \
+            status=progress \
+          ;
+
+          ls -lh $img;
+
+          # write rootfs
+          dd \
+            bs=$((2**20)) \
+            if=${rootfsImage} \
+            of=$img \
+            seek=$((512*0x8000))B \
+            oflag=sync \
+            status=progress \
+          ;
+
+          ls -lh $img;
+        '';
+      }
+    ) { };
 in
 {
   imports = [
@@ -22,6 +105,12 @@ in
     };
     enableVPU = lib.mkEnableOption "the Radxa 5C VPU" // {
       default = false;
+    };
+
+    rootfsLabel = lib.mkOption {
+      type = lib.types.str;
+      default = "NIXOS_SD";
+      description = "Filesystem label used by the default Rock 5C rootfs image and boot config.";
     };
 
     ssdStore = {
@@ -67,75 +156,18 @@ in
       boot.loader.grub.enable = false;
       boot.loader.generic-extlinux-compatible.enable = true;
 
-      system.build.sdImage = pkgs.callPackage (
-        { ... }:
-        let
-          rootfsImage = pkgs.callPackage "${modulesPath}/../lib/make-ext4-fs.nix" ({
-            storePaths = [ config.system.build.toplevel ];
-            volumeLabel = "NIXOS_SD";
-            populateImageCommands = ''
-              ${config.boot.loader.generic-extlinux-compatible.populateCmd} \
-                -c ${config.system.build.toplevel} \
-                -d ./files/boot \
-                -n "rockchip/rk3588s-rock-5c.dtb" \
-              ;
-            '';
-          });
-          name = "rock-5c-sdcard-image";
-        in
-        pkgs.stdenv.mkDerivation {
-          inherit name;
-          nativeBuildInputs = [ pkgs.util-linux ];
-          buildCommand = ''
-            set -x
-            export img=$out;
-            root_fs=${rootfsImage};
+      system.build.sdImage = makeRock5cImage {
+        name = "rock-5c-sdcard-image";
+        volumeLabel = cfg.rootfsLabel;
+      };
 
-            rootSizeSectors=$(du -B 512 --apparent-size $root_fs | awk '{print $1}');
-            imageSize=$((512*(rootSizeSectors + 0x8000)));
-
-            # provision img
-            truncate -s $imageSize $img;
-
-            ls -lh $img;
-
-            # create partition table
-            echo "$((0x8000)),,,*" | sfdisk $img
-
-            # write TPL+SPL
-            dd \
-              if=${config.system.build.firmware}/idbloader.img \
-              of=$img \
-              seek=$((0x40)) \
-              oflag=sync \
-              status=progress \
-            ;
-
-            # write U-Boot
-            dd \
-              if=${config.system.build.firmware}/u-boot.itb \
-              of=$img \
-              seek=$((0x4000)) \
-              oflag=sync \
-              status=progress \
-            ;
-
-            ls -lh $img;
-
-            # write rootfs
-            dd \
-              bs=$((2**20)) \
-              if=${rootfsImage} \
-              of=$img \
-              seek=$((512*0x8000))B \
-              oflag=sync \
-              status=progress \
-            ;
-
-            ls -lh $img;
-          '';
-        }
-      ) { };
+      # Rockchip boots SD and eMMC from the same loader offsets, so the
+      # image layout is identical. This target is for writing straight to
+      # the eMMC block device.
+      system.build.eMMCImage = makeRock5cImage {
+        name = "rock-5c-emmc-image";
+        volumeLabel = cfg.rootfsLabel;
+      };
 
       boot.kernelPatches = [
         {
