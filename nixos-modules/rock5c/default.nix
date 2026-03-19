@@ -144,17 +144,36 @@ in
 
       nixpkgs.hostPlatform = "aarch64-linux";
 
-      # Add provision-sd to pkgs via overlay
       nixpkgs.overlays = [
-        (final: prev: {
-          provision-sd = prev.callPackage ./provision-sd.nix { };
-        })
+        (final: prev:
+          let
+            rock5cFlashImage = prev.callPackage ./flash-image.nix { };
+            flashRock5cSd = prev.writeShellScriptBin "flash-rock5c-sd" ''
+              exec ${rock5cFlashImage}/bin/rock5c-flash-image --target-type sd "$@"
+            '';
+            flashRock5cEmmc = prev.writeShellScriptBin "flash-rock5c-emmc" ''
+              exec ${rock5cFlashImage}/bin/rock5c-flash-image --target-type emmc "$@"
+            '';
+          in
+          {
+            rock5c-flash-image = rock5cFlashImage;
+            flash-rock5c-sd = flashRock5cSd;
+            flash-rock5c-emmc = flashRock5cEmmc;
+            provision-sd = flashRock5cSd;
+            provision-emmc = flashRock5cEmmc;
+          })
       ];
 
       system.build.firmware = pkgs.ubootRock5ModelC;
 
       boot.loader.grub.enable = false;
       boot.loader.generic-extlinux-compatible.enable = true;
+
+      environment.systemPackages = [
+        pkgs.rock5c-flash-image
+        pkgs.flash-rock5c-sd
+        pkgs.flash-rock5c-emmc
+      ];
 
       system.build.sdImage = makeRock5cImage {
         name = "rock-5c-sdcard-image";
