@@ -41,7 +41,10 @@
   };
   dev.johnrinehart.system.enable = true;
   dev.johnrinehart.nix.enable = true;
-  dev.johnrinehart.desktop.wl-hyprland.enable = true;
+  dev.johnrinehart.desktop = {
+    enable = true;
+    variant = "greetd+niri";
+  };
   dev.johnrinehart.packages.shell.enable = true;
   dev.johnrinehart.packages.editors.enable = true;
 
@@ -52,7 +55,7 @@
 
   fileSystems = {
     "/" = {
-      device = "/dev/disk/by-label/NIXOS_SD";
+      device = "/dev/disk/by-label/${config.dev.johnrinehart.rock5c.rootfsLabel}";
       fsType = "ext4";
     };
   };
@@ -66,13 +69,7 @@
     openFilesLimit = 1048576; # 1<<20 = 2^20 = 1048576
   };
 
-  services.jellyfin = {
-    openFirewall = true;
-    enable = true;
-  };
-
   hardware.firmware = [ (pkgs.callPackage ./mali_csffw.nix { }) ];
-  users.groups.video.members = [ config.services.jellyfin.user ];
 
   services.udev.extraRules = ''
     KERNEL=="mpp_service", MODE="0660", GROUP="video"
@@ -155,7 +152,8 @@
   };
 
   # Use iwd for WiFi (lighter than NetworkManager, integrates with systemd-networkd)
-  networking.networkmanager.enable = false;
+  networking.networkmanager.enable = lib.mkForce false;
+  services.speechd.enable = lib.mkForce false;
   networking.wireless.iwd = {
     enable = true;
     settings = {
@@ -198,7 +196,7 @@
 
       SSID=$(cat /run/secrets/wifi-ssid)
       mkdir -p /var/lib/iwd
-      cp /run/secrets/wifi-psk "/var/lib/iwd/$SSID.psk"
+      install -Dm600 /run/secrets/wifi-psk "/var/lib/iwd/$SSID.psk"
       chmod 600 "/var/lib/iwd/$SSID.psk"
     '';
     serviceConfig = {
