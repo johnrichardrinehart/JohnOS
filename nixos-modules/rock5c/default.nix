@@ -169,6 +169,29 @@ in
       boot.loader.grub.enable = false;
       boot.loader.generic-extlinux-compatible.enable = true;
 
+      hardware.deviceTree.overlays = [
+        {
+          name = "rock5c-hdmi0-audio";
+          filter = "rockchip/rk3588s-rock-5c.dtb";
+          dtsText = ''
+            /dts-v1/;
+            /plugin/;
+
+            / {
+              compatible = "radxa,rock-5c", "rockchip,rk3588s";
+            };
+
+            &hdmi0_sound {
+              status = "okay";
+            };
+
+            &i2s5_8ch {
+              status = "okay";
+            };
+          '';
+        }
+      ];
+
       environment.systemPackages = [
         pkgs.rock5c-flash-image
         pkgs.flash-rock5c-sd
