@@ -34,7 +34,6 @@
   nixpkgs.hostPlatform = "aarch64-linux";
   networking.hostName = "rock5c-minimal";
   dev.johnrinehart.rock5c.enable = true;
-  dev.johnrinehart.rock5c.useMinimalKernel = true;
   dev.johnrinehart.rock5c.ssdStore = {
     enable = true;
     users = [ "john" ];
@@ -49,6 +48,7 @@
   dev.johnrinehart.packages.editors.enable = true;
 
   boot.consoleLogLevel = 7;
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   # Disable NCQ to stabilize flaky Penta SATA HAT PCIe link
   boot.kernelParams = [ "libata.force=noncq" ];

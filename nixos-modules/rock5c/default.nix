@@ -94,15 +94,11 @@ let
 in
 {
   imports = [
-    ./kernel_minimal.nix
     ./aic8800/module.nix
   ];
 
   options.dev.johnrinehart.rock5c = {
     enable = lib.mkEnableOption "radxa rock5c hardware stuff";
-    useMinimalKernel = lib.mkEnableOption "use minimal kernel configuration" // {
-      default = false;
-    };
     enableVPU = lib.mkEnableOption "the Radxa 5C VPU" // {
       default = false;
     };
