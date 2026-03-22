@@ -41,6 +41,7 @@
     enable = true;
     variant = "greetd+niri";
   };
+  dev.johnrinehart.desktop.greetd_niri.hypridle.enable = false;
   dev.johnrinehart.packages.shell.enable = true;
   dev.johnrinehart.packages.editors.enable = true;
 

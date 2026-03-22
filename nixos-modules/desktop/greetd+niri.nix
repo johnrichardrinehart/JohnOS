@@ -37,6 +37,9 @@ in
   options = {
     dev.johnrinehart.desktop.greetd_niri = {
       enable = lib.mkEnableOption "greetd + niri";
+      hypridle.enable = lib.mkEnableOption "hypridle integration" // {
+        default = true;
+      };
     }
     // {
       default = false;
@@ -190,7 +193,7 @@ in
           text = fprintPamConfig;
         });
 
-    services.hypridle.enable = true;
+    services.hypridle.enable = if cfg.hypridle.enable then lib.mkDefault true else lib.mkForce false;
     programs.hyprlock.enable = true;
   };
 }
