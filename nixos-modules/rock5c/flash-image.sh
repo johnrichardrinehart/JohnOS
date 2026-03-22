@@ -4,7 +4,7 @@ set -euo pipefail
 target_type=''
 device=''
 image=''
-config_name='rock5c_minimal'
+config_name='rock5c'
 auto_confirm=0
 mount_dir=''
 declare -a copy_specs=()
@@ -29,7 +29,7 @@ Options:
   --target-type TYPE         Required. One of: emmc, sd
   --device PATH              Override the inferred block device
   --image PATH               Use an existing image instead of building from the flake
-  --config NAME              NixOS configuration name (default: rock5c_minimal)
+  --config NAME              NixOS configuration name (default: rock5c)
   --copy SPEC                Copy a plaintext file into the flashed image
                              Format: SOURCE[:DEST]
                              DEST defaults to SOURCE when SOURCE is absolute

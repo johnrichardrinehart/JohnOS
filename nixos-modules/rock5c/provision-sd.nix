@@ -56,7 +56,7 @@ pkgs.writeShellApplication {
       fi
     else
       echo "==> Building SD image..."
-      IMAGE=$(nix build .#nixosConfigurations.rock5c_minimal.config.system.build.sdImage --print-out-paths --no-link)
+      IMAGE=$(nix build .#nixosConfigurations.rock5c.config.system.build.sdImage --print-out-paths --no-link)
       if [ ! -f "''$IMAGE" ]; then
         echo "Error: Build did not produce an image file"
         exit 1
@@ -151,7 +151,7 @@ pkgs.writeShellApplication {
       # Test decryption against secrets.yaml
       echo ""
       echo "==> Testing decryption..."
-      if SOPS_AGE_KEY_FILE="''$AGE_KEY_PATH" sops -d nixos-configurations/rock5c_minimal/secrets.yaml > /dev/null 2>&1; then
+      if SOPS_AGE_KEY_FILE="''$AGE_KEY_PATH" sops -d nixos-configurations/rock5c/secrets.yaml > /dev/null 2>&1; then
         echo "    Decryption test passed!"
       else
         echo "    Warning: Decryption test failed. The key may not match the secrets file."
