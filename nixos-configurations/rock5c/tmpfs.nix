@@ -1,6 +1,5 @@
 { lib, ... }:
 {
-
   systemd.mounts = [
     {
       what = "tmpfs";
