@@ -17,6 +17,21 @@ What is intentionally not included:
 
 Patch origins:
 
+- `0001-media-v4l2-add-hevc-ext-rps-controls-needed-by-rkvdec.patch`
+  Derived from Collabora's `rockchip-v6.19` branch diff against upstream
+  `v6.19.7` for:
+  `include/uapi/linux/v4l2-controls.h`,
+  `drivers/media/v4l2-core/v4l2-ctrls-core.c`, and
+  `drivers/media/v4l2-core/v4l2-ctrls-defs.c`.
+  This patch adds the HEVC short-term and long-term reference picture set
+  controls required by the RK3588 `rkvdec` backport.
+
+- `0002-media-v4l2-add-hevc-ext-rps-control-types.patch`
+  Derived from Collabora's `rockchip-v6.19` branch diff against upstream
+  `v6.19.7` for `include/uapi/linux/videodev2.h`.
+  This patch adds the missing `enum v4l2_ctrl_type` values for the HEVC
+  short-term and long-term reference picture set controls added by `0001`.
+
 - `9f8c2200e6297d07fb1e047c2c2d090b01fccff0.patch`
   `media: rkvdec: Switch to using structs instead of writel`
 - `cf47a636c7fc530d6907ae7f573ac2544b73e40b.patch`

@@ -7,6 +7,8 @@ let
   cfg = config.dev.johnrinehart.rock5c.rkvdec;
 
   patchFiles = [
+    "0001-media-v4l2-add-hevc-ext-rps-controls-needed-by-rkvdec.patch"
+    "0002-media-v4l2-add-hevc-ext-rps-control-types.patch"
     "9f8c2200e6297d07fb1e047c2c2d090b01fccff0.patch"
     "cf47a636c7fc530d6907ae7f573ac2544b73e40b.patch"
     "1a0d65a0d565d9be53432e03c7cf9b7b939f7ac4.patch"
