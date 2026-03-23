@@ -31,6 +31,7 @@
   nixpkgs.hostPlatform = "aarch64-linux";
   networking.hostName = "rock5c";
   dev.johnrinehart.rock5c.enable = true;
+  dev.johnrinehart.rock5c.gstreamerHwdec.enable = true;
   dev.johnrinehart.rock5c.rkvdec.enable = true;
   dev.johnrinehart.rock5c.ssdStore = {
     enable = true;

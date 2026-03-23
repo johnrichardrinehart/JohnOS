@@ -95,6 +95,7 @@ in
 {
   imports = [
     ./aic8800/module.nix
+    ./gstreamer-hwdec/module.nix
     ./rkvdec/module.nix
   ];
 
