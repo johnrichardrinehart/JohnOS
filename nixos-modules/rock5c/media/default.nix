@@ -35,6 +35,19 @@ let
 
   effectiveKodiVariant = if cfg.kodi.variant == "auto" then autoKodiVariant else cfg.kodi.variant;
   selectedKodiAttr = "kodi_22-${effectiveKodiVariant}-v4l2request";
+  selectedKodiPkg = builtins.getAttr selectedKodiAttr pkgs;
+  kodiAutostartLauncher = pkgs.writeShellScriptBin "rock5c-kodi-autostart" ''
+    set -eu
+
+    ${lib.optionalString (effectiveKodiVariant == "wayland") ''
+      unset DISPLAY
+      if [ -z "''${XDG_RUNTIME_DIR:-}" ]; then
+        export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+      fi
+    ''}
+
+    exec ${lib.getExe selectedKodiPkg}
+  '';
 
   ffmpegWrapper = pkgs.writeShellApplication {
     name = "rock5c-ffmpeg-v4l2request";
@@ -122,6 +135,8 @@ in
       enable = lib.mkEnableOption "Rock 5C Kodi 22 V4L2 request package" // {
         default = true;
       };
+
+      autostart.enable = lib.mkEnableOption "autostart Kodi after the compositor/session comes up";
 
       disable_cec_standby_on_poweroff = lib.mkOption {
         type = lib.types.bool;
@@ -247,12 +262,25 @@ in
         hevcTest
       ]
       ++ lib.optionals cfg.mpv.enable [ pkgs.mpv_v4l2request ]
-      ++ lib.optionals cfg.kodi.enable [ (builtins.getAttr selectedKodiAttr pkgs) ];
+      ++ lib.optionals cfg.kodi.enable [ selectedKodiPkg ]
+      ++ lib.optionals (cfg.kodi.enable && cfg.kodi.autostart.enable) [ kodiAutostartLauncher ];
 
     environment.shellAliases = lib.mkIf cfg.ffmpegTools.enable {
       "ffmpeg-v4l2request" = "${ffmpegWrapper}/bin/rock5c-ffmpeg-v4l2request";
       "ffprobe-v4l2request" = "${ffprobeWrapper}/bin/rock5c-ffprobe-v4l2request";
       "ffplay-v4l2request" = "${ffplayWrapper}/bin/rock5c-ffplay-v4l2request";
+    };
+
+    environment.etc = lib.mkIf (cfg.kodi.enable && cfg.kodi.autostart.enable) {
+      "xdg/autostart/rock5c-kodi.desktop".text = ''
+        [Desktop Entry]
+        Type=Application
+        Name=Kodi
+        Comment=Autostart Kodi after the desktop session initializes
+        Exec=${kodiAutostartLauncher}/bin/rock5c-kodi-autostart
+        Terminal=false
+        X-GNOME-Autostart-enabled=true
+      '';
     };
   };
 }

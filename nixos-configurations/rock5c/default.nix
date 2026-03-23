@@ -36,6 +36,7 @@
     enable = true;
     kodi = {
       variant = "auto";
+      autostart.enable = true;
       # This keeps CEC input but suppresses Kodi's shutdown-time standby path.
       # Enable it if exiting Kodi makes the TV power off.
       disable_cec_standby_on_poweroff = true;
