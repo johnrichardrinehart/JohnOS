@@ -95,6 +95,7 @@ in
 {
   imports = [
     ./aic8800/module.nix
+    ./rkvdec/module.nix
   ];
 
   options.dev.johnrinehart.rock5c = {

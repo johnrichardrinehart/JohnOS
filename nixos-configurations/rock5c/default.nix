@@ -31,6 +31,7 @@
   nixpkgs.hostPlatform = "aarch64-linux";
   networking.hostName = "rock5c";
   dev.johnrinehart.rock5c.enable = true;
+  dev.johnrinehart.rock5c.rkvdec.enable = true;
   dev.johnrinehart.rock5c.ssdStore = {
     enable = true;
     users = [ "john" ];
@@ -87,6 +88,7 @@
 
   hardware.firmware = [ (pkgs.callPackage ./mali_csffw.nix { }) ];
   users.groups.video.members = [ config.services.jellyfin.user ];
+  users.users.john.extraGroups = [ "render" ];
 
   services.udev.extraRules = ''
     KERNEL=="mpp_service", MODE="0660", GROUP="video"
