@@ -42,6 +42,15 @@ let
     '';
   };
 
+  gstPlay = pkgs.writeShellApplication {
+    name = "rock5c-gst-play";
+    runtimeInputs = gstPackages;
+    text = ''
+      export GST_PLUGIN_SYSTEM_PATH_1_0="${gstPluginPath}"
+      exec gst-play-1.0 "$@"
+    '';
+  };
+
   gstH264Test = pkgs.writeShellApplication {
     name = "rock5c-hwdec-h264-test";
     runtimeInputs = gstPackages;
@@ -98,6 +107,7 @@ in
       ++ [
         gstLaunch
         gstInspect
+        gstPlay
         gstH264Test
         gstHevcTest
       ];
@@ -105,6 +115,7 @@ in
     environment.shellAliases = {
       "gst-launch-1.0-rock5c" = "${gstLaunch}/bin/rock5c-gst-launch";
       "gst-inspect-1.0-rock5c" = "${gstInspect}/bin/rock5c-gst-inspect";
+      "gst-play-1.0-rock5c" = "${gstPlay}/bin/rock5c-gst-play";
     };
   };
 }
