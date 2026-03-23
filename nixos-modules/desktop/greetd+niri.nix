@@ -7,6 +7,8 @@
 }:
 let
   cfg = config.dev.johnrinehart.desktop.greetd_niri;
+  niriRev = "b07bde3ee82dd73115e6b949e4f3f63695da35ea";
+  niriShortRev = builtins.substring 0 8 niriRev;
 
   # Cursor theme settings (single source of truth)
   xcursorTheme = "Adwaita";
@@ -60,19 +62,23 @@ in
 
     programs.niri.enable = true;
 
-    # Use custom niri fork - build from scratch since overriding cargoHash requires rebuilding
-    programs.niri.package = pkgs.rustPlatform.buildRustPackage {
+    # Track upstream niri directly so compositor and Smithay fixes land quickly.
+    programs.niri.package = pkgs.rustPlatform.buildRustPackage rec {
       pname = "niri";
-      version = "unstable-2024-12-fork";
+      version = "unstable-${niriShortRev}";
 
       src = pkgs.fetchFromGitHub {
-        owner = "johnrichardrinehart";
+        owner = "niri-wm";
         repo = "niri";
-        rev = "e1b394ce9ad51a6892c8df4eb15605cb71f7dc0a";
-        hash = "sha256-gvCF+DaFeR2siWMdl3reM9tuvuNewJW5TiafRGvaH9I=";
+        rev = niriRev;
+        hash = "sha256-3bwx4WqCB06yfQIGB+OgIckOkEDyKxiTD5pOo4Xz2rI=";
       };
 
-      cargoHash = "sha256-CXRI9LBmP2YXd2Kao9Z2jpON+98n2h7m0zQVVTuwqYQ=";
+      cargoLock = {
+        # Upstream niri already pins its Git dependencies in Cargo.lock.
+        allowBuiltinFetchGit = true;
+        lockFile = "${src}/Cargo.lock";
+      };
 
       postPatch = ''
         patchShebangs resources/niri-session
@@ -121,7 +127,7 @@ in
             "-Wl,--pop-state"
           ]
         );
-        NIRI_BUILD_COMMIT = "a84a8ceb";
+        NIRI_BUILD_COMMIT = niriShortRev;
       };
 
       passthru.providedSessions = [ "niri" ];
@@ -167,7 +173,7 @@ in
         pkgs.wl-clipboard
         pkgs.wlsunset
         pkgs.xwayland-satellite
-        # (builtins.getFlake "github:johnrichardrinehart/niri?rev=a84a8ceb5882cca5b26c6caf9e582111a3772634").packages.${pkgs.stdenv.hostPlatform.system}.niri
+        # (builtins.getFlake "github:niri-wm/niri?rev=${niriRev}").packages.${pkgs.stdenv.hostPlatform.system}.niri
       ]
       ++ [
         myMako
