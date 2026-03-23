@@ -44,6 +44,7 @@
   dev.johnrinehart.desktop.greetd_niri.hypridle.enable = false;
   dev.johnrinehart.packages.shell.enable = true;
   dev.johnrinehart.packages.editors.enable = true;
+  dev.johnrinehart.packages.media.enable = true;
 
   boot.consoleLogLevel = 7;
   boot.kernelPackages = pkgs.linuxPackages_latest;
@@ -78,7 +79,11 @@
   services.jellyfin = {
     enable = true;
     openFirewall = true;
+    dataDir = "/mnt/nas/.services/jellyfin";
+    cacheDir = "/mnt/nas/.services/jellyfin/cache";
   };
+
+  systemd.services.jellyfin.unitConfig.RequiresMountsFor = [ "/mnt/nas/.services/jellyfin" ];
 
   hardware.firmware = [ (pkgs.callPackage ./mali_csffw.nix { }) ];
   users.groups.video.members = [ config.services.jellyfin.user ];
@@ -92,7 +97,10 @@
     KERNEL=="system-uncached-dma32", MODE="0666", GROUP="video" RUN+="${pkgs.toybox}/bin/chmod a+rw /dev/dma_heap"
   '';
 
-  environment.systemPackages = [ pkgs.thin-provisioning-tools ];
+  environment.systemPackages = [
+    pkgs.thin-provisioning-tools
+    pkgs."kodi-wayland"
+  ];
 
   boot.kernelPatches = [
     {
