@@ -95,8 +95,8 @@ in
 {
   imports = [
     ./aic8800/module.nix
-    ./ffmpeg-v4l2request/module.nix
     ./gstreamer-hwdec/module.nix
+    ./media/default.nix
     ./rkvdec/module.nix
   ];
 

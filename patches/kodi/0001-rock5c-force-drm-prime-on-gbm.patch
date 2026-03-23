@@ -1,0 +1,109 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JohnOS <noreply@example.com>
+Date: Mon, 23 Mar 2026 15:00:00 +0000
+Subject: [PATCH] rock5c: force drm prime decode/render on gbm
+
+Rock 5C uses FFmpeg V4L2 Request API decode that outputs DRM PRIME frames,
+but Kodi's GBM path treats DRM PRIME as an opt-in hidden setting. On this
+system that setting is repeatedly reset back to software decode, which leads
+to HEVC 10-bit playback falling back to software decode and a black GLES
+renderer path.
+
+For the dedicated GBM package we want the opposite behavior: always prefer
+DRM PRIME when the codec/renderer can support it, and fall back to software
+only if the DRM PRIME codec fails to open.
+---
+ system/settings/linux.xml                                      |  4 ++--
+ xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp | 20 ++++++++++++++++----
+ xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp |  3 +--
+ 3 files changed, 19 insertions(+), 8 deletions(-)
+
+diff --git a/system/settings/linux.xml b/system/settings/linux.xml
+--- a/system/settings/linux.xml
++++ b/system/settings/linux.xml
+@@ -177,7 +177,7 @@
+           <requirement>HAS_GLES</requirement>
+           <visible>false</visible>
+           <level>2</level>
+-          <default>false</default>
++          <default>true</default>
+           <control type="toggle" />
+         </setting>
+         <setting id="videoplayer.useprimedecoderforhw" type="boolean" parent="videoplayer.useprimedecoder" label="13438" help="36172">
+@@ -196,7 +196,7 @@
+           <requirement>HAS_GLES</requirement>
+           <visible>false</visible>
+           <level>2</level>
+-          <default>1</default>
++          <default>0</default>
+           <constraints>
+             <options>
+               <option label="13464">0</option> <!-- DIRECT -->
+diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
+@@ -77,7 +77,7 @@
+   AVHWDeviceType type = AV_HWDEVICE_TYPE_NONE;
+   while ((type = av_hwdevice_iterate_types(type)) != AV_HWDEVICE_TYPE_NONE)
+   {
+-    if (type == AV_HWDEVICE_TYPE_DRM)
++    if (type == AV_HWDEVICE_TYPE_DRM || type == AV_HWDEVICE_TYPE_V4L2REQUEST)
+       return true;
+   }
+ 
+@@ -101,11 +101,15 @@
+ 
+ std::unique_ptr<CDVDVideoCodec> CDVDVideoCodecDRMPRIME::Create(CProcessInfo& processInfo)
+ {
++#if defined(HAVE_GBM)
++  return std::make_unique<CDVDVideoCodecDRMPRIME>(processInfo);
++#else
+   if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
+           CSettings::SETTING_VIDEOPLAYER_USEPRIMEDECODER))
+     return std::make_unique<CDVDVideoCodecDRMPRIME>(processInfo);
+ 
+   return nullptr;
++#endif
+ }
+ 
+ void CDVDVideoCodecDRMPRIME::Register()
+@@ -148,10 +152,14 @@
+ 
+ static bool IsSupportedHwFormat(const enum AVPixelFormat fmt)
+ {
++#if defined(HAVE_GBM)
++  return fmt == AV_PIX_FMT_DRM_PRIME;
++#else
+   bool hw = CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
+       SETTING_VIDEOPLAYER_USEPRIMEDECODERFORHW);
+ 
+   return fmt == AV_PIX_FMT_DRM_PRIME && hw;
++#endif
+ }
+ 
+ static bool IsSupportedSwFormat(const enum AVPixelFormat fmt)
+@@ -162,9 +170,11 @@
+ 
+ static const AVCodecHWConfig* FindHWConfig(const AVCodec* codec)
+ {
++#if !defined(HAVE_GBM)
+   if (!CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
+           SETTING_VIDEOPLAYER_USEPRIMEDECODERFORHW))
+     return nullptr;
++#endif
+ 
+   const AVCodecHWConfig* config = nullptr;
+   for (int n = 0; (config = avcodec_get_hw_config(codec, n)); n++)
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
+@@ -35,8 +35,7 @@
+ 
+ CBaseRenderer* CRendererDRMPRIME::Create(CVideoBuffer* buffer)
+ {
+-  if (buffer && CServiceBroker::GetSettingsComponent()->GetSettings()->GetInt(
+-                    SETTING_VIDEOPLAYER_USEPRIMERENDERER) == 0)
++  if (buffer)
+   {
+     auto buf = dynamic_cast<CVideoBufferDRMPRIME*>(buffer);
+     if (!buf)
