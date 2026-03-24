@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.dev.johnrinehart.rock5c.media;
+  managementCfg = cfg.management;
 
   defaultSession = lib.toLower (lib.attrByPath [ "services" "displayManager" "defaultSession" ] "" config);
   desktopVariant = lib.toLower (lib.attrByPath [ "dev" "johnrinehart" "desktop" "variant" ] "" config);
@@ -118,6 +119,24 @@ let
         -f null -
     '';
   };
+
+  torrentRoots = rec {
+    downloadsRoot = toString managementCfg.downloadsRoot;
+    files = "${downloadsRoot}/files";
+    downloading = "${downloadsRoot}/downloading";
+    completed = "${downloadsRoot}/completed";
+  };
+
+  mediaRoots = rec {
+    root = toString managementCfg.mediaRoot;
+    movies = "${root}/movies";
+    tvShows = "${root}/tv_shows";
+  };
+
+  servicesRoot = toString managementCfg.servicesRoot;
+  delugeDataDir = "${servicesRoot}/deluge";
+  sonarrDataDir = "${servicesRoot}/sonarr";
+  radarrDataDir = "${servicesRoot}/radarr";
 in
 {
   options.dev.johnrinehart.rock5c.media = {
@@ -129,6 +148,42 @@ in
 
     mpv.enable = lib.mkEnableOption "Rock 5C mpv linked against FFmpeg V4L2 request" // {
       default = true;
+    };
+
+    management = {
+      enable = lib.mkEnableOption "Rock 5C Sonarr/Radarr/Deluge NAS layout and permissions";
+
+      downloadsRoot = lib.mkOption {
+        type = lib.types.path;
+        default = "/mnt/nas/torrents";
+        description = ''
+          Root directory for torrent state on the NAS.
+          Deluge should use `${lib.literalExpression "/mnt/nas/torrents/downloading"}` for
+          active downloads, `${lib.literalExpression "/mnt/nas/torrents/files"}` for torrent
+          metadata, and `${lib.literalExpression "/mnt/nas/torrents/completed"}` for completed
+          data that Sonarr/Radarr can hardlink from.
+        '';
+      };
+
+      mediaRoot = lib.mkOption {
+        type = lib.types.path;
+        default = "/mnt/nas/media";
+        description = "Root directory for the curated media library.";
+      };
+
+      servicesRoot = lib.mkOption {
+        type = lib.types.path;
+        default = "/mnt/nas/.services";
+        description = "Root directory for service state stored on the NAS.";
+      };
+
+      sonarr.enable = lib.mkEnableOption "Sonarr" // {
+        default = true;
+      };
+
+      radarr.enable = lib.mkEnableOption "Radarr" // {
+        default = true;
+      };
     };
 
     kodi = {
@@ -281,6 +336,89 @@ in
         Terminal=false
         X-GNOME-Autostart-enabled=true
       '';
+    };
+
+    systemd.tmpfiles.rules = lib.optionals managementCfg.enable [
+      "d '${servicesRoot}' 0775 john media - -"
+      "d '${torrentRoots.downloadsRoot}' 2775 deluge media - -"
+      "d '${torrentRoots.files}' 2775 deluge media - -"
+      "d '${torrentRoots.downloading}' 2775 deluge media - -"
+      "d '${torrentRoots.completed}' 2775 deluge media - -"
+      "z '${torrentRoots.downloadsRoot}' 2775 deluge media - -"
+      "z '${torrentRoots.files}' 2775 deluge media - -"
+      "z '${torrentRoots.downloading}' 2775 deluge media - -"
+      "z '${torrentRoots.completed}' 2775 deluge media - -"
+      "d '${mediaRoots.root}' 2775 john media - -"
+      "d '${mediaRoots.movies}' 2775 john media - -"
+      "d '${mediaRoots.tvShows}' 2775 john media - -"
+      "z '${mediaRoots.root}' 2775 john media - -"
+      "z '${mediaRoots.movies}' 2775 john media - -"
+      "z '${mediaRoots.tvShows}' 2775 john media - -"
+    ];
+
+    users.groups = lib.mkIf managementCfg.enable {
+      media = { };
+    };
+
+    users.users.john.extraGroups = lib.mkIf managementCfg.enable [ "media" ];
+    users.users.deluge.extraGroups = lib.mkIf (managementCfg.enable && config.services.deluge.enable) [ "media" ];
+    users.users.sonarr.extraGroups = lib.mkIf (managementCfg.enable && managementCfg.sonarr.enable) [ "media" ];
+    users.users.radarr.extraGroups = lib.mkIf (managementCfg.enable && managementCfg.radarr.enable) [ "media" ];
+    users.users.jellyfin.extraGroups = lib.mkIf (managementCfg.enable && config.services.jellyfin.enable) [ "media" ];
+
+    services.deluge = lib.mkIf managementCfg.enable {
+      enable = lib.mkDefault true;
+      web = {
+        enable = lib.mkDefault true;
+        openFirewall = lib.mkDefault true;
+      };
+      openFilesLimit = lib.mkDefault 1048576;
+      dataDir = lib.mkDefault delugeDataDir;
+      group = lib.mkDefault "media";
+    };
+
+    services.sonarr = lib.mkIf (managementCfg.enable && managementCfg.sonarr.enable) {
+      enable = true;
+      openFirewall = lib.mkDefault true;
+      dataDir = sonarrDataDir;
+      group = "media";
+    };
+
+    services.radarr = lib.mkIf (managementCfg.enable && managementCfg.radarr.enable) {
+      enable = true;
+      openFirewall = lib.mkDefault true;
+      dataDir = radarrDataDir;
+      group = "media";
+    };
+
+    systemd.services.deluged.unitConfig.RequiresMountsFor = lib.mkIf (managementCfg.enable && config.services.deluge.enable) [
+      delugeDataDir
+      torrentRoots.downloadsRoot
+    ];
+    systemd.services.deluged.serviceConfig.UMask = lib.mkIf (managementCfg.enable && config.services.deluge.enable) "0002";
+    systemd.services.delugeweb.unitConfig.RequiresMountsFor = lib.mkIf (
+      managementCfg.enable
+      && config.services.deluge.enable
+      && config.services.deluge.web.enable
+    ) [
+      delugeDataDir
+      torrentRoots.downloadsRoot
+    ];
+    systemd.services.sonarr = lib.mkIf (managementCfg.enable && managementCfg.sonarr.enable) {
+      unitConfig.RequiresMountsFor = [
+        sonarrDataDir
+        torrentRoots.completed
+        mediaRoots.tvShows
+      ];
+      serviceConfig.UMask = "0002";
+    };
+    systemd.services.radarr = lib.mkIf (managementCfg.enable && managementCfg.radarr.enable) {
+      unitConfig.RequiresMountsFor = [
+        radarrDataDir
+        torrentRoots.completed
+        mediaRoots.movies
+      ];
+      serviceConfig.UMask = "0002";
     };
   };
 }

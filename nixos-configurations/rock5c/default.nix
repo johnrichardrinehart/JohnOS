@@ -34,6 +34,7 @@
   dev.johnrinehart.rock5c.gstreamerHwdec.enable = true;
   dev.johnrinehart.rock5c.media = {
     enable = true;
+    management.enable = true;
     kodi = {
       variant = "auto";
       autostart.enable = true;
@@ -77,15 +78,6 @@
       "nofail"
       "x-systemd.device-timeout=${builtins.toString config.system.build.literals.secondsToWaitForNAS}s"
     ];
-  };
-
-  services.deluge = {
-    web = {
-      enable = true;
-      openFirewall = true;
-    };
-    enable = true;
-    openFilesLimit = 1048576;
   };
 
   services.jellyfin = {
