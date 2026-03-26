@@ -47,6 +47,9 @@ in
   options = {
     dev.johnrinehart.desktop.greetd_niri = {
       enable = lib.mkEnableOption "greetd + niri";
+      hypridle.enable = lib.mkEnableOption "hypridle integration" // {
+        default = true;
+      };
     }
     // {
       default = false;

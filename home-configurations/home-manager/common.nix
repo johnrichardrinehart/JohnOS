@@ -172,6 +172,20 @@ in
       '';
       ".config/powerline/themes/gruvbox.theme".source = ./gruvbox.theme;
       ".config/hypr/hyprlock.conf".source = ./hyprlock.conf;
+      ".config/hypr/hyprpaper.conf".source =
+        let
+          wallpaper = builtins.path {
+            path = ../../static/full-moon-forest-night-dark-starry-sky-5k-8k-7952x5304-1684.jpg;
+            name = "wallpaper.jpg";
+          };
+        in
+        (pkgs.replaceVars ./hyprpaper.conf {
+          inherit wallpaper;
+        }).overrideAttrs
+          (_: {
+            checkPhase = null;
+          });
+    } // lib.optionalAttrs osConfig.dev.johnrinehart.desktop.greetd_niri.hypridle.enable {
       ".config/hypr/hypridle.conf".source =
         let
           onIdlePackage = pkgs.callPackage ./on-idle.nix { };
@@ -191,19 +205,6 @@ in
           medium_timeout_duration = config.idle.medium_timeout_duration;
           long_timeout_duration = config.idle.long_timeout_duration;
           systemctl = lib.getExe' pkgs.systemd "systemctl";
-        }).overrideAttrs
-          (_: {
-            checkPhase = null;
-          });
-      ".config/hypr/hyprpaper.conf".source =
-        let
-          wallpaper = builtins.path {
-            path = ../../static/full-moon-forest-night-dark-starry-sky-5k-8k-7952x5304-1684.jpg;
-            name = "wallpaper.jpg";
-          };
-        in
-        (pkgs.replaceVars ./hyprpaper.conf {
-          inherit wallpaper;
         }).overrideAttrs
           (_: {
             checkPhase = null;
