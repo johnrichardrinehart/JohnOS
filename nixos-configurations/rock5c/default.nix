@@ -43,6 +43,8 @@
     enable = true;
     variant = "greetd+niri";
   };
+  dev.johnrinehart.packages.shell.enable = true;
+  dev.johnrinehart.packages.editors.enable = true;
   services.hypridle.enable = lib.mkForce false;
 
   boot.consoleLogLevel = 7;
