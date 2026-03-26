@@ -2,11 +2,62 @@
   config,
   lib,
   pkgs,
+  utils,
   modulesPath,
   ...
 }:
 let
   cfg = config.dev.johnrinehart.rock5c;
+  makeRock5cImage =
+    {
+      name,
+      volumeLabel ? cfg.rootfsLabel,
+    }:
+    pkgs.callPackage (
+      { ... }:
+      let
+        runtimeRootDevice = "/dev/disk/by-label/${cfg.rootfsLabel}";
+        imageRootDevice = "/dev/disk/by-label/${volumeLabel}";
+        rootfsImage = pkgs.callPackage "${modulesPath}/../lib/make-ext4-fs.nix" ({
+          storePaths = [ config.system.build.toplevel ];
+          inherit volumeLabel;
+          populateImageCommands = ''
+            ${config.boot.loader.generic-extlinux-compatible.populateCmd} \
+              -c ${config.system.build.toplevel} \
+              -d ./files/boot \
+              -n "rockchip/rk3588s-rock-5c.dtb" \
+            ;
+
+            if [ "${imageRootDevice}" != "${runtimeRootDevice}" ]; then
+              matchingFiles=$(grep -rl -- "${runtimeRootDevice}" ./files/boot || true)
+              for bootFile in $matchingFiles; do
+                substituteInPlace "$bootFile" \
+                  --replace-fail "${runtimeRootDevice}" "${imageRootDevice}"
+              done
+            fi
+          '';
+        });
+      in
+      pkgs.stdenv.mkDerivation {
+        inherit name;
+        nativeBuildInputs = [ pkgs.util-linux ];
+        buildCommand = ''
+          set -x
+          export img=$out;
+          root_fs=${rootfsImage};
+
+          rootSizeSectors=$(du -B 512 --apparent-size $root_fs | awk '{print $1}');
+          imageSize=$((512*(rootSizeSectors + 0x8000)));
+
+          truncate -s $imageSize $img;
+          echo "$((0x8000)),,,*" | sfdisk $img
+
+          dd if=${config.system.build.firmware}/idbloader.img of=$img seek=$((0x40)) oflag=sync status=progress
+          dd if=${config.system.build.firmware}/u-boot.itb of=$img seek=$((0x4000)) oflag=sync status=progress
+          dd bs=$((2**20)) if=${rootfsImage} of=$img seek=$((512*0x8000))B oflag=sync status=progress
+        '';
+      }
+    ) { };
 in
 {
   imports = [
@@ -22,108 +73,222 @@ in
     enableVPU = lib.mkEnableOption "the Radxa 5C VPU" // {
       default = false;
     };
+
+    rootfsLabel = lib.mkOption {
+      type = lib.types.str;
+      default = "NIXOS_SD";
+      description = "Filesystem label used by the default Rock 5C rootfs image and boot config.";
+    };
+
+    ssdStore = {
+      enable = lib.mkEnableOption "SSD-backed independent Nix store and build cache";
+
+      device = lib.mkOption {
+        type = lib.types.str;
+        default = "/dev/disk/by-label/NIX_SSD";
+        description = "Block device for the Nix SSD partition";
+      };
+
+      mountPoint = lib.mkOption {
+        type = lib.types.path;
+        default = "/mnt/nix-ssd";
+        description = "Base mount point for SSD btrfs volume";
+      };
+
+      users = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        example = [ "john" "alice" ];
+        description = "Users who should use the SSD-backed store, cache, and build directory";
+      };
+    };
   };
 
-  config = lib.mkIf cfg.enable {
-    dev.johnrinehart.rock5c.aic8800.enable = true;
+  config = lib.mkMerge [
+    (lib.mkIf cfg.enable {
+      dev.johnrinehart.rock5c.aic8800.enable = true;
 
-    nixpkgs.hostPlatform = "aarch64-linux";
+      nixpkgs.hostPlatform = "aarch64-linux";
 
-    system.build.firmware = pkgs.ubootRock5ModelC;
+      nixpkgs.overlays = [
+        (final: prev:
+          let
+            rock5cFlashImage = prev.callPackage ./flash-image.nix { };
+            flashRock5cSd = prev.writeShellScriptBin "flash-rock5c-sd" ''
+              exec ${rock5cFlashImage}/bin/rock5c-flash-image --target-type sd "$@"
+            '';
+            flashRock5cEmmc = prev.writeShellScriptBin "flash-rock5c-emmc" ''
+              exec ${rock5cFlashImage}/bin/rock5c-flash-image --target-type emmc "$@"
+            '';
+          in
+          {
+            rock5c-flash-image = rock5cFlashImage;
+            flash-rock5c-sd = flashRock5cSd;
+            flash-rock5c-emmc = flashRock5cEmmc;
+            provision-sd = flashRock5cSd;
+            provision-emmc = flashRock5cEmmc;
+          })
+      ];
 
-    boot.loader.grub.enable = false;
-    boot.loader.generic-extlinux-compatible.enable = true;
+      system.build.firmware = pkgs.ubootRock5ModelC;
 
-    system.build.sdImage = pkgs.callPackage (
-      { ... }:
-      let
-        rootfsImage = pkgs.callPackage "${modulesPath}/../lib/make-ext4-fs.nix" ({
-          storePaths = [ config.system.build.toplevel ];
-          volumeLabel = "NIXOS_SD";
-          populateImageCommands = ''
-            ${config.boot.loader.generic-extlinux-compatible.populateCmd} \
-              -c ${config.system.build.toplevel} \
-              -d ./files/boot \
-              -n "rockchip/rk3588s-rock-5c.dtb" \
-            ;
+      boot.loader.grub.enable = false;
+      boot.loader.generic-extlinux-compatible.enable = true;
+
+      hardware.deviceTree.overlays = [
+        {
+          name = "rock5c-hdmi0-audio";
+          filter = "rockchip/rk3588s-rock-5c.dtb";
+          dtsText = ''
+            /dts-v1/;
+            /plugin/;
+
+            / {
+              compatible = "radxa,rock-5c", "rockchip,rk3588s";
+            };
+
+            &hdmi0_sound {
+              status = "okay";
+            };
+
+            &i2s5_8ch {
+              status = "okay";
+            };
           '';
-        });
+        }
+      ];
+
+      environment.systemPackages = [
+        pkgs.rock5c-flash-image
+        pkgs.flash-rock5c-sd
+        pkgs.flash-rock5c-emmc
+      ];
+
+      system.build.sdImage = makeRock5cImage {
         name = "rock-5c-sdcard-image";
+        volumeLabel = cfg.rootfsLabel;
+      };
+
+      system.build.eMMCImage = makeRock5cImage {
+        name = "rock-5c-emmc-image";
+        volumeLabel = cfg.rootfsLabel;
+      };
+
+      boot.kernelPatches = [
+        {
+          name = "device-mapper-debug";
+          patch = null;
+          structuredExtraConfig = {
+            DM_DEBUG = lib.kernel.yes;
+          };
+        }
+        {
+          name = "zram-memory-tracking";
+          patch = null;
+          structuredExtraConfig = {
+            ZRAM_MEMORY_TRACKING = lib.kernel.yes;
+          };
+        }
+      ];
+    })
+
+    (lib.mkIf cfg.ssdStore.enable (
+      let
+        ssdMount = cfg.ssdStore.mountPoint;
+        buildDir = "${ssdMount}/build";
+        cacheDir = "${ssdMount}/nix-cache";
+        device = cfg.ssdStore.device;
       in
-      pkgs.stdenv.mkDerivation {
-        inherit name;
-        nativeBuildInputs = [ pkgs.util-linux ];
-        buildCommand = ''
-          set -x
-          export img=$out;
-          root_fs=${rootfsImage};
+      {
+        systemd.services.nix-ssd-mount = {
+          description = "Mount Nix SSD if available";
+          wantedBy = [ "multi-user.target" ];
+          before = [ "nix-daemon.service" ];
+          after = [ "local-fs.target" ];
+          path = [ pkgs.util-linux pkgs.coreutils pkgs.btrfs-progs pkgs.lvm2 ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            TimeoutStartSec = "10s";
+            ExecStop = pkgs.writeShellScript "nix-ssd-unmount" ''
+              umount "${cacheDir}" 2>/dev/null || true
+              umount "${buildDir}" 2>/dev/null || true
+              umount "${ssdMount}" 2>/dev/null || true
+              rm -f /run/nix/ssd.conf /run/nix/ssd.env
+            '';
+          };
+          script = ''
+            set -e
 
-          rootSizeSectors=$(du -B 512 --apparent-size $root_fs | awk '{print $1}');
-          imageSize=$((512*(rootSizeSectors + 0x8000)));
+            echo "Attempting to activate LVM VG 'nas' in degraded mode..."
+            vgchange -ay --activationmode degraded nas 2>/dev/null || true
 
-          # provision img
-          truncate -s $imageSize $img;
+            if [ ! -e "${device}" ]; then
+              echo "SSD device ${device} not found"
+              exit 1
+            fi
 
-          ls -lh $img;
+            mkdir -p "${ssdMount}"
 
-          # create partition table
-          echo "$((0x8000)),,,*" | sfdisk $img
+            if ! mount -t btrfs -o subvol=/,compress=zstd,noatime "${device}" "${ssdMount}"; then
+              echo "Failed to mount base volume"
+              exit 1
+            fi
 
-          # write TPL+SPL
-          dd \
-            if=${config.system.build.firmware}/idbloader.img \
-            of=$img \
-            seek=$((0x40)) \
-            oflag=sync \
-            status=progress \
-          ;
+            mkdir -p "${buildDir}" "${cacheDir}"
 
-          # write U-Boot
-          dd \
-            if=${config.system.build.firmware}/u-boot.itb \
-            of=$img \
-            seek=$((0x4000)) \
-            oflag=sync \
-            status=progress \
-          ;
+            if ! mount -t btrfs -o subvol=@build,compress=zstd,noatime "${device}" "${buildDir}"; then
+              echo "Failed to mount @build subvolume"
+              exit 1
+            fi
 
-          ls -lh $img;
+            if ! mount -t btrfs -o subvol=@cache,compress=zstd,noatime "${device}" "${cacheDir}"; then
+              echo "Failed to mount @cache subvolume"
+              exit 1
+            fi
 
-          # write rootfs
-          dd \
-            bs=$((2**20)) \
-            if=${rootfsImage} \
-            of=$img \
-            seek=$((512*0x8000))B \
-            oflag=sync \
-            status=progress \
-          ;
+            chown root:nixbld "${buildDir}"
+            chmod 1775 "${buildDir}"
 
-          ls -lh $img;
+            chmod 0755 "${cacheDir}"
+            ${lib.concatMapStringsSep "\n" (user: ''
+              mkdir -p "${cacheDir}/${user}"
+              chown ${user}:${user} "${cacheDir}/${user}"
+              chmod 0755 "${cacheDir}/${user}"
+            '') cfg.ssdStore.users}
+
+            mkdir -p /run/nix
+            echo "build-dir = ${buildDir}" > /run/nix/ssd.conf
+            echo "TMPDIR=${buildDir}" > /run/nix/ssd.env
+
+            echo "SSD setup complete"
+          '';
+        };
+
+        nix.extraOptions = ''
+          !include /run/nix/ssd.conf
         '';
-      }
-    ) { };
 
-    boot.kernelPatches = [
-      {
-        name = "device-mapper-debug";
-        patch = null;
-        structuredExtraConfig = {
-          DM_DEBUG = lib.kernel.yes;
+        systemd.services.nix-daemon = {
+          after = [ "nix-ssd-mount.service" ];
+          wants = [ "nix-ssd-mount.service" ];
+          serviceConfig.EnvironmentFile = [ "-/run/nix/ssd.env" ];
         };
+
+        environment.extraInit =
+          let
+            userList = lib.concatStringsSep "|" cfg.ssdStore.users;
+          in
+          ''
+            if mountpoint -q "${ssdMount}" 2>/dev/null; then
+              case "$USER" in
+                ${userList})
+                  export NIX_CACHE_HOME="${cacheDir}/$USER"
+                  ;;
+              esac
+            fi
+          '';
       }
-      {
-        name = "zram-memory-tracking";
-        patch = null;
-        structuredExtraConfig = {
-          ZRAM_MEMORY_TRACKING = lib.kernel.yes;
-        };
-      }
-      # cf. https://github.com/radxa/kernel/commit/d35989ed644b9d67de09849779e5147f4332df55
-      {
-        name = "enable-hdmi-cec";
-        patch = ./0001-feat-enable-CEC-for-Rock-5C.patch;
-      }
-    ];
-  };
+    ))
+  ];
 }
