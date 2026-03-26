@@ -12,7 +12,7 @@
     ./tmpfs.nix
   ];
 
-  system.build.literals.secondsToWaitForNAS = 10;
+  system.build.literals.secondsToWaitForNAS = 20;
 
   nixpkgs.overlays = [
     (final: prev: {
@@ -76,6 +76,7 @@
     device = "/dev/mapper/nas-storage";
     options = [
       "nofail"
+      "x-systemd.automount"
       "x-systemd.device-timeout=${builtins.toString config.system.build.literals.secondsToWaitForNAS}s"
     ];
   };
@@ -94,6 +95,11 @@
   users.users.john.extraGroups = [ "render" ];
 
   services.udev.extraRules = ''
+    # Defense in depth: if an HDMI input node still appears, never let
+    # systemd-logind treat it as a suspend/power key source.
+    SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_PATH}=="platform-fde80000.hdmi", ENV{ID_INPUT_KEY}="0", TAG-="power-switch"
+    SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="fde80000.hdmi", ENV{ID_INPUT_KEY}="0", TAG-="power-switch"
+
     KERNEL=="mpp_service", MODE="0660", GROUP="video"
     KERNEL=="rga", MODE="0660", GROUP="video"
     KERNEL=="system", MODE="0666", GROUP="video"

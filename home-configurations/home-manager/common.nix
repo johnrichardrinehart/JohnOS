@@ -211,6 +211,36 @@ in
           });
     };
 
+    home.activation.kodiCecPolicy = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      kodi_cec_file="$HOME/.kodi/userdata/peripheral_data/cec_CEC_Adapter.xml"
+
+      set_kodi_cec_setting() {
+        setting_id="$1"
+        setting_value="$2"
+
+        if ${pkgs.gnugrep}/bin/grep -q "<setting id=\"$setting_id\"" "$kodi_cec_file"; then
+          ${pkgs.gnused}/bin/sed -i \
+            -e "s/\\(<setting id=\"$setting_id\" value=\"\\)[^\"]*\\(\".*\\)/\\1$setting_value\\2/" \
+            "$kodi_cec_file"
+        else
+          ${pkgs.gnused}/bin/sed -i \
+            -e "/<settings>/a\\    <setting id=\"$setting_id\" value=\"$setting_value\"/>" \
+            "$kodi_cec_file"
+        fi
+      }
+
+      if [ -f "$kodi_cec_file" ]; then
+        set_kodi_cec_setting "activate_source" "0"
+        set_kodi_cec_setting "wake_devices" "231"
+        set_kodi_cec_setting "standby_devices" "231"
+        set_kodi_cec_setting "send_inactive_source" "0"
+        set_kodi_cec_setting "cec_wake_screensaver" "0"
+        set_kodi_cec_setting "standby_pc_on_tv_standby" "36028"
+        set_kodi_cec_setting "standby_tv_on_pc_standby" "0"
+        set_kodi_cec_setting "power_avr_on_as" "0"
+      fi
+    '';
+
     home.sessionVariables.EDITOR = "vim";
 
     dconf.settings = {

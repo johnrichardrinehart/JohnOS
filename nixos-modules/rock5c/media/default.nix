@@ -45,6 +45,31 @@ let
       if [ -z "''${XDG_RUNTIME_DIR:-}" ]; then
         export XDG_RUNTIME_DIR="/run/user/$(id -u)"
       fi
+
+      wayland_display="''${WAYLAND_DISPLAY:-wayland-1}"
+      wayland_socket="$XDG_RUNTIME_DIR/$wayland_display"
+
+      for _ in $(seq 1 40); do
+        if [ -S "$wayland_socket" ]; then
+          break
+        fi
+        sleep 0.5
+      done
+
+      if [ ! -S "$wayland_socket" ]; then
+        echo "rock5c-kodi-autostart: timed out waiting for $wayland_socket" >&2
+        exit 1
+      fi
+
+      ${lib.optionalString (lib.attrByPath [ "programs" "niri" "enable" ] false config) ''
+        for _ in $(seq 1 40); do
+          if ${lib.getExe config.programs.niri.package} msg --json outputs 2>/dev/null \
+            | ${lib.getExe pkgs.jq} -e 'length > 0 and any(.[]; .current_mode != null)' >/dev/null; then
+            break
+          fi
+          sleep 0.5
+        done
+      ''}
     ''}
 
     exec ${lib.getExe selectedKodiPkg}
@@ -326,16 +351,26 @@ in
       "ffplay-v4l2request" = "${ffplayWrapper}/bin/rock5c-ffplay-v4l2request";
     };
 
-    environment.etc = lib.mkIf (cfg.kodi.enable && cfg.kodi.autostart.enable) {
-      "xdg/autostart/rock5c-kodi.desktop".text = ''
-        [Desktop Entry]
-        Type=Application
-        Name=Kodi
-        Comment=Autostart Kodi after the desktop session initializes
-        Exec=${kodiAutostartLauncher}/bin/rock5c-kodi-autostart
-        Terminal=false
-        X-GNOME-Autostart-enabled=true
-      '';
+    systemd.user.services.rock5c-kodi-autostart = lib.mkIf (cfg.kodi.enable && cfg.kodi.autostart.enable) {
+      description = "Autostart Kodi after the graphical session is ready";
+      after =
+        [
+          "graphical-session.target"
+        ]
+        ++ lib.optionals (lib.attrByPath [ "programs" "niri" "enable" ] false config) [ "niri.service" ];
+      wants =
+        [
+          "graphical-session.target"
+        ]
+        ++ lib.optionals (lib.attrByPath [ "programs" "niri" "enable" ] false config) [ "niri.service" ];
+      partOf = [ "graphical-session.target" ];
+      wantedBy = [ "graphical-session.target" ];
+      serviceConfig = {
+        Type = "simple";
+        ExecStart = "${kodiAutostartLauncher}/bin/rock5c-kodi-autostart";
+        Restart = "on-failure";
+        RestartSec = "3s";
+      };
     };
 
     systemd.tmpfiles.rules = lib.optionals managementCfg.enable [
