@@ -21,6 +21,17 @@
 
   networking.hostName = "rock5c";
   dev.johnrinehart.rock5c.enable = true;
+  dev.johnrinehart.rock5c.gstreamerHwdec.enable = true;
+  dev.johnrinehart.rock5c.media = {
+    enable = true;
+    management.enable = true;
+    kodi = {
+      variant = "auto";
+      autostart.enable = true;
+      disable_cec_standby_on_poweroff = true;
+    };
+  };
+  dev.johnrinehart.rock5c.rkvdec.enable = true;
   dev.johnrinehart.rock5c.ssdStore = {
     enable = true;
     users = [ "john" ];

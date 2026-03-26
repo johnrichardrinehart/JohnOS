@@ -63,6 +63,9 @@ in
   imports = [
     ./kernel_minimal.nix
     ./aic8800/module.nix
+    ./gstreamer-hwdec/module.nix
+    ./media/default.nix
+    ./rkvdec/module.nix
   ];
 
   options.dev.johnrinehart.rock5c = {
