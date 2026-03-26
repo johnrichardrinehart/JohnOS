@@ -23,7 +23,7 @@ let
 
   ffmpeg8V4l2Request = mkV4l2RequestFfmpeg pkgs.ffmpeg_8;
   ffmpeg8FullV4l2Request = mkV4l2RequestFfmpeg pkgs.ffmpeg_8-full;
-  mpvUnwrappedV4l2Request = pkgs.mpv-unwrapped.override {
+  mpvUnwrappedV4l2Request = pkgs."mpv-unwrapped".override {
     ffmpeg = ffmpeg8FullV4l2Request;
   };
   mpvV4l2Request = (mpvUnwrappedV4l2Request.wrapper {
