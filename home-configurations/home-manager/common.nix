@@ -196,8 +196,14 @@ in
             checkPhase = null;
           });
       ".config/hypr/hyprpaper.conf".source =
+        let
+          wallpaper = builtins.path {
+            path = ../../static/full-moon-forest-night-dark-starry-sky-5k-8k-7952x5304-1684.jpg;
+            name = "wallpaper.jpg";
+          };
+        in
         (pkgs.replaceVars ./hyprpaper.conf {
-          wallpaper = ../../static/full-moon-forest-night-dark-starry-sky-5k-8k-7952x5304-1684.jpg;
+          inherit wallpaper;
         }).overrideAttrs
           (_: {
             checkPhase = null;
@@ -449,13 +455,20 @@ in
         theme = "agnoster";
       };
 
-      initContent = ''
+      initContent =
+        let
+          bgimg = builtins.path {
+            path = ../../static/full-moon-forest-night-dark-starry-sky-5k-8k-7952x5304-1684.jpg;
+            name = "wallpaper.jpg";
+          };
+        in
+        ''
         # Use a function instead of an alias so zsh uses _ssh completion
         # rather than expanding to "kitty +kitten ssh" and hitting kitty's
         # broken anchor-based matcher handling.
         ssh() { kitty +kitten ssh "$@" }
 
-            export BGIMG="${../../static/full-moon-forest-night-dark-starry-sky-5k-8k-7952x5304-1684.jpg}"
+            export BGIMG="${bgimg}"
             if [ ! -f $BGIMG ]; then
             curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
             fi
