@@ -1,0 +1,28 @@
+From 8a9546d96a6f7d695f3cc62bff17f5db8f970001 Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Sun, 22 Mar 2026 23:30:00 -0400
+Subject: [PATCH] media: v4l2: add HEVC ext RPS control types
+
+Derived from Collabora's `rockchip-v6.19` branch diff against upstream
+`v6.19.7`. This adds the missing V4L2 compound control type enum values
+required by the HEVC short-term and long-term reference picture set
+controls used by the RK3588 rkvdec backport.
+---
+ include/uapi/linux/videodev2.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/uapi/linux/videodev2.h b/include/uapi/linux/videodev2.h
+index 6a1f2ed96ca60..4ad986d9936e0 100644
+--- a/include/uapi/linux/videodev2.h
++++ b/include/uapi/linux/videodev2.h
+@@ -1984,6 +1984,8 @@ enum v4l2_ctrl_type {
+ 	V4L2_CTRL_TYPE_HEVC_SLICE_PARAMS	= 0x0272,
+ 	V4L2_CTRL_TYPE_HEVC_SCALING_MATRIX	= 0x0273,
+ 	V4L2_CTRL_TYPE_HEVC_DECODE_PARAMS	= 0x0274,
++	V4L2_CTRL_TYPE_HEVC_EXT_SPS_ST_RPS	= 0x0275,
++	V4L2_CTRL_TYPE_HEVC_EXT_SPS_LT_RPS	= 0x0276,
+ 
+ 	V4L2_CTRL_TYPE_AV1_SEQUENCE	    = 0x280,
+ 	V4L2_CTRL_TYPE_AV1_TILE_GROUP_ENTRY = 0x281,
+-- 
+2.49.0

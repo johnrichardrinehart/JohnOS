@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JohnOS <noreply@example.com>
+Date: Mon, 23 Mar 2026 15:10:00 +0000
+Subject: [PATCH] rock5c: suppress cec standby on adapter shutdown
+
+On the Rock 5C appliance flow we want libCEC input events from the TV remote,
+but we do not want Kodi shutdown to send standby or inactive-source commands
+from the CEC adapter shutdown path that make the TV power off when the
+application exits.
+---
+ xbmc/peripherals/devices/PeripheralCecAdapter.cpp | 10 ++--------
+ 1 file changed, 2 insertions(+), 8 deletions(-)
+
+diff --git a/xbmc/peripherals/devices/PeripheralCecAdapter.cpp b/xbmc/peripherals/devices/PeripheralCecAdapter.cpp
+--- a/xbmc/peripherals/devices/PeripheralCecAdapter.cpp
++++ b/xbmc/peripherals/devices/PeripheralCecAdapter.cpp
+@@ -411,17 +411,9 @@
+   {
+     if (m_cecAdapter->IsLibCECActiveSource())
+     {
+-      if (!m_configuration.powerOffDevices.IsEmpty())
+-      {
+-        CLog::Log(LOGDEBUG, "{} - sending standby commands", __FUNCTION__);
+-        m_standbySent = CDateTime::GetCurrentDateTime();
+-        m_cecAdapter->StandbyDevices();
+-      }
+-      else if (m_bSendInactiveSource)
+-      {
+-        CLog::Log(LOGDEBUG, "{} - sending inactive source commands", __FUNCTION__);
+-        m_cecAdapter->SetInactiveView();
+-      }
++      CLog::Log(LOGDEBUG,
++                "{} - suppressing CEC standby/inactive-source commands on shutdown",
++                __FUNCTION__);
+     }
+     else
+     {

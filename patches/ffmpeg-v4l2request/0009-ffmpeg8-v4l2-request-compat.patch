@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JohnOS <noreply@example.com>
+Date: Mon, 23 Mar 2026 12:00:00 +0000
+Subject: [PATCH] ffmpeg8: relax v4l2-request configure gate for older kernel
+ headers
+
+FFmpeg 8 in nixpkgs is currently built against kernel headers that do not
+define the newer M2M hold-capture-buffer flag used by the V4L2 request decode
+helpers.
+
+The request decoder already contains a runtime fallback that queues each slice
+as a full frame when hold-capture is not supported by the driver, so this
+feature must not be a configure-time hard requirement.
+---
+ configure | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/configure b/configure
+index 99f9f0d8f61e7..8caab86b4da10 100755
+--- a/configure
++++ b/configure
+@@ -3202 +3202 @@
+-v4l2_request_deps="linux_media_h v4l2_timeval_to_ns v4l2_m2m_hold_capture_buf libdrm libudev"
++v4l2_request_deps="linux_media_h v4l2_timeval_to_ns libdrm libudev"
+@@ -7380,7 +7380,6 @@ if enabled v4l2_request; then
+     check_cc h264_v4l2_request linux/videodev2.h "int i = V4L2_CID_STATELESS_H264_DECODE_MODE"
+     check_cc hevc_v4l2_request linux/videodev2.h "int i = V4L2_CID_STATELESS_HEVC_SPS"
+     check_cc mpeg2_v4l2_request linux/videodev2.h "int i = V4L2_CID_STATELESS_MPEG2_SEQUENCE"
+-    check_cc v4l2_m2m_hold_capture_buf linux/videodev2.h "int i = V4L2_BUF_FLAG_M2M_HOLD_CAPTURE_BUF"
+     check_func_headers "linux/media.h linux/videodev2.h" v4l2_timeval_to_ns
+     check_pkg_config libudev libudev libudev.h udev_new
+     check_struct linux/videodev2.h "struct v4l2_ctrl_hevc_decode_params" num_delta_pocs_of_ref_rps_idx
+-- 
+2.49.0
