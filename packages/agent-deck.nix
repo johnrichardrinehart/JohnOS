@@ -1,18 +1,18 @@
 {
   lib,
-  buildGoModule,
+  buildGo124Module,
   fetchFromGitHub,
   git,
 }:
-buildGoModule rec {
+buildGo124Module rec {
   pname = "agent-deck";
-  version = "0.26.4";
+  version = "0.27.4";
 
   src = fetchFromGitHub {
     owner = "asheshgoplani";
     repo = "agent-deck";
     rev = "v${version}";
-    hash = "sha256-XEZKuKN/M1z47Fam0xLqwbIe1Tir8CH3aHsNyQP0Tgs=";
+    hash = "sha256-oeR9QT+l6KaC92dnw1mww7X2Vv6pIJ9sK7IWeTb5sCY=";
   };
 
   vendorHash = "sha256-PrhxSMJm4TPRtNHkg36HQJE4a0UDfYUpQdYA0tUor9k=";
