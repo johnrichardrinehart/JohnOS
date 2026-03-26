@@ -35,6 +35,12 @@ Options:
                              DEST defaults to SOURCE when SOURCE is absolute
   --yes                      Skip the confirmation prompt
   --help                     Show this message
+
+Examples:
+  rock5c-flash-image --target-type emmc
+  rock5c-flash-image --target-type sd --image ./result/sd-image.img
+  rock5c-flash-image --target-type emmc --copy /boot/age.secret
+  rock5c-flash-image --target-type sd --copy /tmp/age.secret:/boot/age.secret
 EOF
 }
 
@@ -102,7 +108,7 @@ assert_safe_target() {
     fi
   fi
 
-  mounted_entries="$(lsblk -nrpo PATH,MOUNTPOINT "$device" | awk '$2 != \"\" { print $0 }')"
+  mounted_entries="$(lsblk -nrpo PATH,MOUNTPOINT "$device" | awk '$2 != "" { print $0 }')"
   if [[ -n "$mounted_entries" ]]; then
     printf 'Mounted paths on %s:\n%s\n' "$device" "$mounted_entries" >&2
     die 'unmount the target device before flashing it'
@@ -258,30 +264,55 @@ while [[ $# -gt 0 ]]; do
 done
 
 require_root
-[[ "$target_type" == 'emmc' || "$target_type" == 'sd' ]] || die '--target-type must be emmc or sd'
+
+case "$target_type" in
+  emmc|sd) ;;
+  *)
+    usage
+    die '--target-type must be one of: emmc, sd'
+    ;;
+esac
 
 if [[ -z "$device" ]]; then
   device="$(infer_device "$target_type")"
 fi
 
+assert_safe_target
+
 if [[ -z "$image" ]]; then
   image="$(build_image)"
 fi
 
-[[ -f "$image" ]] || die "image file not found: $image"
-assert_safe_target
+[[ -f "$image" ]] || die "$image does not exist"
+
 print_plan
 
 if [[ "$auto_confirm" -ne 1 ]]; then
-  read -r -p "Continue? [y/N] " reply
-  [[ "$reply" =~ ^[Yy]$ ]] || exit 1
+  printf '\n'
+  read -r -p 'Continue? [y/N] ' confirm
+  case "$confirm" in
+    y|Y) ;;
+    *)
+      printf 'Aborted.\n'
+      exit 0
+      ;;
+  esac
 fi
 
-printf '==> Writing %s to %s\n' "$image" "$device"
+printf '\n'
+printf '==> Writing image to %s\n' "$device"
 dd if="$image" of="$device" bs=4M conv=fsync status=progress
 
+printf '\n'
+printf '==> Re-reading partition table\n'
 reread_partition_table
+
+printf '\n'
 resize_rootfs
+
+printf '\n'
 install_copy_specs
 
-printf '==> Finished flashing %s\n' "$device"
+printf '\n'
+printf '==> Final device layout\n'
+lsblk "$device"
