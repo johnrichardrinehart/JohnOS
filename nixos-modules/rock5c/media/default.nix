@@ -35,7 +35,7 @@ let
       "gbm";
 
   effectiveKodiVariant = if cfg.kodi.variant == "auto" then autoKodiVariant else cfg.kodi.variant;
-  selectedKodiAttr = "kodi_22-${effectiveKodiVariant}-v4l2request";
+  selectedKodiAttr = "kodi_22-${effectiveKodiVariant}-${cfg.kodi.ffmpegBackend}";
   selectedKodiPkg = builtins.getAttr selectedKodiAttr pkgs;
   kodiAutostartLauncher = pkgs.writeShellScriptBin "rock5c-kodi-autostart" ''
     set -eu
@@ -162,6 +162,11 @@ let
   delugeDataDir = "${servicesRoot}/deluge";
   sonarrDataDir = "${servicesRoot}/sonarr";
   radarrDataDir = "${servicesRoot}/radarr";
+  selectedMpvPkg =
+    if cfg.mpv.variant == "rockchip" then
+      pkgs.mpv_rockchip
+    else
+      pkgs.mpv_v4l2request;
 in
 {
   options.dev.johnrinehart.rock5c.media = {
@@ -171,8 +176,21 @@ in
       default = true;
     };
 
-    mpv.enable = lib.mkEnableOption "Rock 5C mpv linked against FFmpeg V4L2 request" // {
+    mpv.enable = lib.mkEnableOption "Rock 5C mpv package with hardware-decoding-focused FFmpeg" // {
       default = true;
+    };
+
+    mpv.variant = lib.mkOption {
+      type = lib.types.enum [
+        "rockchip"
+        "v4l2request"
+      ];
+      default = "v4l2request";
+      description = ''
+        Which Rock 5C mpv build to install.
+        `rockchip` links mpv against ffmpeg-rockchip for `rkmpp`/RGA support.
+        `v4l2request` keeps the local FFmpeg V4L2-request patch stack.
+      '';
     };
 
     management = {
@@ -244,6 +262,22 @@ in
           enabled without a Wayland compositor, and GBM otherwise.
         '';
       };
+
+      ffmpegBackend = lib.mkOption {
+        type = lib.types.enum [
+          "ffmpeg8-rkmpp-v4l2request"
+          "ffmpeg8-rkmpp"
+          "ffmpeg-rockchip"
+        ];
+        default = "ffmpeg8-rkmpp-v4l2request";
+        description = ''
+          Which FFmpeg backend family to use for the Rock 5C Kodi builds.
+          `ffmpeg8-rkmpp-v4l2request` builds Kodi against upstream FFmpeg 8 with
+          both `rkmpp` and the local V4L2-request patch stack enabled.
+          `ffmpeg8-rkmpp` builds Kodi against upstream FFmpeg 8 with `rkmpp` enabled.
+          `ffmpeg-rockchip` keeps the downstream `ffmpeg-rockchip` integration work.
+        '';
+      };
     };
   };
 
@@ -251,9 +285,9 @@ in
     nixpkgs.overlays = [
       (final: prev:
         let
-          kodiPatches =
+          commonKodiPatches =
             [
-            ../../../patches/kodi/0001-rock5c-force-drm-prime-on-gbm.patch
+              ../../../patches/kodi/0004-rock5c-add-drm-prime-oes-finishing-path.patch
             ]
             ++ lib.optionals cfg.kodi.disable_cec_standby_on_poweroff [
               # This suppresses Kodi's CEC standby/inactive-source power-off path.
@@ -262,30 +296,52 @@ in
             ];
 
           mkKodi22Variant =
-            baseName:
+            {
+              baseName,
+              ffmpegPkg,
+              backendName,
+              hasV4l2Request ? false,
+            }:
             let
               basePkg = (builtins.getAttr baseName prev).override {
-                ffmpeg = final.ffmpeg_8-full-v4l2request;
+                ffmpeg = ffmpegPkg;
               };
+              variantKodiPatches =
+                lib.optionals (baseName == "kodi-gbm") [
+                  # This patch intentionally forces DRM PRIME defaults for the
+                  # dedicated GBM appliance build. Applying it to Wayland/X11
+                  # pulls those frontends onto the same PRIME renderer path.
+                  ../../../patches/kodi/0001-rock5c-force-drm-prime-defaults-on-gbm.patch
+                ]
+                ++ lib.optionals hasV4l2Request [
+                  ../../../patches/kodi/0000-rock5c-enable-v4l2request-drm-prime-codec.patch
+                ]
+                ++ commonKodiPatches;
             in
             basePkg.overrideAttrs (old: {
-                version = "22.0a2";
+                version = "22.0a3";
                 kodiReleaseName = "Piers";
 
                 src = prev.fetchFromGitHub {
                   owner = "xbmc";
                   repo = "xbmc";
-                  rev = "22.0a2-Piers";
-                  hash = "sha256-6+hpADxmZH2jc4mgzbnX0UO4LK1AY9WPY36HQ6rmK2I=";
+                  rev = "22.0a3-Piers";
+                  hash = "sha256-z9MnqMvo2jChmogYOmVz4D42NLgGbmjL19/sRs1AZSI=";
                 };
 
-                patches = (old.patches or [ ]) ++ kodiPatches;
+                patches = (old.patches or [ ]) ++ variantKodiPatches;
 
                 buildInputs = (old.buildInputs or [ ]) ++ [
+                  final.libcrossguid_with_pc
                   final.libsysprof-capture
                   final.pcre2
                   final.exiv2
+                  final.libxslt.out
                   final.nlohmann_json
+                ];
+
+                nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
+                  final.pkg-config
                 ];
 
                 cmakeFlags =
@@ -299,35 +355,109 @@ in
                   "-DENABLE_INTERNAL_CROSSGUID=OFF"
                   "-DENABLE_INTERNAL_EXIV2=OFF"
                   "-DENABLE_INTERNAL_NLOHMANNJSON=OFF"
-                  "-DCROSSGUID_INCLUDE_DIR=${final.libcrossguid}/include"
-                  "-DCROSSGUID_LIBRARY=${final.libcrossguid}/lib/libcrossguid.a"
-                  "-DCROSSGUID_LIBRARY_RELEASE=${final.libcrossguid}/lib/libcrossguid.a"
                   "-DEXIV2_INCLUDE_DIR=${final.exiv2}/include"
                   "-DEXIV2_LIBRARY=${final.exiv2}/lib/libexiv2.so"
                   "-DEXIV2_LIBRARY_RELEASE=${final.exiv2}/lib/libexiv2.so"
+                  "-DLIBXSLT_INCLUDE_DIR=${final.libxslt.dev}/include"
+                  "-DLIBXSLT_LIBRARY=${final.libxslt.out}/lib/libxslt.so"
+                  "-DLIBXSLT_EXSLT_LIBRARY=${final.libxslt.out}/lib/libexslt.so"
+                  "-DLIBXSLT_XSLTPROC_EXECUTABLE=${final.libxslt.bin}/bin/xsltproc"
                 ];
 
                 passthru = (old.passthru or { }) // {
-                  ffmpeg = final.ffmpeg_8-full-v4l2request;
+                  ffmpeg = ffmpegPkg;
                   frontend = baseName;
+                  backend = backendName;
                 };
               });
 
-          kodi22Wayland = mkKodi22Variant "kodi-wayland";
-          kodi22X11 = mkKodi22Variant "kodi";
-          kodi22Gbm = mkKodi22Variant "kodi-gbm";
+          kodi22WaylandFfmpeg8RkmppV4l2Request = mkKodi22Variant {
+            baseName = "kodi-wayland";
+            ffmpegPkg = final.ffmpeg_8-full-rkmpp-v4l2request;
+            backendName = "ffmpeg8-rkmpp-v4l2request";
+            hasV4l2Request = true;
+          };
+          kodi22X11Ffmpeg8RkmppV4l2Request = mkKodi22Variant {
+            baseName = "kodi";
+            ffmpegPkg = final.ffmpeg_8-full-rkmpp-v4l2request;
+            backendName = "ffmpeg8-rkmpp-v4l2request";
+            hasV4l2Request = true;
+          };
+          kodi22GbmFfmpeg8RkmppV4l2Request = mkKodi22Variant {
+            baseName = "kodi-gbm";
+            ffmpegPkg = final.ffmpeg_8-full-rkmpp-v4l2request;
+            backendName = "ffmpeg8-rkmpp-v4l2request";
+            hasV4l2Request = true;
+          };
+
+          kodi22WaylandFfmpeg8Rkmpp = mkKodi22Variant {
+            baseName = "kodi-wayland";
+            ffmpegPkg = final.ffmpeg_8-full-rkmpp;
+            backendName = "ffmpeg8-rkmpp";
+          };
+          kodi22X11Ffmpeg8Rkmpp = mkKodi22Variant {
+            baseName = "kodi";
+            ffmpegPkg = final.ffmpeg_8-full-rkmpp;
+            backendName = "ffmpeg8-rkmpp";
+          };
+          kodi22GbmFfmpeg8Rkmpp = mkKodi22Variant {
+            baseName = "kodi-gbm";
+            ffmpegPkg = final.ffmpeg_8-full-rkmpp;
+            backendName = "ffmpeg8-rkmpp";
+          };
+
+          kodi22WaylandFfmpegRockchip = mkKodi22Variant {
+            baseName = "kodi-wayland";
+            ffmpegPkg = final.ffmpeg_8-full-rockchip;
+            backendName = "ffmpeg-rockchip";
+          };
+          kodi22X11FfmpegRockchip = mkKodi22Variant {
+            baseName = "kodi";
+            ffmpegPkg = final.ffmpeg_8-full-rockchip;
+            backendName = "ffmpeg-rockchip";
+          };
+          kodi22GbmFfmpegRockchip = mkKodi22Variant {
+            baseName = "kodi-gbm";
+            ffmpegPkg = final.ffmpeg_8-full-rockchip;
+            backendName = "ffmpeg-rockchip";
+          };
         in
         {
-          "kodi_22-wayland-v4l2request" = kodi22Wayland;
-          "kodi_22-x11-v4l2request" = kodi22X11;
-          "kodi_22-gbm-v4l2request" = kodi22Gbm;
+          "kodi_22-wayland-ffmpeg8-rkmpp-v4l2request" = kodi22WaylandFfmpeg8RkmppV4l2Request;
+          "kodi_22-x11-ffmpeg8-rkmpp-v4l2request" = kodi22X11Ffmpeg8RkmppV4l2Request;
+          "kodi_22-gbm-ffmpeg8-rkmpp-v4l2request" = kodi22GbmFfmpeg8RkmppV4l2Request;
 
-          kodi_22_wayland_v4l2request = kodi22Wayland;
-          kodi_22_x11_v4l2request = kodi22X11;
-          kodi_22_gbm_v4l2request = kodi22Gbm;
+          kodi_22_wayland_ffmpeg8_rkmpp_v4l2request = kodi22WaylandFfmpeg8RkmppV4l2Request;
+          kodi_22_x11_ffmpeg8_rkmpp_v4l2request = kodi22X11Ffmpeg8RkmppV4l2Request;
+          kodi_22_gbm_ffmpeg8_rkmpp_v4l2request = kodi22GbmFfmpeg8RkmppV4l2Request;
 
-          "kodi_22-v4l2request" = builtins.getAttr selectedKodiAttr final;
-          kodi_22_v4l2request = builtins.getAttr selectedKodiAttr final;
+          "kodi_22-wayland-ffmpeg8-rkmpp" = kodi22WaylandFfmpeg8Rkmpp;
+          "kodi_22-x11-ffmpeg8-rkmpp" = kodi22X11Ffmpeg8Rkmpp;
+          "kodi_22-gbm-ffmpeg8-rkmpp" = kodi22GbmFfmpeg8Rkmpp;
+
+          kodi_22_wayland_ffmpeg8_rkmpp = kodi22WaylandFfmpeg8Rkmpp;
+          kodi_22_x11_ffmpeg8_rkmpp = kodi22X11Ffmpeg8Rkmpp;
+          kodi_22_gbm_ffmpeg8_rkmpp = kodi22GbmFfmpeg8Rkmpp;
+
+          "kodi_22-wayland-ffmpeg-rockchip" = kodi22WaylandFfmpegRockchip;
+          "kodi_22-x11-ffmpeg-rockchip" = kodi22X11FfmpegRockchip;
+          "kodi_22-gbm-ffmpeg-rockchip" = kodi22GbmFfmpegRockchip;
+
+          kodi_22_wayland_ffmpeg_rockchip = kodi22WaylandFfmpegRockchip;
+          kodi_22_x11_ffmpeg_rockchip = kodi22X11FfmpegRockchip;
+          kodi_22_gbm_ffmpeg_rockchip = kodi22GbmFfmpegRockchip;
+
+          "kodi_22-ffmpeg8-rkmpp-v4l2request" =
+            builtins.getAttr "kodi_22-${effectiveKodiVariant}-ffmpeg8-rkmpp-v4l2request" final;
+          kodi_22_ffmpeg8_rkmpp_v4l2request =
+            builtins.getAttr "kodi_22-${effectiveKodiVariant}-ffmpeg8-rkmpp-v4l2request" final;
+
+          "kodi_22-ffmpeg8-rkmpp" = builtins.getAttr "kodi_22-${effectiveKodiVariant}-ffmpeg8-rkmpp" final;
+          kodi_22_ffmpeg8_rkmpp = builtins.getAttr "kodi_22-${effectiveKodiVariant}-ffmpeg8-rkmpp" final;
+
+          "kodi_22-ffmpeg-rockchip" = builtins.getAttr "kodi_22-${effectiveKodiVariant}-ffmpeg-rockchip" final;
+          kodi_22_ffmpeg_rockchip = builtins.getAttr "kodi_22-${effectiveKodiVariant}-ffmpeg-rockchip" final;
+
           kodi_22 = builtins.getAttr selectedKodiAttr final;
         })
     ];
@@ -341,7 +471,7 @@ in
         h264Test
         hevcTest
       ]
-      ++ lib.optionals cfg.mpv.enable [ pkgs.mpv_v4l2request ]
+      ++ lib.optionals cfg.mpv.enable [ selectedMpvPkg ]
       ++ lib.optionals cfg.kodi.enable [ selectedKodiPkg ]
       ++ lib.optionals (cfg.kodi.enable && cfg.kodi.autostart.enable) [ kodiAutostartLauncher ];
 
