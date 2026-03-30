@@ -1,0 +1,235 @@
+From 8ad30ed5d6f79f3c54f30f8b80634f36f2721ee3 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Fri, 27 Mar 2026 04:25:00 -0400
+Subject: [PATCH] avcodec/v4l2_request_hevc: submit ext SPS RPS controls
+
+On Rockchip RK3588 stateless HEVC decode, 10-bit streams were decoding
+with repeatable corruption on specific reference-heavy frames while the
+same files decoded cleanly in software. The failure was easy to trigger
+with `/tmp/thewire-dv-tests/thewire-s01e01-0944-6s-hdr10-only.mkv`,
+where software decode produced a clean frame 63 while hardware decode
+produced visible block corruption on that same frame.
+
+The userspace and driver stack already agreed on the decoded surface
+format and basic HEVC controls, so the next step was to instrument the
+kernel backend. Tracing in the Rockchip vdpu381 driver showed that the
+decoder was advertising the newer
+`V4L2_CID_STATELESS_HEVC_EXT_SPS_ST_RPS` and
+`V4L2_CID_STATELESS_HEVC_EXT_SPS_LT_RPS` controls, but the request path
+was not providing any nonzero short-term RPS payload to the kernel.
+
+After wiring the ext SPS RPS controls up in FFmpeg, the same diagnostic
+log changed to:
+
+  hevc rps presence: st_ctrl=1 lt_ctrl=1 st_sets=1 lt_sets=0
+  hevc st_ctrl[0] ... neg=4 pos=0 used=0x3 use_delta=0x0
+  hevc hw_st[0] neg=4 pos=0 d0=-1 u0=1 d1=-2 u1=1 d2=-3 u2=0 d3=-4 u3=0
+
+which matches the stream's SPS short-term reference picture set, and
+the decode corruption disappears.
+
+The HEVC v4l2request hwaccel currently only queues SPS, PPS, decode
+params, scaling matrix, slice params, and entry-point offsets. Extend it
+to:
+
+  - detect support for the ext SPS ST/LT RPS controls
+  - serialize `sps->st_rps[]` into
+    `struct v4l2_ctrl_hevc_ext_sps_st_rps`
+  - serialize the SPS long-term reference entries into
+    `struct v4l2_ctrl_hevc_ext_sps_lt_rps`
+  - queue both controls whenever the decoder advertises them
+
+Add guarded compat definitions for the newer HEVC ext SPS RPS UAPI so
+the patch still builds against header sets that do not define those
+controls yet.
+
+Fixes: 2af4006b7a35 ("avcodec: Add V4L2 Request API hevc hwaccel")
+Signed-off-by: John Rinehart <johnrichardrinehart@gmail.com>
+---
+ libavcodec/v4l2_request.h      | 26 ++++++++++++++++++++++++++
+ libavcodec/v4l2_request_hevc.c | 58 ++++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 82 insertions(+), 2 deletions(-)
+
+diff --git a/libavcodec/v4l2_request.h b/libavcodec/v4l2_request.h
+index 62248fe..a91ba5e 100644
+--- a/libavcodec/v4l2_request.h
++++ b/libavcodec/v4l2_request.h
+@@ -27,6 +27,32 @@
+ #include "libavutil/hwcontext_drm.h"
+ #include "libavutil/thread.h"
+ 
++#ifndef V4L2_CID_STATELESS_HEVC_EXT_SPS_ST_RPS
++#define V4L2_CID_STATELESS_HEVC_EXT_SPS_ST_RPS  (V4L2_CID_CODEC_STATELESS_BASE + 408)
++#define V4L2_CID_STATELESS_HEVC_EXT_SPS_LT_RPS  (V4L2_CID_CODEC_STATELESS_BASE + 409)
++
++#define V4L2_HEVC_EXT_SPS_ST_RPS_FLAG_INTER_REF_PIC_SET_PRED 0x1
++#define V4L2_HEVC_EXT_SPS_LT_RPS_FLAG_USED_LT                0x1
++
++struct v4l2_ctrl_hevc_ext_sps_st_rps {
++    __u8  delta_idx_minus1;
++    __u8  delta_rps_sign;
++    __u8  num_negative_pics;
++    __u8  num_positive_pics;
++    __u32 used_by_curr_pic;
++    __u32 use_delta_flag;
++    __u16 abs_delta_rps_minus1;
++    __u16 delta_poc_s0_minus1[16];
++    __u16 delta_poc_s1_minus1[16];
++    __u16 flags;
++};
++
++struct v4l2_ctrl_hevc_ext_sps_lt_rps {
++    __u16 lt_ref_pic_poc_lsb_sps;
++    __u16 flags;
++};
++#endif
++
+ typedef struct V4L2RequestBuffer {
+     int index;
+     int fd;
+diff --git a/libavcodec/v4l2_request_hevc.c b/libavcodec/v4l2_request_hevc.c
+index 21f578a..061c55a 100644
+--- a/libavcodec/v4l2_request_hevc.c
++++ b/libavcodec/v4l2_request_hevc.c
+@@ -25,7 +25,7 @@
+ #include "internal.h"
+ #include "v4l2_request.h"
+ 
+-#define V4L2_HEVC_CONTROLS_MAX 6
++#define V4L2_HEVC_CONTROLS_MAX 8
+ 
+ typedef struct V4L2RequestContextHEVC {
+     V4L2RequestContext base;
+@@ -34,6 +34,8 @@ typedef struct V4L2RequestContextHEVC {
+     unsigned int max_slice_params;
+     unsigned int max_entry_point_offsets;
+     bool has_scaling_matrix;
++    bool has_ext_sps_st_rps;
++    bool has_ext_sps_lt_rps;
+ } V4L2RequestContextHEVC;
+ 
+ typedef struct V4L2RequestControlsHEVC {
+@@ -42,6 +44,8 @@ typedef struct V4L2RequestControlsHEVC {
+     struct v4l2_ctrl_hevc_pps pps;
+     struct v4l2_ctrl_hevc_decode_params decode_params;
+     struct v4l2_ctrl_hevc_scaling_matrix scaling_matrix;
++    struct v4l2_ctrl_hevc_ext_sps_st_rps ext_sps_st_rps[HEVC_MAX_SHORT_TERM_REF_PIC_SETS];
++    struct v4l2_ctrl_hevc_ext_sps_lt_rps ext_sps_lt_rps[HEVC_MAX_LONG_TERM_REF_PICS];
+     struct v4l2_ctrl_hevc_slice_params slice_params;
+     struct v4l2_ctrl_hevc_slice_params *frame_slice_params;
+     unsigned int allocated_slice_params;
+@@ -174,6 +178,41 @@ static void fill_decode_params(struct v4l2_ctrl_hevc_decode_params *decode_param
+     }
+ }
+ 
++static void fill_ext_sps_rps(V4L2RequestControlsHEVC *controls, const HEVCContext *h)
++{
++    const HEVCSPS *sps = h->pps->sps;
++
++    memset(controls->ext_sps_st_rps, 0, sizeof(controls->ext_sps_st_rps));
++    memset(controls->ext_sps_lt_rps, 0, sizeof(controls->ext_sps_lt_rps));
++
++    for (unsigned int i = 0; i < sps->nb_st_rps; i++) {
++        const ShortTermRPS *st_rps = &sps->st_rps[i];
++        struct v4l2_ctrl_hevc_ext_sps_st_rps *ctrl = &controls->ext_sps_st_rps[i];
++        unsigned int num_positive = st_rps->num_delta_pocs - st_rps->num_negative_pics;
++
++        ctrl->num_negative_pics = st_rps->num_negative_pics;
++        ctrl->num_positive_pics = num_positive;
++        ctrl->used_by_curr_pic = st_rps->used;
++
++        for (unsigned int j = 0; j < ctrl->num_negative_pics; j++)
++            ctrl->delta_poc_s0_minus1[j] = -(st_rps->delta_poc[j] -
++                                             (j ? st_rps->delta_poc[j - 1] : 0)) - 1;
++
++        for (unsigned int j = 0; j < ctrl->num_positive_pics; j++) {
++            unsigned int idx = st_rps->num_negative_pics + j;
++            int prev = j ? st_rps->delta_poc[idx - 1] : 0;
++
++            ctrl->delta_poc_s1_minus1[j] = st_rps->delta_poc[idx] - prev - 1;
++        }
++    }
++
++    for (unsigned int i = 0; i < sps->num_long_term_ref_pics_sps; i++) {
++        controls->ext_sps_lt_rps[i].lt_ref_pic_poc_lsb_sps = sps->lt_ref_pic_poc_lsb_sps[i];
++        if (sps->used_by_curr_pic_lt & (1U << i))
++            controls->ext_sps_lt_rps[i].flags |= V4L2_HEVC_EXT_SPS_LT_RPS_FLAG_USED_LT;
++    }
++}
++
+ static int fill_slice_params(V4L2RequestControlsHEVC *controls, int slice,
+                              bool max_entry_point_offsets, const HEVCContext *h)
+ {
+@@ -378,6 +417,7 @@ static int v4l2_request_hevc_start_frame(AVCodecContext *avctx,
+ 
+     fill_sps(&controls->sps, h);
+     fill_decode_params(&controls->decode_params, h);
++    fill_ext_sps_rps(controls, h);
+ 
+     if (ctx->has_scaling_matrix) {
+         const ScalingList *sl = pps->scaling_list_data_present_flag ?
+@@ -535,6 +575,24 @@ static int v4l2_request_hevc_queue_decode(AVCodecContext *avctx, bool last_slice
+         };
+     }
+ 
++    if (ctx->has_ext_sps_st_rps && controls->sps.num_short_term_ref_pic_sets) {
++        control[count++] = (struct v4l2_ext_control) {
++            .id = V4L2_CID_STATELESS_HEVC_EXT_SPS_ST_RPS,
++            .ptr = controls->ext_sps_st_rps,
++            .size = sizeof(*controls->ext_sps_st_rps) *
++                    controls->sps.num_short_term_ref_pic_sets,
++        };
++    }
++
++    if (ctx->has_ext_sps_lt_rps && controls->sps.num_long_term_ref_pics_sps) {
++        control[count++] = (struct v4l2_ext_control) {
++            .id = V4L2_CID_STATELESS_HEVC_EXT_SPS_LT_RPS,
++            .ptr = controls->ext_sps_lt_rps,
++            .size = sizeof(*controls->ext_sps_lt_rps) *
++                    controls->sps.num_long_term_ref_pics_sps,
++        };
++    }
++
+     if (ctx->max_slice_params && controls->num_slice_params) {
+         control[count++] = (struct v4l2_ext_control) {
+             .id = V4L2_CID_STATELESS_HEVC_SLICE_PARAMS,
+@@ -648,6 +706,12 @@ static int v4l2_request_hevc_post_probe(AVCodecContext *avctx)
+     struct v4l2_query_ext_ctrl scaling_matrix = {
+         .id = V4L2_CID_STATELESS_HEVC_SCALING_MATRIX,
+     };
++    struct v4l2_query_ext_ctrl ext_sps_st_rps = {
++        .id = V4L2_CID_STATELESS_HEVC_EXT_SPS_ST_RPS,
++    };
++    struct v4l2_query_ext_ctrl ext_sps_lt_rps = {
++        .id = V4L2_CID_STATELESS_HEVC_EXT_SPS_LT_RPS,
++    };
+     struct v4l2_query_ext_ctrl entry_point_offsets = {
+         .id = V4L2_CID_STATELESS_HEVC_ENTRY_POINT_OFFSETS,
+     };
+@@ -682,6 +746,11 @@ static int v4l2_request_hevc_post_probe(AVCodecContext *avctx)
+     else
+         ctx->has_scaling_matrix = false;
+ 
++    ctx->has_ext_sps_st_rps =
++        !ff_v4l2_request_query_control(avctx, &ext_sps_st_rps);
++    ctx->has_ext_sps_lt_rps =
++        !ff_v4l2_request_query_control(avctx, &ext_sps_lt_rps);
++
+     ret = ff_v4l2_request_query_control(avctx, &entry_point_offsets);
+     if (!ret)
+         ctx->max_entry_point_offsets = FFMAX(entry_point_offsets.dims[0], 1);
+@@ -740,9 +809,10 @@ static int v4l2_request_hevc_post_probe(AVCodecContext *avctx)
+     }
+ 
+     av_log(ctx, AV_LOG_VERBOSE, "%s-based decoder with SLICE_PARAMS=%u, "
+-           "ENTRY_POINT_OFFSETS=%u and SCALING_MATRIX=%d controls\n",
++           "ENTRY_POINT_OFFSETS=%u, SCALING_MATRIX=%d, EXT_SPS_ST_RPS=%d and EXT_SPS_LT_RPS=%d controls\n",
+           ctx->decode_mode == V4L2_STATELESS_HEVC_DECODE_MODE_SLICE_BASED ? "slice" : "frame",
+-          ctx->max_slice_params, ctx->max_entry_point_offsets, ctx->has_scaling_matrix);
++          ctx->max_slice_params, ctx->max_entry_point_offsets, ctx->has_scaling_matrix,
++          ctx->has_ext_sps_st_rps, ctx->has_ext_sps_lt_rps);
+ 
+     control[0].value = ctx->decode_mode;
+     control[1].value = ctx->start_code;
+-- 
+2.49.0
