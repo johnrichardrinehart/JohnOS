@@ -1,0 +1,16 @@
+diff --git a/drivers/video/rockchip/mpp/mpp_rkvdec2.c b/drivers/video/rockchip/mpp/mpp_rkvdec2.c
+--- a/drivers/video/rockchip/mpp/mpp_rkvdec2.c
++++ b/drivers/video/rockchip/mpp/mpp_rkvdec2.c
+@@ -1817,6 +1817,12 @@ static int rkvdec2_alloc_rcbbuf(struct platform_device *pdev, struct rkvdec2_de
+ 		dev_err(dev, "rcb_size invalid.\n");
+ 		return -EINVAL;
+ 	}
++	/* Reserve the fixed RCB IOVA so imported DMA-BUFs cannot collide with it. */
++	ret = mpp_iommu_reserve_iova(dec->mpp.iommu_info, iova, rcb_size);
++	if (ret) {
++		dev_err(dev, "alloc rcb iova error.\n");
++		return ret;
++	}
+ 	/* get sram device node */
+ 	sram_np = of_parse_phandle(dev->of_node, "rockchip,sram", 0);
+ 	if (!sram_np) {
