@@ -60,6 +60,14 @@ The vendored files in this directory correspond to these source commits:
    - Source commit: local patch
    - Subject: `ffmpeg8: relax v4l2-request configure gate for older kernel headers`
 
+10. `0010-hevc-v4l2request-submit-ext-sps-rps.patch`
+   - Source commit: local patch
+   - Subject: `avcodec/v4l2_request_hevc: submit ext SPS RPS controls`
+   - Note: fixes RK3588 10-bit HEVC corruption by queueing the newer
+     `V4L2_CID_STATELESS_HEVC_EXT_SPS_ST_RPS` /
+     `V4L2_CID_STATELESS_HEVC_EXT_SPS_LT_RPS` controls that the original
+     HEVC request-series patch did not submit
+
 ## Local Notes
 
 - These patches are vendored instead of fetched dynamically so Nix builds do
@@ -71,3 +79,7 @@ The vendored files in this directory correspond to these source commits:
   layout changes.
 - `0009-ffmpeg8-v4l2-request-compat.patch` is a local compatibility patch for
   older kernel headers in the current nixpkgs branch.
+- `0010-hevc-v4l2request-submit-ext-sps-rps.patch` is a local HEVC fix for
+  kernels/userspace that expose the ext SPS RPS controls; it was developed
+  against Rockchip RK3588 `vdpu381` after kernel tracing showed that FFmpeg
+  was not submitting any nonzero short-term RPS payload to the decoder.
