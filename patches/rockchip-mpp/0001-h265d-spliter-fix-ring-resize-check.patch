@@ -1,0 +1,13 @@
+diff --git a/mpp/codec/dec/h265/h265d_spliter.c b/mpp/codec/dec/h265/h265d_spliter.c
+index 0e8b7fb..f0d3219 100644
+--- a/mpp/codec/dec/h265/h265d_spliter.c
++++ b/mpp/codec/dec/h265/h265d_spliter.c
+@@ -264,7 +264,7 @@ static RK_S32 h265d_combine_frame(H265dSpl *p, RK_S32 next, const RK_U8 **buf,
+             }
+ 
+             // Resize first to get new memory
+-            if (mpp_ring_resize(p->ring, new_size)) {
++            if (!mpp_ring_resize(p->ring, new_size)) {
+                 mpp_loge_f("hal: resize ring to %u failed\n", new_size);
+                 if (saved_wrap_data)
+                     mpp_free(saved_wrap_data);
