@@ -5,6 +5,7 @@
 }:
 let
   cfg = config.dev.johnrinehart.rock5c.rkvdec;
+  rock5cCfg = config.dev.johnrinehart.rock5c;
 
   patchFiles = [
     "0001-media-v4l2-add-hevc-ext-rps-controls-needed-by-rkvdec.patch"
@@ -31,22 +32,32 @@ in
     enable = lib.mkEnableOption "Collabora RK3588 rkvdec backport for Rock 5C";
   };
 
-  config = lib.mkIf cfg.enable {
-    boot.kernelModules = [ "rockchip_vdec" ];
-
-    boot.kernelPatches =
-      (map (file: {
-        name = "rock5c-rkvdec-${lib.removeSuffix ".patch" file}";
-        patch = ./patches/${file};
-      }) patchFiles)
-      ++ [
+  config = lib.mkMerge [
+    {
+      assertions = [
         {
-          name = "rock5c-rkvdec-kconfig";
-          patch = null;
-          structuredExtraConfig = with lib.kernel; {
-            VIDEO_ROCKCHIP_VDEC = module;
-          };
+          assertion = !(cfg.enable && rock5cCfg.videoBackend != "mainline");
+          message = "dev.johnrinehart.rock5c.rkvdec.enable requires dev.johnrinehart.rock5c.videoBackend = \"mainline\".";
         }
       ];
-  };
+    }
+    (lib.mkIf (cfg.enable && rock5cCfg.videoBackend == "mainline") {
+      boot.kernelModules = [ "rockchip_vdec" ];
+
+      boot.kernelPatches =
+        (map (file: {
+          name = "rock5c-rkvdec-${lib.removeSuffix ".patch" file}";
+          patch = ./patches/${file};
+        }) patchFiles)
+        ++ [
+          {
+            name = "rock5c-rkvdec-kconfig";
+            patch = null;
+            structuredExtraConfig = with lib.kernel; {
+              VIDEO_ROCKCHIP_VDEC = module;
+            };
+          }
+        ];
+    })
+  ];
 }

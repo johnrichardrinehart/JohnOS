@@ -9,6 +9,7 @@
   networking.hostName = "rock5c-minimal";
   dev.johnrinehart.rock5c.enable = true;
   dev.johnrinehart.rock5c.useMinimalKernel = true;
+  dev.johnrinehart.rock5c.videoBackend = "mainline";
   dev.johnrinehart.system.enable = true;
   dev.johnrinehart.nix.enable = true;
   dev.johnrinehart.desktop.wl-hyprland.enable = true;
@@ -40,7 +41,9 @@
   users.groups.video.members = [ config.services.jellyfin.user ];
 
   services.udev.extraRules = ''
-    KERNEL=="mpp_service", MODE="0660", GROUP="video"
+    ${lib.optionalString (config.dev.johnrinehart.rock5c.videoBackend == "mpp") ''
+      KERNEL=="mpp", MODE="0660", GROUP="video", SYMLINK+="mpp_service"
+    ''}
     KERNEL=="rga", MODE="0660", GROUP="video"
     KERNEL=="system", MODE="0666", GROUP="video"
     KERNEL=="system-dma32", MODE="0666", GROUP="video"
