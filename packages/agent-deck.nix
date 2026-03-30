@@ -6,13 +6,14 @@
 }:
 buildGo124Module rec {
   pname = "agent-deck";
-  version = "0.27.4";
+  version = "unstable-2026-03-29";
+  rev = "56a6abaa18d273056234c55205d7459906afaff7";
 
   src = fetchFromGitHub {
-    owner = "asheshgoplani";
+    owner = "johnrichardrinehart";
     repo = "agent-deck";
-    rev = "v${version}";
-    hash = "sha256-oeR9QT+l6KaC92dnw1mww7X2Vv6pIJ9sK7IWeTb5sCY=";
+    inherit rev;
+    hash = "sha256-MRQwQdPg0NjgvtgkjWHcV5MNv5OZq9/Jpxc0ONIxZB8=";
   };
 
   vendorHash = "sha256-PrhxSMJm4TPRtNHkg36HQJE4a0UDfYUpQdYA0tUor9k=";
@@ -27,7 +28,7 @@ buildGo124Module rec {
 
   meta = with lib; {
     description = "Your AI agent command center - manage multiple AI coding agents from one terminal";
-    homepage = "https://github.com/asheshgoplani/agent-deck";
+    homepage = "https://github.com/johnrichardrinehart/agent-deck";
     license = licenses.mit;
     mainProgram = "agent-deck";
     maintainers = [ ];
