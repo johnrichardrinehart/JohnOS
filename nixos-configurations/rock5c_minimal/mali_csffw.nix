@@ -4,11 +4,11 @@
 }:
 stdenv.mkDerivation {
   pname = "mali-g610-firmware";
-  version = "g21p0-01eac0";
+  version = "v1.9-1-2131373";
 
   src = fetchurl {
-    url = "https://github.com/JeffyCN/mirrors/raw/e08ced3e0235b25a7ba2a3aeefd0e2fcbd434b68/firmware/g610/mali_csffw.bin";
-    hash = "sha256-jnyCGlXKHDRcx59hJDYW3SX8NbgfCQlG8wKIbWdxLfU=";
+    url = "https://raw.githubusercontent.com/tsukumijima/libmali-rockchip/v1.9-1-2131373/firmware/g610/mali_csffw.bin";
+    hash = "sha256-YP+jdu3sjEAtwO6TV8aF2DXsLg+z0HePMD0IqYAtV/E=";
   };
 
   buildCommand = ''
