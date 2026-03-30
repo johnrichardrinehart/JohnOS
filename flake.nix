@@ -37,13 +37,19 @@
       overlays = import ./overlays inputs;
       pkgs = import inputs.nixpkgs {
         inherit system;
-        overlays = [ overlays.default ];
+        overlays = [
+          inputs.rock5c-nixos.overlays.default
+          overlays.default
+        ];
       };
     in
     {
       nixosConfigurations = import ./nixos-configurations inputs;
 
-      packages.${system} = import ./packages { inherit pkgs; };
+      packages.${system} = import ./packages {
+        inherit pkgs;
+        rock5cPkgs = pkgs;
+      };
 
       devShells.${system} = import ./dev-shells.nix { inherit pkgs; };
 

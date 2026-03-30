@@ -1,0 +1,87 @@
+--- a/osal/allocator/allocator_drm.c
++++ b/osal/allocator/allocator_drm.c
+@@ -54,11 +54,13 @@ typedef struct {
+     RK_U32  alignment;
+     RK_S32  drm_device;
++    RK_S32  drm_index;
+     RK_U32  flags;
+ } allocator_ctx_drm;
+ 
+ /* use renderD128 first to avoid GKI kernel permission issue */
++/* some kernels allow open on renderD128 but reject MODE_CREATE_DUMB */
+ static const char *dev_drm[] = {
+     "/dev/dri/renderD128",
+     "/dev/dri/card0",
+@@ -155,6 +157,21 @@ static int drm_free(int fd, RK_U32 handle)
+     return drm_ioctl(fd, DRM_IOCTL_MODE_DESTROY_DUMB, &data);
+ }
+ 
++static int drm_open_any(RK_S32 *index)
++{
++    RK_S32 i;
++    RK_S32 fd = -1;
++
++    for (i = 0; i < (RK_S32)MPP_ARRAY_ELEMS(dev_drm); i++) {
++        fd = open(dev_drm[i], O_RDWR | O_CLOEXEC);
++        if (fd >= 0) {
++            if (index)
++                *index = i;
++            break;
++        }
++    }
++    return fd;
++}
++
+ static MPP_RET os_allocator_drm_open(void **ctx, size_t alignment, MppAllocFlagType flags)
+ {
+     allocator_ctx_drm *p;
+@@ -170,10 +187,7 @@ static MPP_RET os_allocator_drm_open(void **ctx, size_t alignment, MppAllocFlagT
+ 
+     mpp_env_get_u32("drm_debug", &drm_debug, 0);
+ 
+-    for (i = 0; i < (RK_S32)MPP_ARRAY_ELEMS(dev_drm); i++) {
+-        fd = open(dev_drm[i], O_RDWR | O_CLOEXEC);
+-        if (fd > 0)
+-            break;
+-    }
++    fd = drm_open_any(&i);
+ 
+     if (fd < 0) {
+         mpp_err_f("open all drm device failed.\n");
+@@ -197,6 +211,7 @@ static MPP_RET os_allocator_drm_open(void **ctx, size_t alignment, MppAllocFlagT
+         /*
+          * default drm use cma, do nothing here
+          */
++        p->drm_index    = i;
+         p->alignment    = alignment;
+         p->flags        = flags;
+         p->drm_device   = fd;
+@@ -222,10 +237,28 @@ static MPP_RET os_allocator_drm_alloc(void *ctx, MppBufferInfo *info)
+ 
+     ret = drm_alloc(p->drm_device, info->size, p->alignment,
+                     (RK_U32 *)&info->hnd, p->flags);
++    if (ret && p->drm_index == 0) {
++        RK_S32 alt_fd = open(dev_drm[1], O_RDWR | O_CLOEXEC);
++
++        if (alt_fd >= 0) {
++            drm_ioctl(alt_fd, DRM_IOCTL_DROP_MASTER, 0);
++            ret = drm_alloc(alt_fd, info->size, p->alignment,
++                            (RK_U32 *)&info->hnd, p->flags);
++            if (!ret) {
++                close(p->drm_device);
++                p->drm_device = alt_fd;
++                p->drm_index = 1;
++            } else {
++                close(alt_fd);
++            }
++        }
++    }
++
+     if (ret) {
+         mpp_err_f("drm_alloc failed ret %d\n", ret);
+         return ret;
+     }
+-
+     ret = drm_handle_to_fd(p->drm_device, (RK_U32)((intptr_t)info->hnd),
+                            &info->fd, DRM_CLOEXEC | DRM_RDWR);
+ 
