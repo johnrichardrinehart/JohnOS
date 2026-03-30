@@ -1,0 +1,135 @@
+diff --git a/drivers/iommu/rockchip-iommu.c b/drivers/iommu/rockchip-iommu.c
+--- a/drivers/iommu/rockchip-iommu.c
++++ b/drivers/iommu/rockchip-iommu.c
+@@ -114,6 +114,7 @@
+ 	struct clk_bulk_data *clocks;
+ 	int num_clocks;
+ 	bool reset_disabled;
++	bool skip_read;
+ 	struct iommu_device iommu;
+ 	struct list_head node; /* entry in rk_iommu_domain.iommus */
+ 	struct iommu_domain *domain; /* domain to which iommu is attached */
+@@ -437,11 +438,18 @@
+ {
+ 	int ret, i;
+ 	bool val;
++	int retry_count = 0;
++
++	if (iommu->skip_read)
++		goto read_wa;
+ 
+ 	if (!rk_iommu_is_stall_active(iommu))
+ 		return 0;
+ 
++read_wa:
+ 	rk_iommu_command(iommu, RK_MMU_CMD_DISABLE_STALL);
++	if (iommu->skip_read)
++		return 0;
+ 
+ 	ret = readx_poll_timeout(rk_iommu_is_stall_active, iommu, val,
+ 				 !val, RK_MMU_POLL_PERIOD_US,
+@@ -450,6 +458,8 @@
+ 		for (i = 0; i < iommu->num_mmu; i++)
+ 			dev_err(iommu->dev, "Disable stall request timed out, status: %#08x\n",
+ 				rk_iommu_read(iommu->bases[i], RK_MMU_STATUS));
++	if (ret && retry_count++ < 10)
++		goto read_wa;
+ 
+ 	return ret;
+ }
+@@ -458,11 +468,18 @@
+ {
+ 	int ret, i;
+ 	bool val;
++	int retry_count = 0;
++
++	if (iommu->skip_read)
++		goto read_wa;
+ 
+ 	if (rk_iommu_is_paging_enabled(iommu))
+ 		return 0;
+ 
++read_wa:
+ 	rk_iommu_command(iommu, RK_MMU_CMD_ENABLE_PAGING);
++	if (iommu->skip_read)
++		return 0;
+ 
+ 	ret = readx_poll_timeout(rk_iommu_is_paging_enabled, iommu, val,
+ 				 val, RK_MMU_POLL_PERIOD_US,
+@@ -471,6 +488,8 @@
+ 		for (i = 0; i < iommu->num_mmu; i++)
+ 			dev_err(iommu->dev, "Enable paging request timed out, status: %#08x\n",
+ 				rk_iommu_read(iommu->bases[i], RK_MMU_STATUS));
++	if (ret && retry_count++ < 10)
++		goto read_wa;
+ 
+ 	return ret;
+ }
+@@ -479,11 +498,18 @@
+ {
+ 	int ret, i;
+ 	bool val;
++	int retry_count = 0;
++
++	if (iommu->skip_read)
++		goto read_wa;
+ 
+ 	if (!rk_iommu_is_paging_enabled(iommu))
+ 		return 0;
+ 
++read_wa:
+ 	rk_iommu_command(iommu, RK_MMU_CMD_DISABLE_PAGING);
++	if (iommu->skip_read)
++		return 0;
+ 
+ 	ret = readx_poll_timeout(rk_iommu_is_paging_enabled, iommu, val,
+ 				 !val, RK_MMU_POLL_PERIOD_US,
+@@ -492,6 +518,8 @@
+ 		for (i = 0; i < iommu->num_mmu; i++)
+ 			dev_err(iommu->dev, "Disable paging request timed out, status: %#08x\n",
+ 				rk_iommu_read(iommu->bases[i], RK_MMU_STATUS));
++	if (ret && retry_count++ < 10)
++		goto read_wa;
+ 
+ 	return ret;
+ }
+@@ -505,6 +533,9 @@
+ 	if (iommu->reset_disabled)
+ 		return 0;
+ 
++	if (iommu->skip_read)
++		goto read_wa;
++
+ 	/*
+ 	 * Check if register DTE_ADDR is working by writing DTE_ADDR_DUMMY
+ 	 * and verifying that upper 5 (v1) or 7 (v2) nybbles are read back.
+@@ -519,7 +550,10 @@
+ 		}
+ 	}
+ 
++read_wa:
+ 	rk_iommu_command(iommu, RK_MMU_CMD_FORCE_RESET);
++	if (iommu->skip_read)
++		return 0;
+ 
+ 	ret = readx_poll_timeout(rk_iommu_is_reset_done, iommu, val,
+ 				 val, RK_MMU_FORCE_RESET_TIMEOUT_US,
+@@ -1245,6 +1279,8 @@
+ 
+ 	iommu->reset_disabled = device_property_read_bool(dev,
+ 					"rockchip,disable-mmu-reset");
++	iommu->skip_read = device_property_read_bool(dev,
++					"rockchip,skip-mmu-read");
+ 
+ 	iommu->num_clocks = ARRAY_SIZE(rk_iommu_clocks);
+ 	iommu->clocks = devm_kcalloc(iommu->dev, iommu->num_clocks,
+@@ -1366,6 +1402,9 @@
+ 	{	.compatible = "rockchip,iommu",
+ 		.data = &iommu_data_ops_v1,
+ 	},
++	{	.compatible = "rockchip,iommu-v2",
++		.data = &iommu_data_ops_v2,
++	},
+ 	{	.compatible = "rockchip,rk3568-iommu",
+ 		.data = &iommu_data_ops_v2,
+ 	},
