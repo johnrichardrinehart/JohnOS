@@ -20,7 +20,16 @@
   nixpkgs.config.permittedInsecurePackages = [ "python-2.7.18.8" ];
 
   networking.hostName = "rock5c";
+  networking.firewall.logRefusedConnections = false;
+  networking.firewall.logRefusedPackets = false;
   dev.johnrinehart.rock5c.enable = true;
+  dev.johnrinehart.rock5c.videoBackend = "mpp";
+  dev.johnrinehart.rock5c.netconsole = {
+    enable = true;
+    device = "wlan0";
+    targetIP = "172.16.0.3";
+    targetMAC = "f4:7b:09:9b:69:0f";
+  };
   dev.johnrinehart.rock5c.gstreamerHwdec.enable = true;
   dev.johnrinehart.rock5c.media = {
     enable = true;
@@ -31,7 +40,8 @@
       disable_cec_standby_on_poweroff = true;
     };
   };
-  dev.johnrinehart.rock5c.rkvdec.enable = true;
+  dev.johnrinehart.rock5c.rkvdec.enable =
+    lib.mkDefault (config.dev.johnrinehart.rock5c.videoBackend == "mainline");
   dev.johnrinehart.rock5c.ssdStore = {
     enable = true;
     users = [ "john" ];
@@ -87,7 +97,9 @@
     SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_PATH}=="platform-fde80000.hdmi", ENV{ID_INPUT_KEY}="0", TAG-="power-switch"
     SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="fde80000.hdmi", ENV{ID_INPUT_KEY}="0", TAG-="power-switch"
 
-    KERNEL=="mpp_service", MODE="0660", GROUP="video"
+    ${lib.optionalString (config.dev.johnrinehart.rock5c.videoBackend == "mpp") ''
+      KERNEL=="mpp", MODE="0660", GROUP="video", SYMLINK+="mpp_service"
+    ''}
     KERNEL=="rga", MODE="0660", GROUP="video"
     KERNEL=="system", MODE="0666", GROUP="video"
     KERNEL=="system-dma32", MODE="0666", GROUP="video"
@@ -95,7 +107,10 @@
     KERNEL=="system-uncached-dma32", MODE="0666", GROUP="video" RUN+="${pkgs.toybox}/bin/chmod a+rw /dev/dma_heap"
   '';
 
-  environment.systemPackages = [ pkgs.thin-provisioning-tools ];
+  environment.systemPackages = [
+    pkgs.agent-deck
+    pkgs.thin-provisioning-tools
+  ];
 
   boot.kernelPatches = [
     {
@@ -104,6 +119,21 @@
       structuredExtraConfig = {
         BTRFS_FS = lib.kernel.yes;
         BTRFS_DEBUG = lib.kernel.yes;
+      };
+    }
+    {
+      name = "rockchip-media-alignment";
+      patch = null;
+      structuredExtraConfig = {
+        DRM_PANFROST = lib.kernel.no;
+        DRM_GEM_DMA_HELPER = lib.kernel.yes;
+        DRM_ROCKCHIP = lib.kernel.yes;
+        SW_SYNC = lib.kernel.yes;
+        DMABUF_HEAPS = lib.kernel.yes;
+        DMABUF_HEAPS_SYSTEM = lib.kernel.yes;
+        DMABUF_HEAPS_CMA = lib.kernel.yes;
+        CMA_AREAS = lib.mkForce (lib.kernel.freeform "7");
+        CMA_SIZE_MBYTES = lib.mkForce (lib.kernel.freeform "16");
       };
     }
   ];

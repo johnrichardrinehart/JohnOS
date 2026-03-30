@@ -2,10 +2,10 @@
 { pkgs, rock5cPkgs }:
 
 {
-  agent-deck = pkgs.agent-deck;
-  codex-cli-nix = pkgs.codex-cli-nix;
-  omx-agent-tools = pkgs.omx-agent-tools;
-  oh-my-codex = pkgs.oh-my-codex;
+  agent-deck = pkgs.callPackage ./agent-deck.nix { };
+  codex-cli-nix = pkgs.callPackage ./codex-cli-nix.nix { };
+  omx-agent-tools = pkgs.callPackage ./omx-agent-tools.nix { };
+  oh-my-codex = pkgs.callPackage ./oh-my-codex.nix { };
   libcrossguid-with-pc = rock5cPkgs."libcrossguid-with-pc";
   libcrossguid_with_pc = rock5cPkgs.libcrossguid_with_pc;
   ffmpeg_8-v4l2request = rock5cPkgs."ffmpeg_8-v4l2request";

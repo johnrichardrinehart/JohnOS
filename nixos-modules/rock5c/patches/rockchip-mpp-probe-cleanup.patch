@@ -1,0 +1,476 @@
+--- a/drivers/video/rockchip/mpp/mpp_iep2.c
++++ b/drivers/video/rockchip/mpp/mpp_iep2.c
+@@ -1125,7 +1125,8 @@
+ 					dev_name(dev), mpp);
+ 	if (ret) {
+ 		dev_err(dev, "register interrupter runtime failed\n");
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto failed_probe;
+ 	}
+ 
+ 	mpp->session_max_buffers = IEP2_SESSION_MAX_BUFFERS;
+@@ -1135,6 +1136,11 @@
+ 	dev_info(dev, "probing finish\n");
+ 
+ 	return 0;
++
++failed_probe:
++	mpp_dev_remove(mpp);
++
++	return ret;
+ }
+ 
+ static void iep2_remove(struct platform_device *pdev)
+--- a/drivers/video/rockchip/mpp/mpp_jpgdec.c
++++ b/drivers/video/rockchip/mpp/mpp_jpgdec.c
+@@ -633,7 +633,8 @@
+ 					dev_name(dev), mpp);
+ 	if (ret) {
+ 		dev_err(dev, "register interrupter runtime failed\n");
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto failed_probe;
+ 	}
+ 
+ 	mpp->session_max_buffers = JPGDEC_SESSION_MAX_BUFFERS;
+@@ -644,6 +645,11 @@
+ 	dev_info(dev, "probing finish\n");
+ 
+ 	return 0;
++
++failed_probe:
++	mpp_dev_remove(mpp);
++
++	return ret;
+ }
+ 
+ static void jpgdec_remove(struct platform_device *pdev)
+--- a/drivers/video/rockchip/mpp/mpp_jpgenc.c
++++ b/drivers/video/rockchip/mpp/mpp_jpgenc.c
+@@ -617,7 +617,8 @@
+ 
+ 	if (ret) {
+ 		dev_err(dev, "register interrupt runtime failed\n");
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto failed_probe;
+ 	}
+ 
+ 	mpp->session_max_buffers = JPGENC_SESSION_MAX_BUFFERS;
+@@ -626,6 +627,11 @@
+ 	mpp_dev_register_srv(mpp, mpp->srv);
+ 	dev_info(dev, "probe finish");
+ 	return 0;
++
++failed_probe:
++	mpp_dev_remove(mpp);
++
++	return ret;
+ }
+ 
+ static void jpgenc_remove(struct platform_device *pdev)
+--- a/drivers/video/rockchip/mpp/mpp_rkvdec.c
++++ b/drivers/video/rockchip/mpp/mpp_rkvdec.c
+@@ -1891,7 +1891,8 @@
+ 					dev_name(dev), mpp);
+ 	if (ret) {
+ 		dev_err(dev, "register interrupter runtime failed\n");
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto failed_probe;
+ 	}
+ 
+ 	mpp->session_max_buffers = RKVDEC_SESSION_MAX_BUFFERS;
+@@ -1901,6 +1902,11 @@
+ 	dev_info(dev, "probing finish\n");
+ 
+ 	return 0;
++
++failed_probe:
++	mpp_dev_remove(mpp);
++
++	return ret;
+ }
+ 
+ static void rkvdec_remove(struct platform_device *pdev)
+--- a/drivers/video/rockchip/mpp/mpp_rkvdec2.c
++++ b/drivers/video/rockchip/mpp/mpp_rkvdec2.c
+@@ -24,6 +24,9 @@
+ #include <soc/rockchip/rockchip_system_monitor.h>
+ #include <soc/rockchip/rockchip_iommu.h>
+ 
++static int rkvdec2_free_rcbbuf(struct platform_device *pdev,
++			       struct rkvdec2_dev *dec);
++
+ /*
+  * hardware information
+  */
+@@ -1948,16 +1951,18 @@
+ 	ret = rkvdec2_attach_ccu(dev, dec);
+ 	if (ret) {
+ 		dev_err(dev, "attach ccu failed\n");
+-		return ret;
++		goto failed_probe;
+ 	}
+ 
+ 	/* alloc rcb buffer */
+-	rkvdec2_alloc_rcbbuf(pdev, dec);
++	ret = rkvdec2_alloc_rcbbuf(pdev, dec);
++	if (ret)
++		goto failed_probe;
+ 
+ 	/* set device for link */
+ 	ret = rkvdec2_ccu_link_init(pdev, dec);
+ 	if (ret)
+-		return ret;
++		goto failed_probe;
+ 
+ 	mpp->dev_ops->alloc_task = rkvdec2_ccu_alloc_task;
+ 	if (dec->ccu->ccu_mode == RKVDEC2_CCU_TASK_SOFT) {
+@@ -1969,7 +1974,7 @@
+ 			dec->link_dec->task_capacity = mpp->task_capacity;
+ 			ret = rkvdec2_ccu_alloc_table(dec, dec->link_dec);
+ 			if (ret)
+-				return ret;
++				goto failed_probe;
+ 		}
+ 		mpp->dev_ops->task_worker = rkvdec2_hard_ccu_worker;
+ 		irq_proc = rkvdec2_hard_ccu_irq;
+@@ -1982,7 +1987,8 @@
+ 					IRQF_SHARED, dev_name(dev), mpp);
+ 	if (ret) {
+ 		dev_err(dev, "register interrupter runtime failed\n");
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto failed_probe;
+ 	}
+ 	/*make sure mpp->irq is startup then can be en/disable*/
+ 	mpp->is_irq_startup = true;
+@@ -1995,6 +2001,17 @@
+ 		mpp_dev_register_srv(mpp, mpp->srv);
+ 
+ 	return ret;
++
++failed_probe:
++	if (dec->mmu_base) {
++		iounmap(dec->mmu_base);
++		dec->mmu_base = NULL;
++	}
++	rkvdec2_free_rcbbuf(pdev, dec);
++	rkvdec2_link_remove(mpp, dec->link_dec);
++	mpp_dev_remove(mpp);
++
++	return ret;
+ }
+ 
+ static int rkvdec2_probe_default(struct platform_device *pdev)
+@@ -2026,8 +2043,12 @@
+ 		return ret;
+ 	}
+ 
+-	rkvdec2_alloc_rcbbuf(pdev, dec);
+-	rkvdec2_link_init(pdev, dec);
++	ret = rkvdec2_alloc_rcbbuf(pdev, dec);
++	if (ret)
++		goto failed_probe;
++	ret = rkvdec2_link_init(pdev, dec);
++	if (ret)
++		goto failed_probe;
+ 
+ 	irq_proc = mpp_dev_irq;
+ 	if (dec->link_dec && (mpp->task_capacity > 1)) {
+@@ -2043,7 +2064,8 @@
+ 					IRQF_SHARED, dev_name(dev), mpp);
+ 	if (ret) {
+ 		dev_err(dev, "register interrupter runtime failed\n");
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto failed_probe;
+ 	}
+ 
+ 	mpp->is_irq_startup = true;
+@@ -2062,6 +2084,13 @@
+ 		mpp->hw_ops->hack_run(mpp);
+ 
+ 	return ret;
++
++failed_probe:
++	rkvdec2_free_rcbbuf(pdev, dec);
++	rkvdec2_link_remove(mpp, dec->link_dec);
++	mpp_dev_remove(mpp);
++
++	return ret;
+ }
+ 
+ static int rkvdec2_probe(struct platform_device *pdev)
+--- a/drivers/video/rockchip/mpp/mpp_rkvenc2.c
++++ b/drivers/video/rockchip/mpp/mpp_rkvenc2.c
+@@ -37,6 +37,9 @@
+ #include "mpp_iommu.h"
+ #include "mpp_common.h"
+ 
++static int rkvenc2_free_rcbbuf(struct platform_device *pdev,
++			       struct rkvenc_dev *enc);
++
+ #define RKVENC_DRIVER_NAME			"mpp_rkvenc2"
+ 
+ #define	RKVENC_SESSION_MAX_BUFFERS		40
+@@ -2938,6 +2941,16 @@
+ 	return 0;
+ }
+ 
++static void rkvenc_detach_ccu(struct rkvenc_dev *enc)
++{
++	if (enc->ccu) {
++		mutex_lock(&enc->ccu->lock);
++		list_del_init(&enc->core_link);
++		enc->ccu->core_num--;
++		mutex_unlock(&enc->ccu->lock);
++	}
++}
++
+ static int rkvenc2_alloc_rcbbuf(struct platform_device *pdev, struct rkvenc_dev *enc)
+ {
+ 	int ret;
+@@ -3107,9 +3120,11 @@
+ 	ret = rkvenc_attach_ccu(dev, enc);
+ 	if (ret) {
+ 		dev_err(dev, "attach ccu failed\n");
+-		return ret;
++		goto failed_probe;
+ 	}
+-	rkvenc2_alloc_rcbbuf(pdev, enc);
++	ret = rkvenc2_alloc_rcbbuf(pdev, enc);
++	if (ret)
++		goto failed_probe;
+ 
+ 	ret = devm_request_threaded_irq(dev, mpp->irq,
+ 					mpp_dev_irq,
+@@ -3118,7 +3133,8 @@
+ 					dev_name(dev), mpp);
+ 	if (ret) {
+ 		dev_err(dev, "register interrupter runtime failed\n");
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto failed_probe;
+ 	}
+ 	mpp->session_max_buffers = RKVENC_SESSION_MAX_BUFFERS;
+ 	enc->hw_info = to_rkvenc_info(mpp->var->hw_info);
+@@ -3131,6 +3147,13 @@
+ 		mpp_dev_register_srv(mpp, mpp->srv);
+ 
+ 	return 0;
++
++failed_probe:
++	rkvenc_detach_ccu(enc);
++	rkvenc2_free_rcbbuf(pdev, enc);
++	mpp_dev_remove(mpp);
++
++	return ret;
+ }
+ 
+ static int rkvenc_probe_default(struct platform_device *pdev)
+@@ -3158,7 +3181,9 @@
+ 	if (ret)
+ 		return ret;
+ 
+-	rkvenc2_alloc_rcbbuf(pdev, enc);
++	ret = rkvenc2_alloc_rcbbuf(pdev, enc);
++	if (ret)
++		goto failed_get_irq;
+ 
+ 	ret = devm_request_threaded_irq(dev, mpp->irq,
+ 					mpp_dev_irq,
+@@ -3177,6 +3202,7 @@
+ 	return 0;
+ 
+ failed_get_irq:
++	rkvenc2_free_rcbbuf(pdev, enc);
+ 	mpp_dev_remove(mpp);
+ 
+ 	return ret;
+--- a/drivers/video/rockchip/mpp/mpp_vdpp.c
++++ b/drivers/video/rockchip/mpp/mpp_vdpp.c
+@@ -778,7 +778,8 @@
+ 		vdpp->zme_base = devm_ioremap(dev, res->start, resource_size(res));
+ 		if (!vdpp->zme_base) {
+ 			dev_err(dev, "ioremap failed for resource %pR\n", res);
+-			return -ENOMEM;
++			ret = -ENOMEM;
++			goto failed_probe;
+ 		}
+ 	}
+ 	/* get irq */
+@@ -789,7 +790,8 @@
+ 					dev_name(dev), mpp);
+ 	if (ret) {
+ 		dev_err(dev, "register interrupter runtime failed\n");
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto failed_probe;
+ 	}
+ 
+ 	mpp->session_max_buffers = VDPP_SESSION_MAX_BUFFERS;
+@@ -801,6 +803,11 @@
+ 	dev_info(dev, "probing finish\n");
+ 
+ 	return 0;
++
++failed_probe:
++	mpp_dev_remove(mpp);
++
++	return ret;
+ }
+ 
+ static void vdpp_remove(struct platform_device *pdev)
+--- a/drivers/video/rockchip/mpp/mpp_vdpu1.c
++++ b/drivers/video/rockchip/mpp/mpp_vdpu1.c
+@@ -931,7 +931,8 @@
+ 					dev_name(dev), mpp);
+ 	if (ret) {
+ 		dev_err(dev, "register interrupter runtime failed\n");
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto failed_probe;
+ 	}
+ 
+ 	if (mpp->var->device_type == MPP_DEVICE_VDPU1) {
+@@ -946,6 +947,11 @@
+ 	dev_info(dev, "probing finish\n");
+ 
+ 	return 0;
++
++failed_probe:
++	mpp_dev_remove(mpp);
++
++	return ret;
+ }
+ 
+ static void vdpu_remove(struct platform_device *pdev)
+--- a/drivers/video/rockchip/mpp/mpp_vdpu2.c
++++ b/drivers/video/rockchip/mpp/mpp_vdpu2.c
+@@ -771,7 +771,8 @@
+ 					dev_name(dev), mpp);
+ 	if (ret) {
+ 		dev_err(dev, "register interrupter runtime failed\n");
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto failed_probe;
+ 	}
+ 
+ 	if (mpp->var->device_type == MPP_DEVICE_VDPU2) {
+@@ -786,6 +787,11 @@
+ 	dev_info(dev, "probing finish\n");
+ 
+ 	return 0;
++
++failed_probe:
++	mpp_dev_remove(mpp);
++
++	return ret;
+ }
+ 
+ static void vdpu_remove(struct platform_device *pdev)
+--- a/drivers/video/rockchip/mpp/mpp_vepu1.c
++++ b/drivers/video/rockchip/mpp/mpp_vepu1.c
+@@ -759,7 +759,8 @@
+ 					dev_name(dev), mpp);
+ 	if (ret) {
+ 		dev_err(dev, "register interrupter runtime failed\n");
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto failed_probe;
+ 	}
+ 
+ 	mpp->session_max_buffers = VEPU1_SESSION_MAX_BUFFERS;
+@@ -769,6 +770,11 @@
+ 	dev_info(dev, "probing finish\n");
+ 
+ 	return 0;
++
++failed_probe:
++	mpp_dev_remove(mpp);
++
++	return ret;
+ }
+ 
+ static void vepu_remove(struct platform_device *pdev)
+--- a/drivers/video/rockchip/mpp/mpp_vepu2.c
++++ b/drivers/video/rockchip/mpp/mpp_vepu2.c
+@@ -1106,6 +1106,21 @@
+ 	return 0;
+ }
+ 
++static void vepu_detach_ccu(struct vepu_dev *enc)
++{
++	if (enc->ccu) {
++		s32 core_id = enc->mpp.core_id;
++		struct vepu_ccu *ccu = enc->ccu;
++		unsigned long flags;
++
++		spin_lock_irqsave(&ccu->lock, flags);
++		ccu->core_num--;
++		ccu->cores[core_id] = NULL;
++		clear_bit(core_id, &ccu->core_idle);
++		spin_unlock_irqrestore(&ccu->lock, flags);
++	}
++}
++
+ static int vepu_core_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+@@ -1137,7 +1152,7 @@
+ 	/* current device attach to ccu */
+ 	ret = vepu_attach_ccu(dev, enc);
+ 	if (ret)
+-		return ret;
++		goto failed_probe;
+ 
+ 	ret = devm_request_threaded_irq(dev, mpp->irq,
+ 					mpp_dev_irq,
+@@ -1146,7 +1161,8 @@
+ 					dev_name(dev), mpp);
+ 	if (ret) {
+ 		dev_err(dev, "register interrupter runtime failed\n");
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto failed_probe;
+ 	}
+ 
+ 	mpp->fault_handler = vepu2_iommu_fault_handle;
+@@ -1158,6 +1174,12 @@
+ 		mpp_dev_register_srv(mpp, mpp->srv);
+ 
+ 	return 0;
++
++failed_probe:
++	vepu_detach_ccu(enc);
++	mpp_dev_remove(mpp);
++
++	return ret;
+ }
+ 
+ static int vepu_probe_default(struct platform_device *pdev)
+@@ -1196,7 +1218,8 @@
+ 					dev_name(dev), mpp);
+ 	if (ret) {
+ 		dev_err(dev, "register interrupter runtime failed\n");
+-		return -EINVAL;
++		ret = -EINVAL;
++		goto failed_probe;
+ 	}
+ 
+ 	mpp->fault_handler = vepu2_iommu_fault_handle;
+@@ -1206,6 +1229,11 @@
+ 	mpp_dev_register_srv(mpp, mpp->srv);
+ 
+ 	return 0;
++
++failed_probe:
++	mpp_dev_remove(mpp);
++
++	return ret;
+ }
+ 
+ static int vepu_probe(struct platform_device *pdev)
