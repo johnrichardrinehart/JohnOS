@@ -984,8 +984,11 @@ in
               exit 1
             fi
 
-            chown root:nixbld "${buildDir}"
-            chmod 1775 "${buildDir}"
+            # This system leaves Nix's build-users-group unset, so the build
+            # directory must be writable by the invoking user, not just nixbld.
+            # Match the usual /build semantics: sticky + world-writable.
+            chown root:root "${buildDir}"
+            chmod 1777 "${buildDir}"
 
             chmod 0755 "${cacheDir}"
             ${lib.concatMapStringsSep "\n" (user: ''
