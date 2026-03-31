@@ -8,6 +8,33 @@
 }:
 let
   cfg = config.dev.johnrinehart.rock5c;
+  mppDriverBits = {
+    VDPU1 = 2;
+    VEPU1 = 4;
+    VDPU2 = 8;
+    VEPU2 = 16;
+    RKVDEC = 64;
+    RKVENC = 128;
+    IEP2 = 512;
+    JPGDEC = 1024;
+    RKVDEC2 = 2048;
+    RKVENC2 = 4096;
+    AV1DEC = 8192;
+    VDPP = 16384;
+    JPGENC = 32768;
+  };
+  mppDriverNames = builtins.attrNames mppDriverBits;
+  mppMaskFromEnabledDrivers =
+    names: lib.foldl' lib.bitOr 0 (map (name: mppDriverBits.${name}) names);
+  mppMaskFromDisabledDrivers =
+    names: mppMaskFromEnabledDrivers (lib.filter (name: !(builtins.elem name names)) mppDriverNames);
+  effectiveMppDriverMask =
+    if cfg.mpp.driverMask != null then
+      cfg.mpp.driverMask
+    else if cfg.mpp.disabledDrivers != [ ] then
+      mppMaskFromDisabledDrivers cfg.mpp.disabledDrivers
+    else
+      null;
   makeRock5cImage =
     {
       name,
@@ -81,6 +108,29 @@ in
         "mainline" keeps the V4L2/media drivers such as rockchip_vdec and hantro_vpu.
         "mpp" applies the vendor-style MPP device-tree takeover intended for /dev/mpp.
       '';
+    };
+    mpp = {
+      disabledDrivers = lib.mkOption {
+        type = lib.types.listOf (lib.types.enum mppDriverNames);
+        default = [ ];
+        example = [ "RKVDEC2" ];
+        description = ''
+          MPP subdrivers to suppress when loading `rk_vcodec`. This is the
+          preferred user-facing way to opt out of specific engines without
+          hand-constructing a bitmask.
+        '';
+      };
+      driverMask = lib.mkOption {
+        type = lib.types.nullOr lib.types.ints.unsigned;
+        default = null;
+        example = 10240;
+        description = ''
+          Optional `rk_vcodec` subdriver bitmask passed as the `mpp_driver_mask`
+          module parameter. Leave this unset to register all Kconfig-enabled MPP
+          subdrivers. This is a low-level escape hatch; prefer
+          `dev.johnrinehart.rock5c.mpp.disabledDrivers` for normal use.
+        '';
+      };
     };
     enableVPU = lib.mkEnableOption "the Radxa 5C VPU" // {
       default = false;
@@ -713,6 +763,18 @@ in
           message = "dev.johnrinehart.rock5c.videoBackend = \"mpp\" requires the 6.19 vendor-MPP patch stack and is incompatible with useMinimalKernel.";
         }
         {
+          assertion = !(cfg.mpp.driverMask != null && cfg.videoBackend != "mpp");
+          message = "dev.johnrinehart.rock5c.mpp.driverMask only applies when dev.johnrinehart.rock5c.videoBackend = \"mpp\".";
+        }
+        {
+          assertion = !(cfg.mpp.disabledDrivers != [ ] && cfg.videoBackend != "mpp");
+          message = "dev.johnrinehart.rock5c.mpp.disabledDrivers only applies when dev.johnrinehart.rock5c.videoBackend = \"mpp\".";
+        }
+        {
+          assertion = !(cfg.mpp.driverMask != null && cfg.mpp.disabledDrivers != [ ]);
+          message = "Use either dev.johnrinehart.rock5c.mpp.driverMask or dev.johnrinehart.rock5c.mpp.disabledDrivers, not both.";
+        }
+        {
           assertion =
             (!cfg.netconsole.enable)
             || (cfg.netconsole.targetIP != null && cfg.netconsole.targetMAC != null);
@@ -729,9 +791,14 @@ in
         "ignore_loglevel"
       ];
 
-      boot.extraModprobeConfig = lib.mkIf cfg.netconsole.enable ''
-        options netconsole netconsole=${toString cfg.netconsole.sourcePort}@/${cfg.netconsole.device},${toString cfg.netconsole.targetPort}@${cfg.netconsole.targetIP}/${cfg.netconsole.targetMAC}
-      '';
+      boot.extraModprobeConfig = lib.concatStringsSep "\n" (
+        lib.optional cfg.netconsole.enable ''
+          options netconsole netconsole=${toString cfg.netconsole.sourcePort}@/${cfg.netconsole.device},${toString cfg.netconsole.targetPort}@${cfg.netconsole.targetIP}/${cfg.netconsole.targetMAC}
+        ''
+        ++ lib.optional (cfg.videoBackend == "mpp" && effectiveMppDriverMask != null) ''
+          options rk_vcodec mpp_driver_mask=${toString effectiveMppDriverMask}
+        ''
+      );
 
       environment.systemPackages = [
         pkgs.rock5c-flash-image
@@ -748,6 +815,10 @@ in
         name = "rock-5c-emmc-image";
         volumeLabel = cfg.rootfsLabel;
       };
+
+      # Keep rk_vcodec manual-load only for now. Autoloading at boot may
+      # trigger the same early probe crash we saw when the driver was built-in.
+      # boot.kernelModules = lib.optionals (cfg.videoBackend == "mpp") [ "rk_vcodec" ];
 
       boot.kernelPatches = [
         {
@@ -771,7 +842,7 @@ in
           structuredExtraConfig = with lib.kernel; {
             VIDEO_ROCKCHIP_VDEC = no;
             VIDEO_HANTRO = no;
-            ROCKCHIP_MPP_SERVICE = yes;
+            ROCKCHIP_MPP_SERVICE = module;
             ROCKCHIP_MPP_PROC_FS = yes;
             ROCKCHIP_MPP_RKVDEC = yes;
             ROCKCHIP_MPP_RKVDEC2 = yes;
@@ -803,6 +874,18 @@ in
         {
           name = "rockchip-mpp-rkvdec2-reserve-rcb-iova";
           patch = ./patches/rockchip-mpp-rkvdec2-reserve-rcb-iova.patch;
+        }
+        {
+          name = "rockchip-mpp-probe-cleanup";
+          patch = ./patches/rockchip-mpp-probe-cleanup.patch;
+        }
+        {
+          name = "rockchip-mpp-driver-mask";
+          patch = ./patches/rockchip-mpp-driver-mask.patch;
+        }
+        {
+          name = "rockchip-mpp-rkvdec2-ccu-defer";
+          patch = ./patches/rockchip-mpp-rkvdec2-ccu-defer.patch;
         }
       ];
 
