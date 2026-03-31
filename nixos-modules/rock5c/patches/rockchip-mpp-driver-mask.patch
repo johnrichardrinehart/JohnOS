@@ -1,0 +1,46 @@
+diff --git a/drivers/video/rockchip/mpp/mpp_service.c b/drivers/video/rockchip/mpp/mpp_service.c
+@@ -42,15 +42,40 @@
+ #define HAS_AV1DEC	IS_ENABLED(CONFIG_ROCKCHIP_MPP_AV1DEC)
+ #define HAS_VDPP	IS_ENABLED(CONFIG_ROCKCHIP_MPP_VDPP)
+ 
+-#define MPP_REGISTER_DRIVER(srv, flag, X, x) {\
+-	if (flag)\
+-		mpp_add_driver(srv, MPP_DRIVER_##X, &rockchip_##x##_driver, "grf_"#x);\
+-	}
++#define DRIVER_MASK_BIT(x)	BIT(MPP_DRIVER_##x)
++#define DEFAULT_DRIVER_MASK ( \
++	(HAS_RKVDEC ? DRIVER_MASK_BIT(RKVDEC) : 0) | \
++	(HAS_RKVENC ? DRIVER_MASK_BIT(RKVENC) : 0) | \
++	(HAS_VDPU1 ? DRIVER_MASK_BIT(VDPU1) : 0) | \
++	(HAS_VEPU1 ? DRIVER_MASK_BIT(VEPU1) : 0) | \
++	(HAS_VDPU2 ? DRIVER_MASK_BIT(VDPU2) : 0) | \
++	(HAS_VEPU2 ? DRIVER_MASK_BIT(VEPU2) : 0) | \
++	(HAS_VEPU22 ? DRIVER_MASK_BIT(VEPU22) : 0) | \
++	(HAS_IEP2 ? DRIVER_MASK_BIT(IEP2) : 0) | \
++	(HAS_JPGDEC ? DRIVER_MASK_BIT(JPGDEC) : 0) | \
++	(HAS_JPGENC ? DRIVER_MASK_BIT(JPGENC) : 0) | \
++	(HAS_RKVDEC2 ? DRIVER_MASK_BIT(RKVDEC2) : 0) | \
++	(HAS_RKVENC2 ? DRIVER_MASK_BIT(RKVENC2) : 0) | \
++	(HAS_AV1DEC ? DRIVER_MASK_BIT(AV1DEC) : 0) | \
++	(HAS_VDPP ? DRIVER_MASK_BIT(VDPP) : 0) \
++)
++
++#define MPP_REGISTER_DRIVER(srv, flag, X, x)					\
++	do {									\
++		if ((flag) && (mpp_driver_mask & DRIVER_MASK_BIT(X)))		\
++			mpp_add_driver(srv, MPP_DRIVER_##X,			\
++				       &rockchip_##x##_driver, "grf_"#x);	\
++	} while (0)
+ 
+ unsigned int mpp_dev_debug;
+ module_param(mpp_dev_debug, uint, 0644);
+ MODULE_PARM_DESC(mpp_dev_debug, "bit switch for mpp debug information");
+ 
++static unsigned int mpp_driver_mask = DEFAULT_DRIVER_MASK;
++module_param(mpp_driver_mask, uint, 0644);
++MODULE_PARM_DESC(mpp_driver_mask,
++		 "bitmask of enabled MPP subdrivers");
++
+ static const char mpp_version[] = MPP_VERSION;
+ 
+ static int mpp_init_grf(struct device_node *np,

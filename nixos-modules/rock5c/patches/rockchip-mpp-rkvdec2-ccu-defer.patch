@@ -1,0 +1,55 @@
+diff --git a/drivers/video/rockchip/mpp/mpp_rkvdec2.c b/drivers/video/rockchip/mpp/mpp_rkvdec2.c
+@@ -1691,12 +1691,15 @@
+ 		.data = &rkvdec_rk3568_data,
+ 	},
+ #endif
+-#ifdef CONFIG_CPU_RK3588
++	/*
++	 * The RK3588/RK3588S CCU DT node is used on Rock 5C, but this kernel
++	 * config does not define CONFIG_CPU_RK3588. Keep the CCU match
++	 * unconditional so the platform device can actually bind.
++	 */
+ 	{
+ 		.compatible = "rockchip,rkv-decoder-v2-ccu",
+ 		.data = &rkvdec_rk3588_data,
+ 	},
+-#endif
+ #ifdef CONFIG_CPU_RK3528
+ 	{
+ 		.compatible = "rockchip,rkv-decoder-rk3528",
+diff --git a/drivers/video/rockchip/mpp/mpp_rkvdec2_link.c b/drivers/video/rockchip/mpp/mpp_rkvdec2_link.c
+@@ -1532,17 +1532,29 @@
+ 	mpp_debug_enter();
+ 
+ 	np = of_parse_phandle(dev->of_node, "rockchip,ccu", 0);
+-	if (!np || !of_device_is_available(np))
++	if (!np || !of_device_is_available(np)) {
++		/* The core DT is malformed if the CCU phandle is absent. */
++		dev_err(dev, "rkvdec2_attach_ccu: ccu phandle missing or unavailable\n");
+ 		return -ENODEV;
++	}
+ 
+ 	pdev = of_find_device_by_node(np);
+ 	of_node_put(np);
+-	if (!pdev)
+-		return -ENODEV;
++	if (!pdev) {
++		/*
++		 * The CCU platform device is created via deferred probing on this
++		 * platform. Defer the core too instead of converting the race into
++		 * a permanent probe failure.
++		 */
++		dev_info(dev, "rkvdec2_attach_ccu: ccu device not created yet, defer\n");
++		return -EPROBE_DEFER;
++	}
+ 
+ 	ccu = platform_get_drvdata(pdev);
+-	if (!ccu)
+-		return -ENOMEM;
++	if (!ccu) {
++		dev_info(dev, "rkvdec2_attach_ccu: ccu driverdata not ready, defer\n");
++		return -EPROBE_DEFER;
++	}
+ 
+ 	ret = of_property_read_u32(dev->of_node, "rockchip,core-mask", &dec->core_mask);
+ 	if (ret)
