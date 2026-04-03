@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.dev.johnrinehart.rock5c.media;
+  rock5cCfg = config.dev.johnrinehart.rock5c;
   managementCfg = cfg.management;
 
   defaultSession = lib.toLower (lib.attrByPath [ "services" "displayManager" "defaultSession" ] "" config);
@@ -35,7 +36,15 @@ let
       "gbm";
 
   effectiveKodiVariant = if cfg.kodi.variant == "auto" then autoKodiVariant else cfg.kodi.variant;
-  selectedKodiAttr = "kodi_22-${effectiveKodiVariant}-${cfg.kodi.ffmpegBackend}";
+  effectiveKodiFfmpegBackend =
+    if cfg.kodi.ffmpegBackend == "auto" then
+      if rock5cCfg.videoBackend == "mpp" then
+        "ffmpeg8-rkmpp"
+      else
+        "ffmpeg8-rkmpp-v4l2request"
+    else
+      cfg.kodi.ffmpegBackend;
+  selectedKodiAttr = "kodi_22-${effectiveKodiVariant}-${effectiveKodiFfmpegBackend}";
   selectedKodiPkg = builtins.getAttr selectedKodiAttr pkgs;
   kodiAutostartLauncher = pkgs.writeShellScriptBin "rock5c-kodi-autostart" ''
     set -eu
@@ -265,13 +274,18 @@ in
 
       ffmpegBackend = lib.mkOption {
         type = lib.types.enum [
+          "auto"
           "ffmpeg8-rkmpp-v4l2request"
           "ffmpeg8-rkmpp"
           "ffmpeg-rockchip"
         ];
-        default = "ffmpeg8-rkmpp-v4l2request";
+        default = "auto";
         description = ''
           Which FFmpeg backend family to use for the Rock 5C Kodi builds.
+          `auto` selects `ffmpeg8-rkmpp` when
+          `dev.johnrinehart.rock5c.videoBackend = "mpp"` so Kodi does not
+          prefer the V4L2-request HEVC path on an MPP-owned media stack.
+          Otherwise it selects `ffmpeg8-rkmpp-v4l2request`.
           `ffmpeg8-rkmpp-v4l2request` builds Kodi against upstream FFmpeg 8 with
           both `rkmpp` and the local V4L2-request patch stack enabled.
           `ffmpeg8-rkmpp` builds Kodi against upstream FFmpeg 8 with `rkmpp` enabled.
