@@ -846,9 +846,17 @@ in
             ROCKCHIP_MPP_PROC_FS = yes;
             ROCKCHIP_MPP_RKVDEC = yes;
             ROCKCHIP_MPP_RKVDEC2 = yes;
+            ROCKCHIP_MPP_RKVENC = yes;
+            ROCKCHIP_MPP_RKVENC2 = yes;
             ROCKCHIP_MPP_VDPU1 = yes;
             ROCKCHIP_MPP_VDPU2 = yes;
+            ROCKCHIP_MPP_VEPU1 = yes;
+            ROCKCHIP_MPP_VEPU2 = yes;
+            ROCKCHIP_MPP_IEP2 = yes;
+            ROCKCHIP_MPP_JPGDEC = yes;
+            ROCKCHIP_MPP_JPGENC = yes;
             ROCKCHIP_MPP_AV1DEC = yes;
+            ROCKCHIP_MPP_VDPP = yes;
             PSTORE = yes;
             PSTORE_CONSOLE = yes;
             PSTORE_PMSG = yes;
@@ -868,8 +876,20 @@ in
           patch = ./patches/rockchip-iommu-mpp-compat.patch;
         }
         {
-          name = "rockchip-iommu-mpp-rkvdec2";
-          patch = ./patches/rockchip-iommu-mpp-rkvdec2.patch;
+          name = "rockchip-mpp-iommu-fault-hook";
+          patch = ./patches/rockchip-mpp-iommu-fault-hook.patch;
+        }
+        {
+          name = "rockchip-mpp-legacy-vpu-ioctl-compat";
+          patch = ./patches/rockchip-mpp-legacy-vpu-ioctl-compat.patch;
+        }
+        {
+          name = "rockchip-mpp-legacy-vpu-reg-ioctl-compat";
+          patch = ./patches/rockchip-mpp-legacy-vpu-reg-ioctl-compat.patch;
+        }
+        {
+          name = "rockchip-mpp-iommu-cookie-layout";
+          patch = ./patches/rockchip-mpp-iommu-cookie-layout.patch;
         }
         {
           name = "rockchip-mpp-rkvdec2-reserve-rcb-iova";

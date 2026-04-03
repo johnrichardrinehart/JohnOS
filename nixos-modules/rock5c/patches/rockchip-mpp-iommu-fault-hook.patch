@@ -1,0 +1,244 @@
+From c104b015d8052d93e19a61021927ed66886159c9 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Wed, 1 Apr 2026 18:21:33 -0400
+Subject: [PATCH] media: rockchip: mpp: route iommu faults through compat hook
+
+---
+ drivers/iommu/rockchip-iommu.c         | 109 ++++++++++++++++++++++++-
+ drivers/video/rockchip/mpp/mpp_iommu.c |  26 ++++--
+ include/soc/rockchip/rockchip_iommu.h  |  12 +++
+ 3 files changed, 138 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/iommu/rockchip-iommu.c b/drivers/iommu/rockchip-iommu.c
+index 887a9c4dc1762..3063dd275f217 100644
+--- a/drivers/iommu/rockchip-iommu.c
++++ b/drivers/iommu/rockchip-iommu.c
+@@ -129,6 +129,55 @@ struct rk_iommudata {
+ static const struct rk_iommu_ops *rk_ops;
+ static struct iommu_domain rk_identity_domain;
+ 
++struct rk_iommu_fault_handler {
++	struct list_head node;
++	struct iommu_domain *domain;
++	iommu_fault_handler_t handler;
++	void *token;
++};
++
++static LIST_HEAD(rk_iommu_fault_handlers);
++static DEFINE_MUTEX(rk_iommu_fault_handlers_lock);
++
++static struct rk_iommu_fault_handler *
++rk_iommu_find_fault_handler(struct iommu_domain *domain)
++{
++	struct rk_iommu_fault_handler *entry;
++
++	list_for_each_entry(entry, &rk_iommu_fault_handlers, node) {
++		if (entry->domain == domain)
++			return entry;
++	}
++
++	return NULL;
++}
++
++static int rk_iommu_call_fault_handler(struct iommu_domain *domain,
++				       struct device *iommu_dev,
++				       unsigned long iova, int flags)
++{
++	struct rk_iommu_fault_handler *entry;
++	iommu_fault_handler_t handler;
++	void *token;
++	int ret = -ENOSYS;
++
++	mutex_lock(&rk_iommu_fault_handlers_lock);
++	entry = rk_iommu_find_fault_handler(domain);
++	if (entry) {
++		handler = entry->handler;
++		token = entry->token;
++	} else {
++		handler = NULL;
++		token = NULL;
++	}
++	mutex_unlock(&rk_iommu_fault_handlers_lock);
++
++	if (handler)
++		ret = handler(domain, iommu_dev, iova, flags, token);
++
++	return ret;
++}
++
+ static inline void rk_table_flush(struct rk_iommu_domain *dom, dma_addr_t dma,
+ 				  unsigned int count)
+ {
+@@ -656,11 +705,23 @@ static irqreturn_t rk_iommu_irq(int irq, void *dev_id)
+ 			 * Ignore the return code, though, since we always zap cache
+ 			 * and clear the page fault anyway.
+ 			 */
+-			if (iommu->domain != &rk_identity_domain)
+-				report_iommu_fault(iommu->domain, iommu->dev, iova,
+-						   flags);
+-			else
++			if (iommu->domain != &rk_identity_domain) {
++				/*
++				 * MPP uses DMA domains, so it cannot install
++				 * a generic iommu domain fault handler without
++				 * clobbering the DMA cookie on newer kernels.
++				 * Check the Rockchip-specific compat hook first.
++				 */
++				err = rk_iommu_call_fault_handler(iommu->domain,
++								  iommu->dev,
++								  iova, flags);
++				if (err == -ENOSYS)
++					report_iommu_fault(iommu->domain,
++							   iommu->dev, iova,
++							   flags);
++			} else {
+ 				dev_err(iommu->dev, "Page fault while iommu not attached to domain?\n");
++			}
+ 
+ 			rk_iommu_base_command(iommu->bases[i], RK_MMU_CMD_ZAP_CACHE);
+ 			rk_iommu_base_command(iommu->bases[i], RK_MMU_CMD_PAGE_FAULT_DONE);
+@@ -1095,6 +1156,46 @@ void rockchip_iommu_unmask_irq(struct device *dev)
+ }
+ EXPORT_SYMBOL(rockchip_iommu_unmask_irq);
+ 
++int rockchip_iommu_set_domain_fault_handler(struct iommu_domain *domain,
++					    iommu_fault_handler_t handler,
++					    void *token)
++{
++	struct rk_iommu_fault_handler *entry;
++
++	if (!domain)
++		return -EINVAL;
++
++	mutex_lock(&rk_iommu_fault_handlers_lock);
++	entry = rk_iommu_find_fault_handler(domain);
++
++	if (!handler) {
++		if (entry) {
++			list_del(&entry->node);
++			kfree(entry);
++		}
++		mutex_unlock(&rk_iommu_fault_handlers_lock);
++		return 0;
++	}
++
++	if (!entry) {
++		entry = kzalloc(sizeof(*entry), GFP_KERNEL);
++		if (!entry) {
++			mutex_unlock(&rk_iommu_fault_handlers_lock);
++			return -ENOMEM;
++		}
++
++		entry->domain = domain;
++		list_add(&entry->node, &rk_iommu_fault_handlers);
++	}
++
++	entry->handler = handler;
++	entry->token = token;
++	mutex_unlock(&rk_iommu_fault_handlers_lock);
++
++	return 0;
++}
++EXPORT_SYMBOL(rockchip_iommu_set_domain_fault_handler);
++
+ int rockchip_iommu_force_reset(struct device *dev)
+ {
+ 	struct rk_iommu *iommu = rk_iommu_from_dev(dev);
+diff --git a/drivers/video/rockchip/mpp/mpp_iommu.c b/drivers/video/rockchip/mpp/mpp_iommu.c
+index 7f57874145398..17b06216af81d 100644
+--- a/drivers/video/rockchip/mpp/mpp_iommu.c
++++ b/drivers/video/rockchip/mpp/mpp_iommu.c
+@@ -476,7 +476,20 @@ static int mpp_iommu_handle(struct iommu_domain *iommu,
+ 			    unsigned long iova,
+ 			    int status, void *arg)
+ {
+-	struct mpp_dev *mpp = (struct mpp_dev *)arg;
++	struct mpp_iommu_info *info = arg;
++	struct mpp_dev *mpp = info ? READ_ONCE(info->dev_active) : NULL;
++	iommu_fault_handler_t handler = NULL;
++
++	/*
++	 * On modern kernels DMA domains already consume domain->iova_cookie,
++	 * so MPP cannot safely swap domain fault handlers on each activate.
++	 * Dispatch through the currently active device instead.
++	 */
++	if (mpp && mpp->fault_handler)
++		handler = mpp->fault_handler;
++
++	if (handler && handler != mpp_iommu_handle)
++		return handler(iommu, iommu_dev, iova, status, mpp);
+ 
+ 	/*
+ 	 * Mask iommu irq, in order for iommu not repeatedly trigger pagefault.
+@@ -581,6 +594,11 @@ mpp_iommu_probe(struct device *dev)
+ 			iommu_detach_group(info->domain, info->group);
+ 	}
+ 
++	ret = rockchip_iommu_set_domain_fault_handler(info->domain,
++						      mpp_iommu_handle, info);
++	if (ret)
++		goto err_put_group;
++
+ 	return info;
+ 
+ err_put_group:
+@@ -598,6 +616,8 @@ int mpp_iommu_remove(struct mpp_iommu_info *info)
+ 	if (!info)
+ 		return 0;
+ 
++	rockchip_iommu_set_domain_fault_handler(info->domain, NULL, NULL);
++
+ 	/* if iommu shared, ensure current device's domain, then remove correctly */
+ 	if (info->shared)
+ 		mpp_iommu_attach(info);
+@@ -651,10 +671,6 @@ int mpp_iommu_dev_activate(struct mpp_iommu_info *info, struct mpp_dev *dev)
+ 		ret = -EINVAL;
+ 	} else {
+ 		info->dev_active = dev;
+-		/* switch domain pagefault handler and arg depending on device */
+-		iommu_set_fault_handler(info->domain, dev->fault_handler ?
+-					dev->fault_handler : mpp_iommu_handle, dev);
+-
+ 		dev_dbg(info->dev, "activate -> %p %s\n", dev, dev_name(dev->dev));
+ 	}
+ 
+diff --git a/include/soc/rockchip/rockchip_iommu.h b/include/soc/rockchip/rockchip_iommu.h
+index f5cb9d96f3607..d110bff659d15 100644
+--- a/include/soc/rockchip/rockchip_iommu.h
++++ b/include/soc/rockchip/rockchip_iommu.h
+@@ -10,6 +10,8 @@ struct iommu_domain;
+ struct iommu_iotlb_gather;
+ struct platform_device;
+ 
++#include <linux/iommu.h>
++
+ /* 1. dev and pdev is iommu device.
+  * 2. store third_iommu data in dev->platform_data.
+  */
+@@ -44,6 +46,9 @@ bool rockchip_iommu_is_enabled(struct device *dev);
+ void rockchip_iommu_mask_irq(struct device *dev);
+ void rockchip_iommu_unmask_irq(struct device *dev);
+ int rockchip_iommu_force_reset(struct device *dev);
++int rockchip_iommu_set_domain_fault_handler(struct iommu_domain *domain,
++					    iommu_fault_handler_t handler,
++					    void *token);
+ #else
+ static inline int rockchip_iommu_enable(struct device *dev)
+ {
+@@ -75,6 +80,13 @@ static inline int rockchip_iommu_force_reset(struct device *dev)
+ {
+ 	return -ENODEV;
+ }
++static inline int
++rockchip_iommu_set_domain_fault_handler(struct iommu_domain *domain,
++					iommu_fault_handler_t handler,
++					void *token)
++{
++	return -ENODEV;
++}
+ #endif
+ 
+ #if IS_ENABLED(CONFIG_ROCKCHIP_MPP_AV1DEC)
+-- 
+2.51.2
+

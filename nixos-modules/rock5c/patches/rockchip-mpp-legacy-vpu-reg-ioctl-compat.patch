@@ -1,0 +1,162 @@
+From 0c9b6d16a339487a7d60a915635108731ebb33a9 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Fri, 3 Apr 2026 11:13:43 -0400
+Subject: [PATCH] media: rockchip: mpp: accept legacy vpu register ioctls
+
+---
+ drivers/video/rockchip/mpp/mpp_common.c | 93 +++++++++++++++++++++++--
+ drivers/video/rockchip/mpp/mpp_common.h |  3 +
+ 2 files changed, 92 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/video/rockchip/mpp/mpp_common.c b/drivers/video/rockchip/mpp/mpp_common.c
+index 10fb00fafd29b..259fa08841c81 100644
+--- a/drivers/video/rockchip/mpp/mpp_common.c
++++ b/drivers/video/rockchip/mpp/mpp_common.c
+@@ -55,6 +55,8 @@ struct mpp_msg_v1 {
+ #define MPP_VPU_IOC_MAGIC                'l'
+ #define MPP_VPU_IOC_SET_CLIENT_TYPE      _IOW(MPP_VPU_IOC_MAGIC, 1, unsigned long)
+ #define MPP_VPU_IOC_GET_HW_FUSE_STATUS   _IOW(MPP_VPU_IOC_MAGIC, 2, unsigned long)
++#define MPP_VPU_IOC_SET_REG              _IOW(MPP_VPU_IOC_MAGIC, 3, unsigned long)
++#define MPP_VPU_IOC_GET_REG              _IOW(MPP_VPU_IOC_MAGIC, 4, unsigned long)
+ #define MPP_VPU_IOC_SET_CLIENT_TYPE_U32  _IOW(MPP_VPU_IOC_MAGIC, 1, unsigned int)
+ 
+ enum mpp_legacy_vpu_client_type {
+@@ -68,6 +70,11 @@ enum mpp_legacy_vpu_client_type {
+ 	MPP_VPU_DEC_AVSPLUS	= 0x7,
+ 	MPP_VPU_ENC_VEPU22	= 0x8,
+ };
++
++struct mpp_legacy_reg_req {
++	void __user *req;
++	u32 size;
++};
+ #ifdef CONFIG_ROCKCHIP_MPP_PROC_FS
+ const char *mpp_device_name[MPP_DEVICE_BUTT] = {
+ 	[MPP_DEVICE_VDPU1]		= "VDPU1",
+@@ -1796,12 +1803,71 @@ static struct mpp_dev *mpp_legacy_client_to_mpp(struct mpp_service *srv,
+ 	}
+ }
+ 
++static int mpp_legacy_reg_from_user(unsigned long arg,
++				   struct mpp_legacy_reg_req *req)
++{
++	if (copy_from_user(req, (void __user *)arg, sizeof(*req)))
++		return -EFAULT;
++
++	if (!req->req || !req->size)
++		return -EINVAL;
++
++	return 0;
++}
++
++static int mpp_legacy_submit_regs(struct mpp_session *session,
++				 const struct mpp_legacy_reg_req *poll_req)
++{
++	LIST_HEAD(msgs_list);
++	struct mpp_task_msgs *msgs;
++	struct mpp_request *req;
++
++	if (!session->legacy_reg_pending)
++		return -EINVAL;
++
++	msgs = get_task_msgs(session);
++	req = &msgs->reqs[msgs->req_cnt++];
++	req->cmd = MPP_CMD_SET_REG_WRITE;
++	req->flags = 0;
++	req->size = session->legacy_reg_size;
++	req->offset = 0;
++	req->data = session->legacy_reg_data;
++	msgs->set_cnt++;
++
++	req = &msgs->reqs[msgs->req_cnt++];
++	req->cmd = MPP_CMD_SET_REG_READ;
++	req->flags = 0;
++	req->size = poll_req->size;
++	req->offset = 0;
++	req->data = poll_req->req;
++	msgs->set_cnt++;
++
++	req = &msgs->reqs[msgs->req_cnt++];
++	req->cmd = MPP_CMD_POLL_HW_FINISH;
++	req->flags = 0;
++	req->size = 0;
++	req->offset = 0;
++	req->data = NULL;
++	msgs->poll_cnt++;
++
++	task_msgs_add(msgs, &msgs_list);
++	mpp_msgs_trigger(&msgs_list);
++	mpp_msgs_wait(&msgs_list);
++
++	session->legacy_reg_data = NULL;
++	session->legacy_reg_size = 0;
++	session->legacy_reg_pending = false;
++
++	return 0;
++}
++
+ static long mpp_legacy_ioctl(struct mpp_session *session,
+-				     struct mpp_service *srv,
+-				     unsigned int cmd,
+-				     unsigned long arg)
++			     struct mpp_service *srv,
++			     unsigned int cmd,
++			     unsigned long arg)
+ {
+ 	struct mpp_dev *mpp;
++	struct mpp_legacy_reg_req reg_req;
+ 	u32 client_type;
+ 	int ret;
+ 
+@@ -1827,7 +1893,7 @@ static long mpp_legacy_ioctl(struct mpp_session *session,
+ 
+ 		session->device_type = mpp->var->device_type;
+ 		session->dma = mpp_dma_session_create(mpp->dev,
+-						     mpp->session_max_buffers);
++					      mpp->session_max_buffers);
+ 		if (!session->dma)
+ 			return -ENOMEM;
+ 
+@@ -1850,6 +1916,25 @@ static long mpp_legacy_ioctl(struct mpp_session *session,
+ 
+ 		mpp_session_attach_workqueue(session, mpp->queue);
+ 		return 0;
++	case MPP_VPU_IOC_SET_REG:
++		ret = mpp_legacy_reg_from_user(arg, &reg_req);
++		if (ret)
++			return ret;
++		if (!session->mpp)
++			return -EINVAL;
++		if (session->legacy_reg_pending)
++			return -EBUSY;
++		session->legacy_reg_data = reg_req.req;
++		session->legacy_reg_size = reg_req.size;
++		session->legacy_reg_pending = true;
++		return 0;
++	case MPP_VPU_IOC_GET_REG:
++		ret = mpp_legacy_reg_from_user(arg, &reg_req);
++		if (ret)
++			return ret;
++		if (!session->mpp)
++			return -EINVAL;
++		return mpp_legacy_submit_regs(session, &reg_req);
+ 	default:
+ 		return -ENOIOCTLCMD;
+ 	}
+diff --git a/drivers/video/rockchip/mpp/mpp_common.h b/drivers/video/rockchip/mpp/mpp_common.h
+index 37590db092c88..b0630b2915458 100644
+--- a/drivers/video/rockchip/mpp/mpp_common.h
++++ b/drivers/video/rockchip/mpp/mpp_common.h
+@@ -355,6 +355,9 @@ struct mpp_session {
+ 	int trans_count;
+ 	u16 trans_table[MPP_MAX_REG_TRANS_NUM];
+ 	u32 msg_flags;
++	void __user *legacy_reg_data;
++	u32 legacy_reg_size;
++	bool legacy_reg_pending;
+ 	/* link to mpp_service session_list */
+ 	struct list_head service_link;
+ 	/* link to mpp_workqueue session_attach / session_detach */
+-- 
+2.51.2
+
