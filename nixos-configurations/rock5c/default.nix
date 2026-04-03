@@ -89,7 +89,10 @@
 
   hardware.firmware = [ (pkgs.callPackage ./mali_csffw.nix { }) ];
   users.groups.video.members = [ config.services.jellyfin.user ];
-  users.users.john.extraGroups = [ "render" ];
+  users.users.john.extraGroups = [
+    "render"
+    "video"
+  ];
 
   services.udev.extraRules = ''
     # Defense in depth: if an HDMI input node still appears, never let
@@ -98,7 +101,10 @@
     SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="fde80000.hdmi", ENV{ID_INPUT_KEY}="0", TAG-="power-switch"
 
     ${lib.optionalString (config.dev.johnrinehart.rock5c.videoBackend == "mpp") ''
-      KERNEL=="mpp", MODE="0660", GROUP="video", SYMLINK+="mpp_service"
+      # The vendor MPP userspace may look for either /dev/mpp or /dev/mpp_service.
+      # The current kernel driver registers the device as "mpp_service", so match
+      # that real node for permissions and add a /dev/mpp compatibility symlink.
+      KERNEL=="mpp_service", MODE="0660", GROUP="video", SYMLINK+="mpp"
     ''}
     KERNEL=="rga", MODE="0660", GROUP="video"
     KERNEL=="system", MODE="0666", GROUP="video"
