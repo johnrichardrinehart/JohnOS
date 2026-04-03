@@ -1,0 +1,113 @@
+From ffc72a7ce486f9bb4b25766651fc98c24a46e7ec Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Fri, 3 Apr 2026 13:02:11 -0400
+Subject: [PATCH] avcodec/rkmppdec: retain packets on decoder backpressure
+
+---
+ libavcodec/rkmppdec.c | 52 ++++++++++++++++++++++---------------------
+ 1 file changed, 27 insertions(+), 25 deletions(-)
+
+diff --git a/libavcodec/rkmppdec.c b/libavcodec/rkmppdec.c
+index dad0e4c..3a10e1c 100644
+--- a/libavcodec/rkmppdec.c
++++ b/libavcodec/rkmppdec.c
+@@ -43,8 +43,6 @@
+ 
+ #define RECEIVE_FRAME_TIMEOUT   100
+ #define FRAMEGROUP_MAX_FRAMES   16
+-#define INPUT_MAX_PACKETS       4
+-
+ typedef struct {
+     MppCtx ctx;
+     MppApi *mpi;
+@@ -60,6 +58,8 @@ typedef struct {
+ typedef struct {
+     AVClass *av_class;
+     RKMPPDecoder *decoder;           ///< RefStruct reference
++    AVPacket pending_pkt;
++    char pending_eof;
+ } RKMPPDecodeContext;
+ 
+ typedef struct {
+@@ -127,6 +127,7 @@ static int rkmpp_write_data(AVCodecContext *avctx, uint8_t *buffer, int size, in
+ static av_cold int rkmpp_close_decoder(AVCodecContext *avctx)
+ {
+     RKMPPDecodeContext *rk_context = avctx->priv_data;
++    av_packet_unref(&rk_context->pending_pkt);
+     av_refstruct_unref(&rk_context->decoder);
+     return 0;
+ }
+@@ -485,39 +486,37 @@ static int rkmpp_receive_frame(AVCodecContext *avctx, AVFrame *frame)
+     RKMPPDecodeContext *rk_context = avctx->priv_data;
+     RKMPPDecoder *decoder = rk_context->decoder;
+     int ret = MPP_NOK;
+-    AVPacket pkt = {0};
+-    RK_S32 usedslots, freeslots;
+ 
+     if (!decoder->eos_reached) {
+-        // we get the available slots in decoder
+-        ret = decoder->mpi->control(decoder->ctx, MPP_DEC_GET_STREAM_COUNT, &usedslots);
+-        if (ret != MPP_OK) {
+-            av_log(avctx, AV_LOG_ERROR, "Failed to get decoder used slots (code = %d).\n", ret);
+-            return ret;
+-        }
+-
+-        freeslots = INPUT_MAX_PACKETS - usedslots;
+-        if (freeslots > 0) {
+-            ret = ff_decode_get_packet(avctx, &pkt);
+-            if (ret < 0 && ret != AVERROR_EOF) {
+-                return ret;
++        if (!rk_context->pending_pkt.size && !rk_context->pending_eof) {
++            ret = ff_decode_get_packet(avctx, &rk_context->pending_pkt);
++            if (ret == AVERROR_EOF) {
++                rk_context->pending_eof = 1;
++            } else if (ret < 0) {
++                if (ret != AVERROR(EAGAIN))
++                    return ret;
+             }
++        }
+ 
+-            ret = rkmpp_send_packet(avctx, &pkt);
+-            av_packet_unref(&pkt);
+-
+-            if (ret < 0) {
++        if (rk_context->pending_pkt.size || rk_context->pending_eof) {
++            AVPacket eof_pkt = { 0 };
++            AVPacket *pkt = rk_context->pending_eof ? &eof_pkt : &rk_context->pending_pkt;
++
++            ret = rkmpp_send_packet(avctx, pkt);
++            if (ret == 0) {
++                if (rk_context->pending_eof)
++                    rk_context->pending_eof = 0;
++                else
++                    av_packet_unref(&rk_context->pending_pkt);
++            } else if (ret != AVERROR(EAGAIN)) {
+                 av_log(avctx, AV_LOG_ERROR, "Failed to send packet to decoder (code = %d)\n", ret);
+                 return ret;
+             }
+         }
+-
+-        // make sure we keep decoder full
+-        if (freeslots > 1)
+-            return AVERROR(EAGAIN);
+     }
+ 
+-    return rkmpp_retrieve_frame(avctx, frame);
++    ret = rkmpp_retrieve_frame(avctx, frame);
++    return ret;
+ }
+ 
+ static av_cold void rkmpp_flush(AVCodecContext *avctx)
+@@ -531,6 +530,9 @@ static av_cold void rkmpp_flush(AVCodecContext *avctx)
+     ret = decoder->mpi->reset(decoder->ctx);
+     if (ret == MPP_OK) {
+         decoder->first_packet = 1;
++        decoder->eos_reached = 0;
++        rk_context->pending_eof = 0;
++        av_packet_unref(&rk_context->pending_pkt);
+     } else
+         av_log(avctx, AV_LOG_ERROR, "Failed to reset MPI (code = %d)\n", ret);
+ }
+-- 
+2.51.2
+

@@ -67,6 +67,10 @@ let
     ../patches/ffmpeg-v4l2request/0010-hevc-v4l2request-submit-ext-sps-rps.patch
   ];
 
+  ffmpegRkmppPatches = [
+    ../patches/ffmpeg-rkmpp/0001-rkmpp-retain-packets-on-decoder-backpressure.patch
+  ];
+
   mkV4l2RequestFfmpeg = ffmpegPkg:
     ffmpegPkg.overrideAttrs (old: {
       patches = (old.patches or [ ]) ++ ffmpegV4l2RequestPatches;
@@ -76,6 +80,7 @@ let
 
   mkRkmppFfmpeg = ffmpegPkg:
     ffmpegPkg.overrideAttrs (old: {
+      patches = (old.patches or [ ]) ++ ffmpegRkmppPatches;
       configureFlags = (old.configureFlags or [ ]) ++ [ "--enable-rkmpp" ];
       buildInputs = (old.buildInputs or [ ]) ++ [ rockchipMpp ];
     });
