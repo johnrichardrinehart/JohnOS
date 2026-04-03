@@ -1,0 +1,64 @@
+diff --git a/drivers/video/rockchip/mpp/mpp_iommu.c b/drivers/video/rockchip/mpp/mpp_iommu.c
+index ff93d7f75e6c9..6221cb7a6fa4b 100644
+--- a/drivers/video/rockchip/mpp/mpp_iommu.c
++++ b/drivers/video/rockchip/mpp/mpp_iommu.c
+@@ -688,7 +688,6 @@ int mpp_iommu_reserve_iova(struct mpp_iommu_info *info, dma_addr_t iova, size_t
+ {
+ 
+ 	struct iommu_domain *domain;
+-	struct mpp_iommu_dma_cookie *cookie;
+ 	struct iova_domain *iovad;
+ 	unsigned long pfn_lo, pfn_hi;
+ 
+@@ -699,8 +698,7 @@ int mpp_iommu_reserve_iova(struct mpp_iommu_info *info, dma_addr_t iova, size_t
+ 	if (!domain || !domain->iova_cookie)
+ 		return -EINVAL;
+ 
+-	cookie = (struct mpp_iommu_dma_cookie *)domain->iova_cookie;
+-	iovad = &cookie->iovad;
++	iovad = mpp_iommu_dma_cookie_iovad(domain->iova_cookie);
+ 
+ 	/* iova will be freed automatically by put_iova_domain() */
+ 	pfn_lo = iova_pfn(iovad, iova);
+diff --git a/drivers/video/rockchip/mpp/mpp_iommu.h b/drivers/video/rockchip/mpp/mpp_iommu.h
+index bf51e0ee4de39..43cd9e616d9df 100644
+--- a/drivers/video/rockchip/mpp/mpp_iommu.h
++++ b/drivers/video/rockchip/mpp/mpp_iommu.h
+@@ -15,18 +15,35 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/interrupt.h>
+ #include <linux/iova.h>
++#include <linux/version.h>
+ 
++/*
++ * MPP only needs the dma-iommu allocator's iova_domain. Mainline 6.15
++ * moved struct iova_domain to offset 0 in struct iommu_dma_cookie, while
++ * older vendor-style trees kept a leading cookie type field. Mirror just
++ * enough of the active layout to reach iovad safely on both sides.
++ */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 15, 0)
+ enum iommu_dma_cookie_type {
+ 	IOMMU_DMA_IOVA_COOKIE,
+ 	IOMMU_DMA_MSI_COOKIE,
+ };
+ 
+-/* Keep in mind: member order must keep align with struct iommu_dma_cookie */
+ struct mpp_iommu_dma_cookie {
+ 	enum iommu_dma_cookie_type type;
+-	/* Full allocator for IOMMU_DMA_IOVA_COOKIE */
+ 	struct iova_domain iovad;
+ };
++#else
++struct mpp_iommu_dma_cookie {
++	struct iova_domain iovad;
++};
++#endif
++
++static inline struct iova_domain *
++mpp_iommu_dma_cookie_iovad(void *cookie)
++{
++	return &((struct mpp_iommu_dma_cookie *)cookie)->iovad;
++}
+ 
+ struct mpp_dma_buffer {
+ 	/* link to dma session buffer list */

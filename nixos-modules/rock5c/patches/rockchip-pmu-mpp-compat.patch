@@ -1,5 +1,5 @@
 diff --git a/drivers/pmdomain/rockchip/pm-domains.c b/drivers/pmdomain/rockchip/pm-domains.c
-index e9709ce8984d..ca4f2f7d5afc 100644
+index 997e93c12951c..6a9e85a64bca4 100644
 --- a/drivers/pmdomain/rockchip/pm-domains.c
 +++ b/drivers/pmdomain/rockchip/pm-domains.c
 @@ -7,6 +7,7 @@
@@ -10,7 +10,7 @@ index e9709ce8984d..ca4f2f7d5afc 100644
  #include <linux/iopoll.h>
  #include <linux/err.h>
  #include <linux/mutex.h>
-@@ -434,6 +435,29 @@ static int rockchip_pmu_set_idle_request(struct rockchip_pm_domain *pd,
+@@ -439,6 +440,29 @@ static int rockchip_pmu_set_idle_request(struct rockchip_pm_domain *pd,
  	return 0;
  }
  
@@ -40,7 +40,7 @@ index e9709ce8984d..ca4f2f7d5afc 100644
  static int rockchip_pmu_save_qos(struct rockchip_pm_domain *pd)
  {
  	int i;
-@@ -508,6 +532,52 @@ static int rockchip_pmu_restore_qos(struct rockchip_pm_domain *pd)
+@@ -488,6 +512,52 @@ static int rockchip_pmu_restore_qos(struct rockchip_pm_domain *pd)
  	return 0;
  }
  
@@ -93,7 +93,7 @@ index e9709ce8984d..ca4f2f7d5afc 100644
  static bool rockchip_pmu_domain_is_on(struct rockchip_pm_domain *pd)
  {
  	struct rockchip_pmu *pmu = pd->pmu;
-@@ -526,6 +596,29 @@ static bool rockchip_pmu_domain_is_on(struct rockchip_pm_domain *pd)
+@@ -509,6 +579,29 @@ static bool rockchip_pmu_domain_is_on(struct rockchip_pm_domain *pd)
  	return !(val & pd->info->status_mask);
  }
  
@@ -123,7 +123,7 @@ index e9709ce8984d..ca4f2f7d5afc 100644
  static bool rockchip_pmu_domain_is_mem_on(struct rockchip_pm_domain *pd)
  {
  	struct rockchip_pmu *pmu = pd->pmu;
-@@ -750,6 +843,42 @@ static int rockchip_pd_power_off(struct generic_pm_domain *domain)
+@@ -730,6 +823,42 @@ static int rockchip_pd_power_off(struct generic_pm_domain *domain)
  	return ret;
  }
  
