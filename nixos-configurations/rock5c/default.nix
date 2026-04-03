@@ -35,7 +35,7 @@
     enable = true;
     management.enable = true;
     kodi = {
-      variant = "auto";
+      variant = "gbm";
       autostart.enable = true;
       disable_cec_standby_on_poweroff = true;
     };
@@ -51,7 +51,7 @@
   dev.johnrinehart.nix.enable = true;
   dev.johnrinehart.desktop = {
     enable = true;
-    variant = "greetd+niri";
+    variant = "wl-kwin";
   };
   dev.johnrinehart.packages.shell.enable = true;
   dev.johnrinehart.packages.editors.enable = true;
@@ -89,7 +89,10 @@
   systemd.services.jellyfin.unitConfig.RequiresMountsFor = [ "/mnt/nas/.services/jellyfin" ];
 
   users.groups.video.members = [ config.services.jellyfin.user ];
-  users.users.john.extraGroups = [ "render" ];
+  users.users.john.extraGroups = [
+    "render"
+    "video"
+  ];
 
   services.udev.extraRules = ''
     # Defense in depth: if an HDMI input node still appears, never let
@@ -98,7 +101,10 @@
     SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="fde80000.hdmi", ENV{ID_INPUT_KEY}="0", TAG-="power-switch"
 
     ${lib.optionalString (config.dev.johnrinehart.rock5c.videoBackend == "mpp") ''
-      KERNEL=="mpp", MODE="0660", GROUP="video", SYMLINK+="mpp_service"
+      # The vendor MPP userspace may look for either /dev/mpp or /dev/mpp_service.
+      # The current kernel driver registers the device as "mpp_service", so match
+      # that real node for permissions and add a /dev/mpp compatibility symlink.
+      KERNEL=="mpp_service", MODE="0660", GROUP="video", SYMLINK+="mpp"
     ''}
     KERNEL=="rga", MODE="0660", GROUP="video"
     KERNEL=="system", MODE="0666", GROUP="video"
@@ -184,6 +190,11 @@
       Network.EnableIPv6 = true;
     };
   };
+
+  # PowerDevil is initiating suspend requests on this host. Disable the
+  # user service entirely so Plasma cannot auto-suspend the machine.
+  systemd.user.services.plasma-powerdevil.unitConfig.ConditionPathExists =
+    lib.mkForce "/this/path/should/not/exist";
 
   nix.package = pkgs.nixVersions.nix_2_32;
 

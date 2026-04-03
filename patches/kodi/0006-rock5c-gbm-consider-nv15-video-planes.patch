@@ -1,0 +1,26 @@
+From 35897689a80112c0f5dae9c879c729f88558f801 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Sun, 5 Apr 2026 19:25:27 -0400
+Subject: [PATCH] gbm: consider NV15-capable planes for 10-bit video
+
+---
+ xbmc/windowing/gbm/drm/DRMUtils.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/xbmc/windowing/gbm/drm/DRMUtils.cpp b/xbmc/windowing/gbm/drm/DRMUtils.cpp
+index df2f397b2a..3a3743cfa0 100644
+--- a/xbmc/windowing/gbm/drm/DRMUtils.cpp
++++ b/xbmc/windowing/gbm/drm/DRMUtils.cpp
+@@ -173,7 +173,8 @@ bool CDRMUtils::FindPlanes()
+                                            {
+                                              if (plane->GetPossibleCrtcs() & (1 << i))
+                                              {
+-                                               return plane->SupportsFormat(DRM_FORMAT_NV12);
++                                               return plane->SupportsFormat(DRM_FORMAT_NV12) ||
++                                                      plane->SupportsFormat(DRM_FORMAT_NV15);
+                                              }
+                                              return false;
+                                            });
+-- 
+2.51.2
+

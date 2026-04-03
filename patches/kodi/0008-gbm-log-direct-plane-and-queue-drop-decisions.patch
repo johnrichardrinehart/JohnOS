@@ -1,0 +1,147 @@
+From 623e1686e02f0f4b9defdb0cfe5f10ebc2e306c3 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Sun, 5 Apr 2026 21:01:51 -0400
+Subject: [PATCH] gbm: log direct plane and queue drop decisions
+
+---
+ xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp   | 10 ++++--
+ .../HwDecRender/RendererDRMPRIME.cpp          | 36 +++++++++++++------
+ .../VideoRenderers/RenderManager.cpp          |  9 +++++
+ xbmc/windowing/gbm/drm/DRMAtomic.cpp          | 11 +++++-
+ 4 files changed, 52 insertions(+), 14 deletions(-)
+
+diff --git a/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp b/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
+index b27235678f..6a24b9cea5 100644
+--- a/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
++++ b/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
+@@ -917,7 +917,8 @@ CVideoPlayerVideo::EOutputState CVideoPlayerVideo::OutputPicture(const VideoPict
+   if ((pPicture->iFlags & DVP_FLAG_DROPPED))
+   {
+     m_droppingStats.AddOutputDropGain(pPicture->pts, 1);
+-    CLog::Log(LOGDEBUG, "{} - dropped in output", __FUNCTION__);
++    CLog::Log(LOGDEBUG, LOGVIDEO, "{} - dropped in output pts={:.6f} clock={:.6f}",
++              __FUNCTION__, pPicture->pts, iPlayingClock);
+     return OUTPUT_DROPPED;
+   }
+ 
+@@ -1113,8 +1114,11 @@ int CVideoPlayerVideo::CalcDropRequirement(double pts)
+   else if (iBufferLevel < 2)
+   {
+     result |= DROP_BUFFER_LEVEL;
+-    CLog::Log(LOGDEBUG, LOGVIDEO, "CVideoPlayerVideo::CalcDropRequirement - hurry: {}",
+-              iBufferLevel);
++    CLog::Log(LOGDEBUG, LOGVIDEO,
++              "CVideoPlayerVideo::CalcDropRequirement - hurry: {} decoderPts={:.6f} "
++              "renderPts={:.6f} queued={} discard={} lateframes={} dropped={} skipped={}",
++              iBufferLevel, iDecoderPts, iRenderPts, queued, discard, lateframes, iDroppedFrames,
++              iSkippedPicture);
+   }
+ 
+   if (m_bAllowDrop)
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
+index a3398e43f8..dfa1a71993 100644
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
+@@ -174,16 +174,32 @@ bool CRendererDRMPRIME::IsGuiLayer()
+     return false;
+ 
+   const auto& windowManager = gui->GetWindowManager();
+-  return windowManager.IsWindowActive(WINDOW_DIALOG_VIDEO_OSD) ||
+-         windowManager.IsWindowActive(WINDOW_DIALOG_SEEK_BAR) ||
+-         windowManager.IsWindowActive(WINDOW_DIALOG_AUDIO_OSD_SETTINGS) ||
+-         windowManager.IsWindowActive(WINDOW_DIALOG_SUBTITLE_OSD_SETTINGS) ||
+-         windowManager.IsWindowActive(WINDOW_DIALOG_VIDEO_OSD_SETTINGS) ||
+-         windowManager.IsWindowActive(WINDOW_DIALOG_CMS_OSD_SETTINGS) ||
+-         windowManager.IsWindowActive(WINDOW_DIALOG_VIDEO_BOOKMARKS) ||
+-         windowManager.IsWindowActive(WINDOW_DIALOG_PVR_OSD_CHANNELS) ||
+-         windowManager.IsWindowActive(WINDOW_DIALOG_PVR_CHANNEL_GUIDE) ||
+-         windowManager.IsWindowActive(WINDOW_DIALOG_OSD_TELETEXT);
++  bool guiLayer = windowManager.IsWindowActive(WINDOW_DIALOG_VIDEO_OSD) ||
++                  windowManager.IsWindowActive(WINDOW_DIALOG_SEEK_BAR) ||
++                  windowManager.IsWindowActive(WINDOW_DIALOG_AUDIO_OSD_SETTINGS) ||
++                  windowManager.IsWindowActive(WINDOW_DIALOG_SUBTITLE_OSD_SETTINGS) ||
++                  windowManager.IsWindowActive(WINDOW_DIALOG_VIDEO_OSD_SETTINGS) ||
++                  windowManager.IsWindowActive(WINDOW_DIALOG_CMS_OSD_SETTINGS) ||
++                  windowManager.IsWindowActive(WINDOW_DIALOG_VIDEO_BOOKMARKS) ||
++                  windowManager.IsWindowActive(WINDOW_DIALOG_PVR_OSD_CHANNELS) ||
++                  windowManager.IsWindowActive(WINDOW_DIALOG_PVR_CHANNEL_GUIDE) ||
++                  windowManager.IsWindowActive(WINDOW_DIALOG_OSD_TELETEXT);
++
++  CLog::Log(LOGDEBUG, LOGVIDEO,
++            "CRendererDRMPRIME::{} - guiLayer={} osd={} seek={} audio={} sub={} video={} cms={} "
++            "bookmarks={} pvr_osd={} pvr_guide={} teletext={}",
++            __FUNCTION__, guiLayer, windowManager.IsWindowActive(WINDOW_DIALOG_VIDEO_OSD),
++            windowManager.IsWindowActive(WINDOW_DIALOG_SEEK_BAR),
++            windowManager.IsWindowActive(WINDOW_DIALOG_AUDIO_OSD_SETTINGS),
++            windowManager.IsWindowActive(WINDOW_DIALOG_SUBTITLE_OSD_SETTINGS),
++            windowManager.IsWindowActive(WINDOW_DIALOG_VIDEO_OSD_SETTINGS),
++            windowManager.IsWindowActive(WINDOW_DIALOG_CMS_OSD_SETTINGS),
++            windowManager.IsWindowActive(WINDOW_DIALOG_VIDEO_BOOKMARKS),
++            windowManager.IsWindowActive(WINDOW_DIALOG_PVR_OSD_CHANNELS),
++            windowManager.IsWindowActive(WINDOW_DIALOG_PVR_CHANNEL_GUIDE),
++            windowManager.IsWindowActive(WINDOW_DIALOG_OSD_TELETEXT));
++
++  return guiLayer;
+ }
+ 
+ void CRendererDRMPRIME::ReleaseBuffer(int index)
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
+index c08fafc435..2fecd94513 100644
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
+@@ -1103,6 +1103,10 @@ int CRenderManager::WaitForBuffer(volatile std::atomic_bool& bStop,
+       sleeptime = 0ms;
+     sleeptime = std::min(sleeptime, 20ms);
+     m_presentevent.wait(lock, sleeptime);
++    CLog::Log(LOGDEBUG, LOGVIDEO,
++              "CRenderManager::{} - GUI rendering disabled, discarding buffer queued={} "
++              "discard={} free={} clock={:.6f} presenttime={:.6f}",
++              __FUNCTION__, m_queued.size(), m_discard.size(), m_free.size(), clock, presenttime);
+     DiscardBuffer();
+     return 0;
+   }
+@@ -1113,6 +1117,11 @@ int CRenderManager::WaitForBuffer(volatile std::atomic_bool& bStop,
+     m_presentevent.wait(lock, std::min(50ms, timeout));
+     if (endtime.IsTimePast() || bStop)
+     {
++      CLog::Log(LOGWARNING, LOGVIDEO,
++                "CRenderManager::{} - timed out waiting for free buffer queued={} discard={} "
++                "free={} timeout_ms={} stop={}",
++                __FUNCTION__, m_queued.size(), m_discard.size(), m_free.size(), timeout.count(),
++                bStop.load());
+       return -1;
+     }
+   }
+diff --git a/xbmc/windowing/gbm/drm/DRMAtomic.cpp b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
+index 7a5e68d30b..24a4fa0aa5 100644
+--- a/xbmc/windowing/gbm/drm/DRMAtomic.cpp
++++ b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
+@@ -26,6 +26,13 @@ using namespace KODI::WINDOWING::GBM;
+ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool videoLayer)
+ {
+   uint32_t blob_id;
++  const bool hasVisibleControls = CServiceBroker::GetGUI()->GetWindowManager().HasVisibleControls();
++
++  CLog::Log(LOGDEBUG, LOGWINDOWING,
++            "CDRMAtomic::{} - fb_id={} flags=0x{:x} rendered={} videoLayer={} "
++            "hasVisibleControls={} need_modeset={} active={}",
++            __FUNCTION__, fb_id, flags, rendered, videoLayer, hasVisibleControls, m_need_modeset,
++            m_active);
+ 
+   if (flags & DRM_MODE_ATOMIC_ALLOW_MODESET)
+   {
+@@ -71,9 +78,11 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
+       AddProperty(m_gui_plane, "IN_FENCE_FD", m_inFenceFd);
+     }
+   }
+-  else if (videoLayer && !CServiceBroker::GetGUI()->GetWindowManager().HasVisibleControls())
++  else if (videoLayer && !hasVisibleControls)
+   {
+     // disable gui plane when video layer is active and gui has no visible controls
++    CLog::Log(LOGDEBUG, LOGWINDOWING,
++              "CDRMAtomic::{} - disabling GUI plane for direct video plane commit", __FUNCTION__);
+     AddProperty(m_gui_plane, "FB_ID", 0);
+     AddProperty(m_gui_plane, "CRTC_ID", 0);
+   }
+-- 
+2.51.2

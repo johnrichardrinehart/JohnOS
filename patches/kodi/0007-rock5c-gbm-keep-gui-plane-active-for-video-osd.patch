@@ -1,0 +1,66 @@
+From 5f181d17e4db748ead83fa0ccb705377f469fd3d Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Sun, 5 Apr 2026 20:43:06 -0400
+Subject: [PATCH] gbm: keep GUI plane active while video OSD is visible
+
+---
+ .../HwDecRender/RendererDRMPRIME.cpp          | 22 +++++++++++++++++++
+ .../HwDecRender/RendererDRMPRIME.h            |  2 +-
+ 2 files changed, 23 insertions(+), 1 deletion(-)
+
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
+index 66df0e49c7..a3398e43f8 100644
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
+@@ -9,6 +9,9 @@
+ #include "RendererDRMPRIME.h"
+ 
+ #include "ServiceBroker.h"
++#include "guilib/GUIComponent.h"
++#include "guilib/GUIWindowManager.h"
++#include "guilib/WindowIDs.h"
+ #include "cores/VideoPlayer/Buffers/VideoBufferDRMPRIME.h"
+ #include "cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h"
+ #include "cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeDRMPRIME.h"
+@@ -164,6 +167,25 @@ bool CRendererDRMPRIME::Flush(bool saveBuffers)
+   return saveBuffers;
+ }
+ 
++bool CRendererDRMPRIME::IsGuiLayer()
++{
++  auto* gui = CServiceBroker::GetGUI();
++  if (!gui)
++    return false;
++
++  const auto& windowManager = gui->GetWindowManager();
++  return windowManager.IsWindowActive(WINDOW_DIALOG_VIDEO_OSD) ||
++         windowManager.IsWindowActive(WINDOW_DIALOG_SEEK_BAR) ||
++         windowManager.IsWindowActive(WINDOW_DIALOG_AUDIO_OSD_SETTINGS) ||
++         windowManager.IsWindowActive(WINDOW_DIALOG_SUBTITLE_OSD_SETTINGS) ||
++         windowManager.IsWindowActive(WINDOW_DIALOG_VIDEO_OSD_SETTINGS) ||
++         windowManager.IsWindowActive(WINDOW_DIALOG_CMS_OSD_SETTINGS) ||
++         windowManager.IsWindowActive(WINDOW_DIALOG_VIDEO_BOOKMARKS) ||
++         windowManager.IsWindowActive(WINDOW_DIALOG_PVR_OSD_CHANNELS) ||
++         windowManager.IsWindowActive(WINDOW_DIALOG_PVR_CHANNEL_GUIDE) ||
++         windowManager.IsWindowActive(WINDOW_DIALOG_OSD_TELETEXT);
++}
++
+ void CRendererDRMPRIME::ReleaseBuffer(int index)
+ {
+   BUFFER& buf = m_buffers[index];
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.h b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.h
+index 30b69f8031..1be7c95080 100644
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.h
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.h
+@@ -31,7 +31,7 @@ public:
+   bool Flush(bool saveBuffers) override;
+   void ReleaseBuffer(int idx) override;
+   bool NeedBuffer(int idx) override;
+-  bool IsGuiLayer() override { return false; }
++  bool IsGuiLayer() override;
+   CRenderInfo GetRenderInfo() override;
+   void Update() override;
+   void RenderUpdate(
+-- 
+2.51.2
+

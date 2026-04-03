@@ -1,0 +1,37 @@
+From cc9f79ea0035474e8a13a6b87534d8eff5ce1a0c Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Sun, 5 Apr 2026 22:53:53 -0400
+Subject: [PATCH] gbm: disable direct video plane while GUI layer is active
+
+---
+ .../HwDecRender/RendererDRMPRIME.cpp               | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
+index a3398e43f8..bf64ca4698 100644
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
+@@ -222,6 +222,20 @@ void CRendererDRMPRIME::Update()
+ void CRendererDRMPRIME::RenderUpdate(
+     int index, int index2, bool clear, unsigned int flags, unsigned int alpha)
+ {
++  if (IsGuiLayer())
++  {
++    if (m_videoLayerBridge)
++    {
++      CLog::Log(LOGDEBUG,
++                "CRendererDRMPRIME::{} - disabling direct video plane while GUI layer is active",
++                __FUNCTION__);
++      m_videoLayerBridge->Disable();
++      m_videoLayerBridge.reset();
++    }
++    m_iLastRenderBuffer = -1;
++    return;
++  }
++
+   if (m_iLastRenderBuffer == index && m_videoLayerBridge)
+   {
+     m_videoLayerBridge->UpdateVideoPlane();
+-- 
+2.51.2
+

@@ -88,7 +88,6 @@ let
 in
 {
   imports = [
-    ./kernel_minimal.nix
     ./aic8800/module.nix
     ./gstreamer-hwdec/module.nix
     ./media/default.nix
@@ -97,9 +96,6 @@ in
 
   options.dev.johnrinehart.rock5c = {
     enable = lib.mkEnableOption "radxa rock5c hardware stuff";
-    useMinimalKernel = lib.mkEnableOption "use minimal kernel configuration" // {
-      default = false;
-    };
     videoBackend = lib.mkOption {
       type = lib.types.enum [ "mainline" "mpp" ];
       default = "mainline";
@@ -759,10 +755,6 @@ in
 
       assertions = [
         {
-          assertion = !(cfg.videoBackend == "mpp" && cfg.useMinimalKernel);
-          message = "dev.johnrinehart.rock5c.videoBackend = \"mpp\" requires the 6.19 vendor-MPP patch stack and is incompatible with useMinimalKernel.";
-        }
-        {
           assertion = !(cfg.mpp.driverMask != null && cfg.videoBackend != "mpp");
           message = "dev.johnrinehart.rock5c.mpp.driverMask only applies when dev.johnrinehart.rock5c.videoBackend = \"mpp\".";
         }
@@ -816,9 +808,11 @@ in
         volumeLabel = cfg.rootfsLabel;
       };
 
-      # Keep rk_vcodec manual-load only for now. Autoloading at boot may
-      # trigger the same early probe crash we saw when the driver was built-in.
-      # boot.kernelModules = lib.optionals (cfg.videoBackend == "mpp") [ "rk_vcodec" ];
+      # The MPP stack is now stable enough to autoload for the MPP backend.
+      # Kodi/libmpp expects /dev/mpp_service to exist before attempting RKMPP
+      # init; leaving rk_vcodec manual-load only causes silent fallback to the
+      # software HEVC decoder when the device node is absent.
+      boot.kernelModules = lib.optionals (cfg.videoBackend == "mpp") [ "rk_vcodec" ];
 
       boot.kernelPatches = [
         {

@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.dev.johnrinehart.rock5c.media;
+  rock5cCfg = config.dev.johnrinehart.rock5c;
   managementCfg = cfg.management;
 
   defaultSession = lib.toLower (lib.attrByPath [ "services" "displayManager" "defaultSession" ] "" config);
@@ -15,14 +16,19 @@ let
     lib.attrByPath [ "programs" "niri" "enable" ] false config
     || lib.attrByPath [ "programs" "hyprland" "enable" ] false config
     || lib.attrByPath [ "programs" "sway" "enable" ] false config
+    || lib.attrByPath [ "services" "desktopManager" "plasma6" "enable" ] false config
     || lib.hasInfix "wayland" defaultSession
     || lib.hasInfix "niri" defaultSession
     || lib.hasInfix "hypr" defaultSession
     || lib.hasInfix "sway" defaultSession
+    || lib.hasInfix "plasma" defaultSession
+    || lib.hasInfix "kwin" defaultSession
     || lib.hasInfix "wayland" desktopVariant
     || lib.hasInfix "niri" desktopVariant
     || lib.hasInfix "hypr" desktopVariant
-    || lib.hasInfix "sway" desktopVariant;
+    || lib.hasInfix "sway" desktopVariant
+    || lib.hasInfix "plasma" desktopVariant
+    || lib.hasInfix "kwin" desktopVariant;
 
   x11Session = lib.attrByPath [ "services" "xserver" "enable" ] false config && !waylandSession;
 
@@ -35,8 +41,17 @@ let
       "gbm";
 
   effectiveKodiVariant = if cfg.kodi.variant == "auto" then autoKodiVariant else cfg.kodi.variant;
-  selectedKodiAttr = "kodi_22-${effectiveKodiVariant}-${cfg.kodi.ffmpegBackend}";
+  effectiveKodiFfmpegBackend =
+    if cfg.kodi.ffmpegBackend == "auto" then
+      if rock5cCfg.videoBackend == "mpp" then
+        "ffmpeg8-rkmpp"
+      else
+        "ffmpeg8-rkmpp-v4l2request"
+    else
+      cfg.kodi.ffmpegBackend;
+  selectedKodiAttr = "kodi_22-${effectiveKodiVariant}-${effectiveKodiFfmpegBackend}";
   selectedKodiPkg = builtins.getAttr selectedKodiAttr pkgs;
+  kodiGbmSessionCommand = "${lib.getExe' selectedKodiPkg "kodi-standalone"} --windowing=gbm";
   kodiAutostartLauncher = pkgs.writeShellScriptBin "rock5c-kodi-autostart" ''
     set -eu
 
@@ -46,7 +61,21 @@ let
         export XDG_RUNTIME_DIR="/run/user/$(id -u)"
       fi
 
-      wayland_display="''${WAYLAND_DISPLAY:-wayland-1}"
+      wayland_display="''${WAYLAND_DISPLAY:-}"
+      if [ -z "$wayland_display" ]; then
+        for candidate in wayland-0 wayland-1 "$(${lib.getExe' pkgs.findutils "find"} "$XDG_RUNTIME_DIR" -maxdepth 1 -type s -name 'wayland-*' -printf '%f\n' 2>/dev/null | ${lib.getExe' pkgs.coreutils "sort"} | head -n 1)"; do
+          if [ -n "$candidate" ] && [ -S "$XDG_RUNTIME_DIR/$candidate" ]; then
+            wayland_display="$candidate"
+            break
+          fi
+        done
+      fi
+
+      if [ -z "$wayland_display" ]; then
+        echo "rock5c-kodi-autostart: no Wayland socket found in $XDG_RUNTIME_DIR" >&2
+        exit 1
+      fi
+
       wayland_socket="$XDG_RUNTIME_DIR/$wayland_display"
 
       for _ in $(seq 1 40); do
@@ -265,13 +294,18 @@ in
 
       ffmpegBackend = lib.mkOption {
         type = lib.types.enum [
+          "auto"
           "ffmpeg8-rkmpp-v4l2request"
           "ffmpeg8-rkmpp"
           "ffmpeg-rockchip"
         ];
-        default = "ffmpeg8-rkmpp-v4l2request";
+        default = "auto";
         description = ''
           Which FFmpeg backend family to use for the Rock 5C Kodi builds.
+          `auto` selects `ffmpeg8-rkmpp` when
+          `dev.johnrinehart.rock5c.videoBackend = "mpp"` so Kodi does not
+          prefer the V4L2-request HEVC path on an MPP-owned media stack.
+          Otherwise it selects `ffmpeg8-rkmpp-v4l2request`.
           `ffmpeg8-rkmpp-v4l2request` builds Kodi against upstream FFmpeg 8 with
           both `rkmpp` and the local V4L2-request patch stack enabled.
           `ffmpeg8-rkmpp` builds Kodi against upstream FFmpeg 8 with `rkmpp` enabled.
@@ -288,6 +322,7 @@ in
           commonKodiPatches =
             [
               ../../../patches/kodi/0004-rock5c-add-drm-prime-oes-finishing-path.patch
+              ../../../patches/kodi/0005-rock5c-accept-p010-on-wayland-drm-prime.patch
             ]
             ++ lib.optionals cfg.kodi.disable_cec_standby_on_poweroff [
               # This suppresses Kodi's CEC standby/inactive-source power-off path.
@@ -312,6 +347,12 @@ in
                   # dedicated GBM appliance build. Applying it to Wayland/X11
                   # pulls those frontends onto the same PRIME renderer path.
                   ../../../patches/kodi/0001-rock5c-force-drm-prime-defaults-on-gbm.patch
+                  ../../../patches/kodi/0006-rock5c-gbm-consider-nv15-video-planes.patch
+                  ../../../patches/kodi/0007-rock5c-gbm-keep-gui-plane-active-for-video-osd.patch
+                  # Temporarily disabled once the GBM queue/OSD diagnosis was captured.
+                  # ../../../patches/kodi/0008-gbm-log-direct-plane-and-queue-drop-decisions.patch
+                  ../../../patches/kodi/0009-gbm-log-gui-render-and-atomic-commit-path.patch
+                  ../../../patches/kodi/0010-gbm-disable-direct-video-plane-while-gui-layer-active.patch
                 ]
                 ++ lib.optionals hasV4l2Request [
                   ../../../patches/kodi/0000-rock5c-enable-v4l2request-drm-prime-codec.patch
@@ -368,6 +409,15 @@ in
                   ffmpeg = ffmpegPkg;
                   frontend = baseName;
                   backend = backendName;
+                  providedSessions =
+                    if baseName == "kodi-gbm" then
+                      [ "kodi-gbm" ]
+                    else if baseName == "kodi-wayland" then
+                      [ "kodi-gbm" ]
+                    else if baseName == "kodi" then
+                      [ "kodi" ]
+                    else
+                      [ ];
                 };
               });
 
@@ -473,7 +523,7 @@ in
       ]
       ++ lib.optionals cfg.mpv.enable [ selectedMpvPkg ]
       ++ lib.optionals cfg.kodi.enable [ selectedKodiPkg ]
-      ++ lib.optionals (cfg.kodi.enable && cfg.kodi.autostart.enable) [ kodiAutostartLauncher ];
+      ++ lib.optionals (cfg.kodi.enable && cfg.kodi.autostart.enable && effectiveKodiVariant != "gbm") [ kodiAutostartLauncher ];
 
     environment.shellAliases = lib.mkIf cfg.ffmpegTools.enable {
       "ffmpeg-v4l2request" = "${ffmpegWrapper}/bin/rock5c-ffmpeg-v4l2request";
@@ -481,7 +531,33 @@ in
       "ffplay-v4l2request" = "${ffplayWrapper}/bin/rock5c-ffplay-v4l2request";
     };
 
-    systemd.user.services.rock5c-kodi-autostart = lib.mkIf (cfg.kodi.enable && cfg.kodi.autostart.enable) {
+    services.displayManager.sessionPackages = lib.mkIf (cfg.kodi.enable && effectiveKodiVariant == "gbm") [
+      selectedKodiPkg
+    ];
+    services.displayManager.defaultSession =
+      lib.mkIf (cfg.kodi.enable && effectiveKodiVariant == "gbm") (lib.mkForce "kodi-gbm");
+
+    services.displayManager.sddm.enable = lib.mkIf (cfg.kodi.enable && effectiveKodiVariant == "gbm") (lib.mkForce false);
+    services.displayManager.sddm.wayland.enable =
+      lib.mkIf (cfg.kodi.enable && effectiveKodiVariant == "gbm") (lib.mkForce false);
+    services.displayManager.autoLogin.enable =
+      lib.mkIf (cfg.kodi.enable && effectiveKodiVariant == "gbm") (lib.mkForce false);
+    services.desktopManager.plasma6.enable =
+      lib.mkIf (cfg.kodi.enable && effectiveKodiVariant == "gbm") (lib.mkForce false);
+
+    services.greetd = lib.mkIf (cfg.kodi.enable && effectiveKodiVariant == "gbm") {
+      enable = true;
+      settings.default_session = {
+        command = kodiGbmSessionCommand;
+        user = "john";
+      };
+    };
+
+    warnings = lib.optionals (cfg.kodi.enable && cfg.kodi.autostart.enable && effectiveKodiVariant == "gbm") [
+      "Rock 5C Kodi autostart is disabled for the GBM variant because GBM Kodi must run as a direct greetd session, not inside an existing desktop session."
+    ];
+
+    systemd.user.services.rock5c-kodi-autostart = lib.mkIf (cfg.kodi.enable && cfg.kodi.autostart.enable && effectiveKodiVariant != "gbm") {
       description = "Autostart Kodi after the graphical session is ready";
       after =
         [
@@ -497,6 +573,7 @@ in
       wantedBy = [ "graphical-session.target" ];
       serviceConfig = {
         Type = "simple";
+        Environment = [ "KODI_DRMPRIME_TRACE=1" ];
         ExecStart = "${kodiAutostartLauncher}/bin/rock5c-kodi-autostart";
         Restart = "on-failure";
         RestartSec = "3s";
@@ -525,7 +602,9 @@ in
       media = { };
     };
 
-    users.users.john.extraGroups = lib.mkIf managementCfg.enable [ "media" ];
+    users.users.john.extraGroups =
+      lib.optionals (cfg.kodi.enable && effectiveKodiVariant == "gbm") [ "seat" ]
+      ++ lib.optionals managementCfg.enable [ "media" ];
     users.users.deluge.extraGroups = lib.mkIf (managementCfg.enable && config.services.deluge.enable) [ "media" ];
     users.users.sonarr.extraGroups = lib.mkIf (managementCfg.enable && managementCfg.sonarr.enable) [ "media" ];
     users.users.radarr.extraGroups = lib.mkIf (managementCfg.enable && managementCfg.radarr.enable) [ "media" ];

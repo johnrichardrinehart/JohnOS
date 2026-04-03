@@ -1,0 +1,26 @@
+From 0e0178b6f0d74a6cbfb16d1864f05731e78754d5 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Fri, 3 Apr 2026 20:56:00 -0400
+Subject: [PATCH] avcodec/rkmppdec: mask MPP frame flags when choosing DRM
+ format
+
+---
+ libavcodec/rkmppdec.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libavcodec/rkmppdec.c b/libavcodec/rkmppdec.c
+index 6cc6381..e182783 100644
+--- a/libavcodec/rkmppdec.c
++++ b/libavcodec/rkmppdec.c
+@@ -80,7 +80,7 @@ static MppCodingType rkmpp_get_codingtype(AVCodecContext *avctx)
+ 
+ static uint32_t rkmpp_get_frameformat(MppFrameFormat mppformat)
+ {
+-    switch (mppformat) {
++    switch (mppformat & MPP_FRAME_FMT_MASK) {
+     case MPP_FMT_YUV420SP:          return DRM_FORMAT_NV12;
+ #ifdef DRM_FORMAT_NV12_10
+     case MPP_FMT_YUV420SP_10BIT:    return DRM_FORMAT_NV12_10;
+-- 
+2.51.2
+
