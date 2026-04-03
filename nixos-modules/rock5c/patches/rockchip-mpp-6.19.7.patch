@@ -218,10 +218,10 @@ index fdb017258b7bc..b46123a22838d 100644
  	vop: vop@fdd90000 {
  		compatible = "rockchip,rk3588-vop";
 diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
-index d51777df12d16..20e1eab9d72b2 100644
+index d51777df12d16..0b007a105763a 100644
 --- a/drivers/video/Kconfig
 +++ b/drivers/video/Kconfig
-@@ -44,6 +44,10 @@ endmenu
+@@ -49,6 +49,10 @@ endmenu
  
  source "drivers/video/backlight/Kconfig"
  
@@ -233,14 +233,20 @@ index d51777df12d16..20e1eab9d72b2 100644
         tristate
         default n
 diff --git a/drivers/video/Makefile b/drivers/video/Makefile
-index ffbac4387c670..e9f59c5fb4aaf 100644
+index ffbac4387c670..65fdf00ee2bbe 100644
 --- a/drivers/video/Makefile
 +++ b/drivers/video/Makefile
-@@ -15,0 +16 @@ obj-y				  += backlight/
+@@ -13,6 +13,7 @@ screen_info-$(CONFIG_PCI)         += screen_info_pci.o
+ obj-$(CONFIG_VT)		  += console/
+ obj-$(CONFIG_FB_STI)		  += console/
+ obj-$(CONFIG_LOGO)		  += logo/
 +obj-y				  += rockchip/
+ obj-y				  += backlight/
+ 
+ obj-y				  += fbdev/
 diff --git a/drivers/video/rockchip/Kconfig b/drivers/video/rockchip/Kconfig
 new file mode 100644
-index 0000000000000..6548dd38b534d
+index 0000000000000..5409b49782780
 --- /dev/null
 +++ b/drivers/video/rockchip/Kconfig
 @@ -0,0 +1,3 @@
@@ -249,7 +255,7 @@ index 0000000000000..6548dd38b534d
 +source "drivers/video/rockchip/mpp_osal/Kconfig"
 diff --git a/drivers/video/rockchip/Makefile b/drivers/video/rockchip/Makefile
 new file mode 100644
-index 0000000000000..867ac56fe5b72
+index 0000000000000..b11fbf8871d84
 --- /dev/null
 +++ b/drivers/video/rockchip/Makefile
 @@ -0,0 +1,3 @@
@@ -347,7 +353,7 @@ index 0000000000000..92dfe93e7eafd
 +endif
 diff --git a/drivers/video/rockchip/mpp/Makefile b/drivers/video/rockchip/mpp/Makefile
 new file mode 100644
-index 0000000000000..34d2c2d9de9fc
+index 0000000000000..0be859eb1ae03
 --- /dev/null
 +++ b/drivers/video/rockchip/mpp/Makefile
 @@ -0,0 +1,32 @@

@@ -206,16 +206,16 @@
  static int rkvdec2_probe(struct platform_device *pdev)
 --- a/drivers/video/rockchip/mpp/mpp_rkvenc2.c
 +++ b/drivers/video/rockchip/mpp/mpp_rkvenc2.c
-@@ -37,6 +37,9 @@
+@@ -37,4 +37,9 @@
  #include "mpp_iommu.h"
  #include "mpp_common.h"
  
++struct rkvenc_dev;
++
 +static int rkvenc2_free_rcbbuf(struct platform_device *pdev,
 +			       struct rkvenc_dev *enc);
 +
  #define RKVENC_DRIVER_NAME			"mpp_rkvenc2"
- 
- #define	RKVENC_SESSION_MAX_BUFFERS		40
 @@ -2938,6 +2941,16 @@
  	return 0;
  }

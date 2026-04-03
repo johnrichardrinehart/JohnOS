@@ -1,0 +1,187 @@
+From 5e775224cb464db08eae57fbf12b190be2878a42 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Thu, 2 Apr 2026 07:05:58 -0400
+Subject: [PATCH] media: rockchip: mpp: accept legacy vpu client ioctls
+
+---
+ drivers/video/rockchip/mpp/mpp_common.c | 150 ++++++++++++++++++++++++
+ 1 file changed, 150 insertions(+)
+
+diff --git a/drivers/video/rockchip/mpp/mpp_common.c b/drivers/video/rockchip/mpp/mpp_common.c
+index f2f7cc8e7d021..10fb00fafd29b 100644
+--- a/drivers/video/rockchip/mpp/mpp_common.c
++++ b/drivers/video/rockchip/mpp/mpp_common.c
+@@ -45,6 +45,29 @@ struct mpp_msg_v1 {
+ 	__u64 data_ptr;
+ };
+ 
++/*
++ * Current rockchip_mpp userspace still probes /dev/mpp_service with the
++ * legacy 'l' client-type ioctls before it falls back to the wrapped
++ * MPP_IOC_CFG_V1 request path. Keep those setup calls working on the unified
++ * service node so newer userspace can discover a usable decoder instead of
++ * bailing out during initialisation.
++ */
++#define MPP_VPU_IOC_MAGIC                'l'
++#define MPP_VPU_IOC_SET_CLIENT_TYPE      _IOW(MPP_VPU_IOC_MAGIC, 1, unsigned long)
++#define MPP_VPU_IOC_GET_HW_FUSE_STATUS   _IOW(MPP_VPU_IOC_MAGIC, 2, unsigned long)
++#define MPP_VPU_IOC_SET_CLIENT_TYPE_U32  _IOW(MPP_VPU_IOC_MAGIC, 1, unsigned int)
++
++enum mpp_legacy_vpu_client_type {
++	MPP_VPU_ENC		= 0x0,
++	MPP_VPU_DEC		= 0x1,
++	MPP_VPU_PP		= 0x2,
++	MPP_VPU_DEC_PP		= 0x3,
++	MPP_VPU_DEC_HEVC	= 0x4,
++	MPP_VPU_DEC_RKV		= 0x5,
++	MPP_VPU_ENC_RKV		= 0x6,
++	MPP_VPU_DEC_AVSPLUS	= 0x7,
++	MPP_VPU_ENC_VEPU22	= 0x8,
++};
+ #ifdef CONFIG_ROCKCHIP_MPP_PROC_FS
+ const char *mpp_device_name[MPP_DEVICE_BUTT] = {
+ 	[MPP_DEVICE_VDPU1]		= "VDPU1",
+@@ -1709,6 +1732,128 @@ static void mpp_msgs_wait(struct list_head *msgs_list)
+ 	}
+ }
+ 
++static struct mpp_dev *mpp_legacy_find_first(struct mpp_service *srv,
++					     const enum MPP_DEVICE_TYPE *types,
++					     size_t count)
++{
++	size_t i;
++
++	for (i = 0; i < count; i++) {
++		enum MPP_DEVICE_TYPE type = types[i];
++		struct mpp_dev *mpp;
++
++		if (type >= MPP_DEVICE_BUTT)
++			continue;
++
++		mpp = srv->sub_devices[type];
++		if (mpp)
++			return mpp;
++	}
++
++	return NULL;
++}
++
++static struct mpp_dev *mpp_legacy_client_to_mpp(struct mpp_service *srv,
++						u32 client_type)
++{
++	static const enum MPP_DEVICE_TYPE dec_types[] = {
++		MPP_DEVICE_RKVDEC,
++		MPP_DEVICE_HEVC_DEC,
++		MPP_DEVICE_VDPU2,
++		MPP_DEVICE_VDPU1,
++	};
++	static const enum MPP_DEVICE_TYPE enc_types[] = {
++		MPP_DEVICE_RKVENC,
++		MPP_DEVICE_VEPU2,
++		MPP_DEVICE_VEPU1,
++	};
++	static const enum MPP_DEVICE_TYPE pp_types[] = {
++		MPP_DEVICE_VDPU2_PP,
++		MPP_DEVICE_VDPU1_PP,
++	};
++	static const enum MPP_DEVICE_TYPE avs_types[] = {
++		MPP_DEVICE_AVSPLUS_DEC,
++		MPP_DEVICE_VDPU2,
++		MPP_DEVICE_VDPU1,
++	};
++
++	switch (client_type) {
++	case MPP_VPU_ENC:
++	case MPP_VPU_ENC_RKV:
++	case MPP_VPU_ENC_VEPU22:
++		return mpp_legacy_find_first(srv, enc_types, ARRAY_SIZE(enc_types));
++	case MPP_VPU_PP:
++	case MPP_VPU_DEC_PP:
++		return mpp_legacy_find_first(srv, pp_types, ARRAY_SIZE(pp_types));
++	case MPP_VPU_DEC_AVSPLUS:
++		return mpp_legacy_find_first(srv, avs_types, ARRAY_SIZE(avs_types));
++	case MPP_VPU_DEC:
++	case MPP_VPU_DEC_HEVC:
++	case MPP_VPU_DEC_RKV:
++		return mpp_legacy_find_first(srv, dec_types, ARRAY_SIZE(dec_types));
++	default:
++		return NULL;
++	}
++}
++
++static long mpp_legacy_ioctl(struct mpp_session *session,
++				     struct mpp_service *srv,
++				     unsigned int cmd,
++				     unsigned long arg)
++{
++	struct mpp_dev *mpp;
++	u32 client_type;
++	int ret;
++
++	switch (cmd) {
++	case MPP_VPU_IOC_GET_HW_FUSE_STATUS:
++		if (put_user(srv->hw_support, (u32 __user *)arg))
++			return -EFAULT;
++		return 0;
++	case MPP_VPU_IOC_SET_CLIENT_TYPE:
++	case MPP_VPU_IOC_SET_CLIENT_TYPE_U32:
++		client_type = (u32)arg;
++		mpp = mpp_legacy_client_to_mpp(srv, client_type);
++		if (!mpp) {
++			mpp_err("legacy client_type %u not supported on this service\n",
++				client_type);
++			return -EINVAL;
++		}
++
++		if (session->mpp == mpp)
++			return 0;
++		if (session->mpp)
++			return -EBUSY;
++
++		session->device_type = mpp->var->device_type;
++		session->dma = mpp_dma_session_create(mpp->dev,
++						     mpp->session_max_buffers);
++		if (!session->dma)
++			return -ENOMEM;
++
++		session->mpp = mpp;
++		if (mpp->dev_ops) {
++			if (mpp->dev_ops->process_task)
++				session->process_task = mpp->dev_ops->process_task;
++			if (mpp->dev_ops->wait_result)
++				session->wait_result = mpp->dev_ops->wait_result;
++			if (mpp->dev_ops->deinit)
++				session->deinit = mpp->dev_ops->deinit;
++		}
++
++		session->index = atomic_fetch_inc(&mpp->session_index);
++		if (mpp->dev_ops && mpp->dev_ops->init_session) {
++			ret = mpp->dev_ops->init_session(session);
++			if (ret)
++				return ret;
++		}
++
++		mpp_session_attach_workqueue(session, mpp->queue);
++		return 0;
++	default:
++		return -ENOIOCTLCMD;
++	}
++}
+ static long mpp_dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+ {
+ 	struct mpp_service *srv;
+@@ -1734,6 +1879,11 @@ static long mpp_dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg
+ 		return -EBUSY;
+ 	}
+ 
++	ret = mpp_legacy_ioctl(session, srv, cmd, arg);
++	if (ret != -ENOIOCTLCMD)
++		return ret;
++
++	ret = 0;
+ 	INIT_LIST_HEAD(&msgs_list);
+ 
+ 	ret = mpp_collect_msgs(&msgs_list, session, cmd, (void __user *)arg);
+-- 
+2.51.2
+

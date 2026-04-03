@@ -1,16 +1,69 @@
+diff --git a/drivers/video/rockchip/mpp/mpp_iommu.c b/drivers/video/rockchip/mpp/mpp_iommu.c
+index 6221cb7a6fa4b..7f57874145398 100644
+--- a/drivers/video/rockchip/mpp/mpp_iommu.c
++++ b/drivers/video/rockchip/mpp/mpp_iommu.c
+@@ -688,6 +688,8 @@ int mpp_iommu_reserve_iova(struct mpp_iommu_info *info, dma_addr_t iova, size_t
+ {
+ 
+ 	struct iommu_domain *domain;
++	struct mpp_iommu_dma_cookie *cookie;
++	struct iova *existing;
+ 	struct iova_domain *iovad;
+ 	unsigned long pfn_lo, pfn_hi;
+ 
+@@ -698,13 +700,36 @@ int mpp_iommu_reserve_iova(struct mpp_iommu_info *info, dma_addr_t iova, size_t
+ 	if (!domain || !domain->iova_cookie)
+ 		return -EINVAL;
+ 
++	cookie = (struct mpp_iommu_dma_cookie *)domain->iova_cookie;
+ 	iovad = mpp_iommu_dma_cookie_iovad(domain->iova_cookie);
++	if (!iovad->granule) {
++		dev_err(info->dev,
++			"reserve_iova invalid allocator state: domain=%px cookie=%px iovad=%px granule=%lu iova=%pad size=%zu\n",
++			domain, cookie, iovad, iovad->granule, &iova, size);
++		return -EINVAL;
++	}
+ 
+ 	/* iova will be freed automatically by put_iova_domain() */
+ 	pfn_lo = iova_pfn(iovad, iova);
+ 	pfn_hi = iova_pfn(iovad, iova + size - 1);
+-	if (!reserve_iova(iovad, pfn_lo, pfn_hi))
++	dev_info(info->dev,
++		 "reserve_iova domain=%px cookie=%px iovad=%px granule=%lu iova=%pad size=%zu pfn=[%#lx-%#lx]\n",
++		 domain, cookie, iovad, iovad->granule, &iova, size, pfn_lo, pfn_hi);
++	existing = find_iova(iovad, pfn_lo);
++	if (existing &&
++	    pfn_lo >= existing->pfn_lo &&
++	    pfn_hi <= existing->pfn_hi) {
++		dev_info(info->dev,
++			 "reserve_iova already reserved iova=%pad pfn=[%#lx-%#lx] existing=[%#lx-%#lx]\n",
++			 &iova, pfn_lo, pfn_hi, existing->pfn_lo, existing->pfn_hi);
++		return 0;
++	}
++	if (!reserve_iova(iovad, pfn_lo, pfn_hi)) {
++		dev_err(info->dev,
++			"reserve_iova failed iova=%pad size=%zu pfn=[%#lx-%#lx]\n",
++			&iova, size, pfn_lo, pfn_hi);
+ 		return -EINVAL;
++	}
+ 
+ 	return 0;
+ 
 diff --git a/drivers/video/rockchip/mpp/mpp_rkvdec2.c b/drivers/video/rockchip/mpp/mpp_rkvdec2.c
+index bb28890178a60..37c340b780578 100644
 --- a/drivers/video/rockchip/mpp/mpp_rkvdec2.c
 +++ b/drivers/video/rockchip/mpp/mpp_rkvdec2.c
-@@ -1817,6 +1817,12 @@ static int rkvdec2_alloc_rcbbuf(struct platform_device *pdev, struct rkvdec2_de
- 		dev_err(dev, "rcb_size invalid.\n");
- 		return -EINVAL;
- 	}
-+	/* Reserve the fixed RCB IOVA so imported DMA-BUFs cannot collide with it. */
-+	ret = mpp_iommu_reserve_iova(dec->mpp.iommu_info, iova, rcb_size);
-+	if (ret) {
-+		dev_err(dev, "alloc rcb iova error.\n");
-+		return ret;
+@@ -1798,6 +1798,13 @@ static int rkvdec2_alloc_rcbbuf(struct platform_device *pdev, struct rkvdec2_dev
+ 	struct iommu_domain *domain;
+ 	struct device *dev = &pdev->dev;
+ 
++	dev_info(dev, "rkvdec2_alloc_rcbbuf: start\n");
++
++	if (!dec->mpp.iommu_info || !dec->mpp.iommu_info->domain) {
++		dev_err(dev, "missing iommu domain for rcb mapping\n");
++		return -ENODEV;
 +	}
- 	/* get sram device node */
- 	sram_np = of_parse_phandle(dev->of_node, "rockchip,sram", 0);
- 	if (!sram_np) {
++
+ 	/* get rcb iova start and size */
+ 	ret = device_property_read_u32_array(dev, "rockchip,rcb-iova", vals, 2);
+ 	if (ret) {
