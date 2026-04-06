@@ -17,6 +17,7 @@ in
       type = lib.types.enum [
         "xorg-xmonad"
         "wl-hyprland"
+        "wl-sway"
         "wl-kwin"
         "greetd+niri"
       ];
@@ -32,6 +33,7 @@ in
     inputs.home-manager.nixosModules.default
     ./xorg-xmonad.nix
     ./hyprland.nix
+    ./sway.nix
     ./kwin.nix
     ./greetd+niri.nix
   ];
@@ -45,6 +47,7 @@ in
     networking.networkmanager.enable = true;
     dev.johnrinehart.desktop.xorg-xmonad.enable = (cfg.variant == "xorg-xmonad");
     dev.johnrinehart.desktop.wl-hyprland.enable = (cfg.variant == "wl-hyprland");
+    dev.johnrinehart.desktop.wl-sway.enable = (cfg.variant == "wl-sway");
     dev.johnrinehart.desktop.wl-kwin.enable = (cfg.variant == "wl-kwin");
     dev.johnrinehart.desktop.greetd_niri.enable = (cfg.variant == "greetd+niri");
   };
