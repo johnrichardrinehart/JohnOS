@@ -1,130 +1,128 @@
---- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIMEGLES.h
-+++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIMEGLES.h
-@@ -57,9 +57,21 @@
- private:
-   void DrawBlackBars();
-   void Render(unsigned int flags, int index);
-+  GLint GetCurrentUniformLocation(const char* name) const;
- 
-   bool m_configured = false;
-   float m_clearColour{0.0f};
-+  int m_videoColorRange{0};
-+  int m_videoTransfer{0};
-+  int m_videoPrimaries{0};
-+  int m_videoColorSpace{0};
-+  int m_videoBits{8};
-+  int m_oesDebugMode{0};
-+  float m_pqScale{100.0f};
-+  float m_outputGamma{2.2f};
-+  bool m_expandLimitedRange{false};
-+  bool m_toneMapPQToSDR{false};
-+  bool m_loggedUniformState{false};
- 
-   struct BUFFER
-   {
+From b1d90480df26157915fa1f416ca3d40b20add0b7 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Mon, 6 Apr 2026 11:01:48 -0400
+Subject: [PATCH] gbm: add DRM PRIME GLES HDR passthrough trace
+
+---
+ .../HwDecRender/RendererDRMPRIMEGLES.cpp      | 114 ++++++++++++++++++
+ 1 file changed, 114 insertions(+)
+
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIMEGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIMEGLES.cpp
+index c36f016c83..9bbccd788e 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIMEGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIMEGLES.cpp
-@@ -23,9 +23,76 @@
+@@ -14,6 +14,7 @@
+ #include "cores/VideoPlayer/VideoRenderers/RenderFactory.h"
+ #include "cores/VideoPlayer/VideoRenderers/RenderFlags.h"
+ #include "rendering/gles/RenderSystemGLES.h"
++#include "utils/DRMHelpers.h"
+ #include "utils/EGLFence.h"
+ #include "utils/EGLImage.h"
+ #include "utils/GLUtils.h"
+@@ -22,10 +23,55 @@
+ #include "windowing/WinSystem.h"
  #include "windowing/linux/WinSystemEGL.h"
  
- #include <memory>
++#include <libavutil/pixdesc.h>
++#include <libavutil/pixfmt.h>
 +#include <cstdlib>
 +#include <cstring>
+ #include <memory>
++#include <sstream>
  
  using namespace KODI::UTILS::EGL;
  
-+const char* BoolString(bool value)
++namespace
 +{
-+  return value ? "true" : "false";
-+}
 +
 +bool IsDRMPRIMETraceEnabled()
 +{
 +  const char* value = std::getenv("KODI_DRMPRIME_TRACE");
-+  return value && *value && std::strcmp(value, "0") != 0;
-+}
-+
-+int GetOESDebugMode()
-+{
-+  const char* value = std::getenv("KODI_DRMPRIME_OES_DEBUG");
 +  if (!value || !*value)
-+    return 0;
++    return false;
 +
-+  if (std::strcmp(value, "raw") == 0 || std::strcmp(value, "1") == 0)
-+    return 1;
-+  if (std::strcmp(value, "post-bc") == 0 || std::strcmp(value, "2") == 0)
-+    return 2;
-+  if (std::strcmp(value, "expanded") == 0 || std::strcmp(value, "3") == 0)
-+    return 3;
-+  if (std::strcmp(value, "pq-linear") == 0 || std::strcmp(value, "4") == 0)
-+    return 4;
-+  if (std::strcmp(value, "tonemapped") == 0 || std::strcmp(value, "5") == 0)
-+    return 5;
-+
-+  return 0;
++  return std::strcmp(value, "0") != 0 && std::strcmp(value, "false") != 0 &&
++         std::strcmp(value, "FALSE") != 0 && std::strcmp(value, "no") != 0 &&
++         std::strcmp(value, "NO") != 0;
 +}
 +
-+const char* OESDebugModeString(int mode)
++std::string DescribeDescriptor(const AVDRMFrameDescriptor& desc)
 +{
-+  switch (mode)
++  std::ostringstream out;
++  out << "objects=" << desc.nb_objects << ", layers=" << desc.nb_layers;
++
++  for (int layerIdx = 0; layerIdx < desc.nb_layers; ++layerIdx)
 +  {
-+    case 1:
-+      return "raw-sample";
-+    case 2:
-+      return "post-brightness-contrast";
-+    case 3:
-+      return "post-range-expansion";
-+    case 4:
-+      return "pq-linear-preview";
-+    case 5:
-+      return "post-tonemap";
-+    default:
-+      return "normal";
++    const auto& layer = desc.layers[layerIdx];
++    out << ", layer" << layerIdx << "={format=" << DRMHELPERS::FourCCToString(layer.format)
++        << ", planes=" << layer.nb_planes;
++    for (int planeIdx = 0; planeIdx < layer.nb_planes; ++planeIdx)
++    {
++      const auto& plane = layer.planes[planeIdx];
++      const auto& object = desc.objects[plane.object_index];
++      out << ", p" << planeIdx << ":obj=" << plane.object_index << ",fd=" << object.fd
++          << ",offset=" << plane.offset << ",pitch=" << plane.pitch
++          << ",modifier=" << DRMHELPERS::ModifierToString(object.format_modifier);
++    }
++    out << "}";
 +  }
++
++  return out.str();
 +}
 +
-+float GetFloatEnv(const char* name, float fallback)
-+{
-+  const char* value = std::getenv(name);
-+  if (!value || !*value)
-+    return fallback;
-+
-+  char* end = nullptr;
-+  const float parsed = std::strtof(value, &end);
-+  if (end == value)
-+    return fallback;
-+
-+  return parsed;
-+}
-+
++} // namespace
 +
  CRendererDRMPRIMEGLES::~CRendererDRMPRIMEGLES()
  {
    Flush(false);
-@@ -100,6 +161,34 @@
+@@ -51,6 +97,13 @@ CBaseRenderer* CRendererDRMPRIMEGLES::Create(CVideoBuffer* buffer)
+     return nullptr;
+   }
+ 
++  if (IsDRMPRIMETraceEnabled())
++  {
++    CLog::Log(LOGDEBUG,
++              "CRendererDRMPRIMEGLES::{} - probing buffer id {} for renderer selection: {}",
++              __FUNCTION__, buf->GetId(), DescribeDescriptor(*desc));
++  }
++
+   uint64_t modifier = desc->objects[0].format_modifier;
+   uint32_t format = desc->layers[0].format;
+ 
+@@ -63,7 +116,24 @@ CBaseRenderer* CRendererDRMPRIMEGLES::Create(CVideoBuffer* buffer)
+ 
+   CEGLImage image{winSystemEGL->GetEGLDisplay()};
+   if (!image.SupportsFormatAndModifier(format, modifier))
++  {
++    if (IsDRMPRIMETraceEnabled())
++    {
++      CLog::Log(LOGDEBUG,
++                "CRendererDRMPRIMEGLES::{} - rejected buffer id {} during probe: format={}, modifier={}",
++                __FUNCTION__, buf->GetId(), DRMHELPERS::FourCCToString(format),
++                DRMHELPERS::ModifierToString(modifier));
++    }
+     return nullptr;
++  }
++
++  if (IsDRMPRIMETraceEnabled())
++  {
++    CLog::Log(LOGDEBUG,
++              "CRendererDRMPRIMEGLES::{} - accepted buffer id {} during probe: format={}, modifier={}",
++              __FUNCTION__, buf->GetId(), DRMHELPERS::FourCCToString(format),
++              DRMHELPERS::ModifierToString(modifier));
++  }
+ #endif
+ 
+   return new CRendererDRMPRIMEGLES();
+@@ -100,6 +170,19 @@ bool CRendererDRMPRIMEGLES::Configure(const VideoPicture& picture,
    if (!winSystem)
      return false;
  
-+  auto& gfxContext = winSystem->GetGfxContext();
-+  gfxContext.SetTransferPQ(false);
-+  m_videoColorRange = static_cast<int>(picture.color_range);
-+  m_videoTransfer = static_cast<int>(picture.color_transfer);
-+  m_videoPrimaries = static_cast<int>(picture.color_primaries);
-+  m_videoColorSpace = static_cast<int>(picture.color_space);
-+  m_videoBits = picture.colorBits;
-+  m_oesDebugMode = GetOESDebugMode();
-+  m_pqScale = GetFloatEnv("KODI_DRMPRIME_OES_PQ_SCALE", 100.0f);
-+  m_outputGamma = GetFloatEnv("KODI_DRMPRIME_OES_GAMMA", 2.2f);
-+  m_expandLimitedRange = (picture.color_range != AVCOL_RANGE_JPEG);
-+  m_toneMapPQToSDR = false;
-+  m_loggedUniformState = false;
-+
 +  if (picture.color_transfer == AVCOL_TRC_SMPTE2084 ||
 +      picture.color_transfer == AVCOL_TRC_ARIB_STD_B67)
 +  {
 +    const bool hdrPassthrough = winSystem->SetHDR(&picture);
-+    gfxContext.SetTransferPQ(hdrPassthrough);
-+    m_toneMapPQToSDR = (picture.color_transfer == AVCOL_TRC_SMPTE2084) && !hdrPassthrough;
++
 +    CLog::Log(LOGDEBUG, "CRendererDRMPRIMEGLES::{} - HDR passthrough: {}", __FUNCTION__,
 +              hdrPassthrough ? "on" : "off");
 +  }
@@ -136,37 +134,45 @@
    auto winSystemEGL = dynamic_cast<KODI::WINDOWING::LINUX::CWinSystemEGL*>(winSystem);
  
    if (!winSystemEGL)
-@@ -118,6 +207,16 @@
+@@ -118,6 +201,18 @@ bool CRendererDRMPRIMEGLES::Configure(const VideoPicture& picture,
  
    m_clearColour = winSystem->UseLimitedColor() ? (16.0f / 0xff) : 0.0f;
  
-+  CLog::Log(
-+      LOGDEBUG,
-+      "CRendererDRMPRIMEGLES::{} - configured renderer: {}x{}, fps={:0.3f}, pixfmt={}, color_space={}, color_primaries={}, color_transfer={}, color_range={}, bits={}, hdrDisplayEnabled={}, hdrDisplay={}, expandLimitedRange={}, toneMapPQToSDR={}, oesDebugMode={}({}), pqScale={:0.3f}, outputGamma={:0.3f}",
-+      __FUNCTION__, m_sourceWidth, m_sourceHeight, fps, static_cast<int>(m_format),
-+      m_videoColorSpace, m_videoPrimaries, m_videoTransfer, m_videoColorRange, m_videoBits,
-+      BoolString(winSystem->IsHDRDisplaySettingEnabled()),
-+      BoolString(winSystem->IsHDRDisplay()), BoolString(m_expandLimitedRange),
-+      BoolString(m_toneMapPQToSDR), m_oesDebugMode, OESDebugModeString(m_oesDebugMode),
-+      m_pqScale, m_outputGamma);
++  if (IsDRMPRIMETraceEnabled())
++  {
++    CLog::Log(
++        LOGDEBUG,
++        "CRendererDRMPRIMEGLES::{} - configured renderer: {}x{}, fps={:0.3f}, pixfmt={}, color_space={}, color_primaries={}, color_transfer={}, color_range={}, bits={}, hdrDisplayEnabled={}, hdrDisplay={}",
++        __FUNCTION__, m_sourceWidth, m_sourceHeight, fps, static_cast<int>(m_format),
++        static_cast<int>(picture.color_space), static_cast<int>(picture.color_primaries),
++        static_cast<int>(picture.color_transfer), static_cast<int>(picture.color_range),
++        picture.colorBits, winSystem->IsHDRDisplaySettingEnabled() ? "true" : "false",
++        winSystem->IsHDRDisplay() ? "true" : "false");
++  }
 +
    m_configured = true;
    return true;
  }
-@@ -139,6 +238,12 @@
+@@ -139,6 +234,9 @@ void CRendererDRMPRIMEGLES::AddVideoPicture(const VideoPicture& picture, int ind
  
  bool CRendererDRMPRIMEGLES::Flush(bool saveBuffers)
  {
 +  if (auto* winSystem = CServiceBroker::GetWinSystem(); winSystem)
-+  {
 +    winSystem->SetHDR(nullptr);
-+    winSystem->GetGfxContext().SetTransferPQ(false);
-+  }
 +
    if (!saveBuffers)
      for (int i = 0; i < NUM_BUFFERS; i++)
        ReleaseBuffer(i);
-@@ -315,8 +420,54 @@
+@@ -311,10 +409,26 @@ void CRendererDRMPRIMEGLES::Render(unsigned int flags, int index)
+     return;
+ 
+   if (!buf.texture.Map(buffer))
++  {
++    if (IsDRMPRIMETraceEnabled())
++      CLog::Log(LOGDEBUG, "CRendererDRMPRIMEGLES::{} - map failed for buffer id {}", __FUNCTION__,
++                buffer->GetId());
+     return;
++  }
  
    glBindTexture(GL_TEXTURE_EXTERNAL_OES, buf.texture.GetTexture());
  
@@ -183,163 +189,7 @@
 +
    renderSystem->EnableGUIShader(ShaderMethodGLES::SM_TEXTURE_RGBA_OES);
  
-+  const GLint rangeLoc = GetCurrentUniformLocation("m_drmPrimeVideoRange");
-+  const GLint transferLoc = GetCurrentUniformLocation("m_drmPrimeVideoTransfer");
-+  const GLint expandLoc = GetCurrentUniformLocation("m_drmPrimeExpandLimited");
-+  const GLint toneMapLoc = GetCurrentUniformLocation("m_drmPrimeToneMapPQ");
-+  const GLint debugLoc = GetCurrentUniformLocation("m_drmPrimeDebugMode");
-+  const GLint pqScaleLoc = GetCurrentUniformLocation("m_drmPrimePQScale");
-+  const GLint gammaLoc = GetCurrentUniformLocation("m_drmPrimeOutputGamma");
-+
-+  if (rangeLoc >= 0)
-+    glUniform1i(rangeLoc, m_videoColorRange);
-+  if (transferLoc >= 0)
-+    glUniform1i(transferLoc, m_videoTransfer);
-+  if (expandLoc >= 0)
-+    glUniform1i(expandLoc, m_expandLimitedRange ? 1 : 0);
-+  if (toneMapLoc >= 0)
-+    glUniform1i(toneMapLoc, m_toneMapPQToSDR ? 1 : 0);
-+  if (debugLoc >= 0)
-+    glUniform1i(debugLoc, m_oesDebugMode);
-+  if (pqScaleLoc >= 0)
-+    glUniform1f(pqScaleLoc, m_pqScale);
-+  if (gammaLoc >= 0)
-+    glUniform1f(gammaLoc, m_outputGamma);
-+
-+  if (IsDRMPRIMETraceEnabled() && !m_loggedUniformState)
-+  {
-+    CLog::Log(
-+        LOGDEBUG,
-+        "CRendererDRMPRIMEGLES::{} - OES shader uniforms: rangeLoc={}, transferLoc={}, expandLoc={}, toneMapLoc={}, debugLoc={}, pqScaleLoc={}, gammaLoc={}, videoRange={}, videoTransfer={}, expandLimitedRange={}, toneMapPQToSDR={}, debugMode={}({}), pqScale={:0.3f}, outputGamma={:0.3f}, colorSpace={}, primaries={}, bits={} (gentle external-texture finishing curve active when toneMapPQToSDR=true)",
-+        __FUNCTION__, rangeLoc, transferLoc, expandLoc, toneMapLoc, debugLoc, pqScaleLoc,
-+        gammaLoc, m_videoColorRange, m_videoTransfer, BoolString(m_expandLimitedRange),
-+        BoolString(m_toneMapPQToSDR), m_oesDebugMode, OESDebugModeString(m_oesDebugMode),
-+        m_pqScale, m_outputGamma, m_videoColorSpace, m_videoPrimaries, m_videoBits);
-+    m_loggedUniformState = true;
-+  }
-+
    GLubyte idx[4] = {0, 1, 3, 2}; // Determines order of triangle strip
-   GLuint vertexVBO;
-   GLuint indexVBO;
-@@ -397,6 +548,16 @@
-   buf.fence->CreateFence();
- }
- 
-+GLint CRendererDRMPRIMEGLES::GetCurrentUniformLocation(const char* name) const
-+{
-+  GLint program = 0;
-+  glGetIntegerv(GL_CURRENT_PROGRAM, &program);
-+  if (program <= 0)
-+    return -1;
-+
-+  return glGetUniformLocation(static_cast<GLuint>(program), name);
-+}
-+
- bool CRendererDRMPRIMEGLES::Supports(ERENDERFEATURE feature) const
- {
-   switch (feature)
---- a/system/shaders/GLES/2.0/gles_shader_rgba_oes.frag
-+++ b/system/shaders/GLES/2.0/gles_shader_rgba_oes.frag
-@@ -22,20 +22,95 @@
- 
- #extension GL_OES_EGL_image_external : require
- 
--precision mediump float;
-+precision highp float;
- uniform samplerExternalOES m_samp0;
- varying vec4 m_cord0;
- 
- uniform float m_brightness;
- uniform float m_contrast;
-+uniform int m_drmPrimeVideoRange;
-+uniform int m_drmPrimeVideoTransfer;
-+uniform int m_drmPrimeExpandLimited;
-+uniform int m_drmPrimeToneMapPQ;
-+uniform int m_drmPrimeDebugMode;
-+uniform float m_drmPrimePQScale;
-+uniform float m_drmPrimeOutputGamma;
- 
--void main ()
-+vec3 ExpandLimitedRange(vec3 rgb)
-+{
-+  return clamp((rgb - vec3(16.0 / 255.0)) * (255.0 / 219.0), 0.0, 1.0);
-+}
-+
-+vec3 EotfPQ(vec3 x)
-+{
-+  const float m1 = 2610.0 / 16384.0;
-+  const float m2 = 2523.0 / 32.0;
-+  const float c1 = 3424.0 / 4096.0;
-+  const float c2 = 2413.0 / 128.0;
-+  const float c3 = 2392.0 / 128.0;
-+
-+  vec3 xp = pow(max(x, vec3(0.0)), vec3(1.0 / m2));
-+  vec3 num = max(xp - vec3(c1), vec3(0.0));
-+  vec3 den = max(vec3(c2) - vec3(c3) * xp, vec3(1e-6));
-+  return pow(num / den, vec3(1.0 / m1));
-+}
-+
-+vec3 FinishExternalTexture(vec3 rgb)
- {
--  vec4 rgb;
-+  vec3 outRgb = clamp(rgb, 0.0, 1.0);
- 
--  rgb = texture2D(m_samp0, m_cord0.xy);
--  rgb *= m_contrast;
--  rgb += m_brightness;
-+  const vec3 lumaCoeffs = vec3(0.2627, 0.6780, 0.0593);
-+  float gamma = max(m_drmPrimeOutputGamma, 0.001);
-+  float shoulder = clamp(m_drmPrimePQScale / 100.0, 0.25, 2.0);
-+  float mixAmount = clamp((m_drmPrimePQScale - 40.0) / 160.0, 0.10, 0.65);
-+
-+  vec3 lifted = pow(outRgb, vec3(1.0 / gamma));
-+  vec3 compressed = lifted / (lifted + vec3(shoulder * 0.35));
-+  compressed *= (1.0 + shoulder * 0.35);
-+
-+  float srcLuma = dot(outRgb, lumaCoeffs);
-+  float dstLuma = max(dot(compressed, lumaCoeffs), 1e-4);
-+  compressed *= mix(1.0, srcLuma / dstLuma, 0.65);
- 
--  gl_FragColor = rgb;
-+  return mix(outRgb, clamp(compressed, 0.0, 1.0), mixAmount);
-+}
-+
-+vec3 PreviewPQLinear(vec3 rgb)
-+{
-+  vec3 linear = EotfPQ(clamp(rgb, 0.0, 1.0));
-+  return clamp(linear * 16.0, 0.0, 1.0);
-+}
-+
-+void main ()
-+{
-+  vec4 rawRgb = texture2D(m_samp0, m_cord0.xy);
-+  vec4 bcRgb = rawRgb;
-+  vec4 expandedRgb = bcRgb;
-+  vec4 finalRgb = expandedRgb;
-+
-+  bcRgb *= m_contrast;
-+  bcRgb += m_brightness;
-+
-+  if (m_drmPrimeExpandLimited != 0 || m_drmPrimeVideoRange == 0)
-+    expandedRgb.rgb = ExpandLimitedRange(bcRgb.rgb);
-+  else
-+    expandedRgb = bcRgb;
-+
-+  finalRgb = expandedRgb;
-+
-+  if (m_drmPrimeToneMapPQ != 0 || m_drmPrimeVideoTransfer == 16)
-+    finalRgb.rgb = FinishExternalTexture(expandedRgb.rgb);
-+
-+  if (m_drmPrimeDebugMode == 1)
-+    gl_FragColor = vec4(rawRgb.rgb, 1.0);
-+  else if (m_drmPrimeDebugMode == 2)
-+    gl_FragColor = vec4(clamp(bcRgb.rgb, 0.0, 1.0), 1.0);
-+  else if (m_drmPrimeDebugMode == 3)
-+    gl_FragColor = vec4(clamp(expandedRgb.rgb, 0.0, 1.0), 1.0);
-+  else if (m_drmPrimeDebugMode == 4)
-+    gl_FragColor = vec4(PreviewPQLinear(expandedRgb.rgb), 1.0);
-+  else if (m_drmPrimeDebugMode == 5)
-+    gl_FragColor = vec4(clamp(finalRgb.rgb, 0.0, 1.0), 1.0);
-+  else
-+    gl_FragColor = vec4(clamp(finalRgb.rgb, 0.0, 1.0), finalRgb.a);
- }
+-- 
+2.51.2
+
