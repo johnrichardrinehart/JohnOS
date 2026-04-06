@@ -51,7 +51,10 @@ let
       cfg.kodi.ffmpegBackend;
   selectedKodiAttr = "kodi_22-${effectiveKodiVariant}-${effectiveKodiFfmpegBackend}";
   selectedKodiPkg = builtins.getAttr selectedKodiAttr pkgs;
-  kodiGbmSessionCommand = "${lib.getExe' selectedKodiPkg "kodi-standalone"} --windowing=gbm";
+  kodiGbmSessionCommand = "${pkgs.writeShellScript "rock5c-kodi-gbm-session" ''
+    export KODI_DRMPRIME_TRACE=1
+    exec ${lib.getExe' selectedKodiPkg "kodi-standalone"} --windowing=gbm
+  ''}";
   kodiAutostartLauncher = pkgs.writeShellScriptBin "rock5c-kodi-autostart" ''
     set -eu
 
@@ -343,16 +346,9 @@ in
               };
               variantKodiPatches =
                 lib.optionals (baseName == "kodi-gbm") [
-                  # This patch intentionally forces DRM PRIME defaults for the
-                  # dedicated GBM appliance build. Applying it to Wayland/X11
-                  # pulls those frontends onto the same PRIME renderer path.
+                  # Keep the dedicated GBM build on DRM PRIME decode while
+                  # using the GLES/EGL renderer rather than the direct plane path.
                   ../../../patches/kodi/0001-rock5c-force-drm-prime-defaults-on-gbm.patch
-                  ../../../patches/kodi/0006-rock5c-gbm-consider-nv15-video-planes.patch
-                  ../../../patches/kodi/0007-rock5c-gbm-keep-gui-plane-active-for-video-osd.patch
-                  # Temporarily disabled once the GBM queue/OSD diagnosis was captured.
-                  # ../../../patches/kodi/0008-gbm-log-direct-plane-and-queue-drop-decisions.patch
-                  ../../../patches/kodi/0009-gbm-log-gui-render-and-atomic-commit-path.patch
-                  ../../../patches/kodi/0010-gbm-disable-direct-video-plane-while-gui-layer-active.patch
                 ]
                 ++ lib.optionals hasV4l2Request [
                   ../../../patches/kodi/0000-rock5c-enable-v4l2request-drm-prime-codec.patch
@@ -534,6 +530,11 @@ in
     services.displayManager.sessionPackages = lib.mkIf (cfg.kodi.enable && effectiveKodiVariant == "gbm") [
       selectedKodiPkg
     ];
+    # Home Manager still applies dconf settings for john during `switch`, even
+    # in the standalone GBM Kodi appliance session. Provide the dconf D-Bus
+    # service here so activation does not fail when no normal desktop session
+    # is running.
+    programs.dconf.enable = lib.mkIf (cfg.kodi.enable && effectiveKodiVariant == "gbm") true;
     services.displayManager.defaultSession =
       lib.mkIf (cfg.kodi.enable && effectiveKodiVariant == "gbm") (lib.mkForce "kodi-gbm");
 

@@ -280,7 +280,13 @@ in
       TMUX_TMPDIR = lib.mkForce osConfig.dev.johnrinehart.tmux.socketDir;
     };
 
-    dconf.settings = {
+    # The Rock 5C GBM Kodi appliance session does not run the usual desktop
+    # dconf service, so Home Manager's dconf activation step fails there.
+    # Keep these settings for normal desktop sessions, but skip them for the
+    # standalone GBM Kodi path so `nixos-rebuild switch` can complete cleanly.
+    dconf.settings = lib.mkIf
+      (!(osConfig.dev.johnrinehart.rock5c.media.kodi.enable or false
+        && (osConfig.dev.johnrinehart.rock5c.media.kodi.variant or "auto") == "gbm")) {
       "org/gnome/nautilus/preferences" = {
         default-sort-order = "mtime";
         default-sort-in-reverse-order = true;
