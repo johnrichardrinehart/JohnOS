@@ -35,7 +35,7 @@
     enable = true;
     management.enable = true;
     kodi = {
-      variant = "gbm";
+      variant = "wayland";
       autostart.enable = true;
       disable_cec_standby_on_poweroff = true;
     };
@@ -51,7 +51,7 @@
   dev.johnrinehart.nix.enable = true;
   dev.johnrinehart.desktop = {
     enable = true;
-    variant = "wl-kwin";
+    variant = "wl-hyprland";
   };
   dev.johnrinehart.packages.shell.enable = true;
   dev.johnrinehart.packages.editors.enable = true;
