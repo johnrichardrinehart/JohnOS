@@ -50,7 +50,7 @@
   dev.johnrinehart.nix.enable = true;
   dev.johnrinehart.desktop = {
     enable = true;
-    variant = "wl-sway";
+    variant = "wl-hyprland";
   };
   dev.johnrinehart.packages.shell.enable = true;
   dev.johnrinehart.packages.editors.enable = true;
