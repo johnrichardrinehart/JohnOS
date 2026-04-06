@@ -1,0 +1,145 @@
+From 8d94df9149ed45ee3f05f83bbd2f7d7fbd555f3a Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Sun, 5 Apr 2026 22:46:07 -0400
+Subject: [PATCH] gbm: log GUI and video plane commit state
+
+---
+ .../HwDecRender/VideoLayerBridgeDRMPRIME.cpp  | 31 ++++++++++++++++---
+ .../VideoRenderers/RenderManager.cpp          | 14 ++++++++-
+ xbmc/windowing/gbm/drm/DRMAtomic.cpp          | 24 +++++++++++++-
+ 3 files changed, 63 insertions(+), 6 deletions(-)
+
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeDRMPRIME.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeDRMPRIME.cpp
+index 34d1ab6235..8bc889258c 100644
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeDRMPRIME.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeDRMPRIME.cpp
+@@ -34,6 +34,7 @@ void CVideoLayerBridgeDRMPRIME::Disable()
+ {
+   // disable video plane
+   auto plane = m_DRM->GetVideoPlane();
++  CLog::Log(LOGDEBUG, "CVideoLayerBridgeDRMPRIME::{} - disabling video plane", __FUNCTION__);
+   m_DRM->AddProperty(plane, "FB_ID", 0);
+   m_DRM->AddProperty(plane, "CRTC_ID", 0);
+ 
+@@ -186,16 +187,38 @@ void CVideoLayerBridgeDRMPRIME::SetVideoPlane(CVideoBufferDRMPRIME* buffer, cons
+   }
+ 
+   auto plane = m_DRM->GetVideoPlane();
++  static uint32_t s_lastFbId = 0;
++  static int s_lastX = -1;
++  static int s_lastY = -1;
++  static int s_lastW = -1;
++  static int s_lastH = -1;
++  const int crtcX = static_cast<int32_t>(destRect.x1) & ~1;
++  const int crtcY = static_cast<int32_t>(destRect.y1) & ~1;
++  const int crtcW = (static_cast<uint32_t>(destRect.Width()) + 1) & ~1;
++  const int crtcH = (static_cast<uint32_t>(destRect.Height()) + 1) & ~1;
++  if (buffer->m_fb_id != s_lastFbId || crtcX != s_lastX || crtcY != s_lastY ||
++      crtcW != s_lastW || crtcH != s_lastH)
++  {
++    CLog::Log(LOGDEBUG,
++              "CVideoLayerBridgeDRMPRIME::{} - video_fb={} crtc=({},{} {}x{}) src={}x{}",
++              __FUNCTION__, buffer->m_fb_id, crtcX, crtcY, crtcW, crtcH, buffer->GetWidth(),
++              buffer->GetHeight());
++    s_lastFbId = buffer->m_fb_id;
++    s_lastX = crtcX;
++    s_lastY = crtcY;
++    s_lastW = crtcW;
++    s_lastH = crtcH;
++  }
+   m_DRM->AddProperty(plane, "FB_ID", buffer->m_fb_id);
+   m_DRM->AddProperty(plane, "CRTC_ID", m_DRM->GetCrtc()->GetCrtcId());
+   m_DRM->AddProperty(plane, "SRC_X", 0);
+   m_DRM->AddProperty(plane, "SRC_Y", 0);
+   m_DRM->AddProperty(plane, "SRC_W", buffer->GetWidth() << 16);
+   m_DRM->AddProperty(plane, "SRC_H", buffer->GetHeight() << 16);
+-  m_DRM->AddProperty(plane, "CRTC_X", static_cast<int32_t>(destRect.x1) & ~1);
+-  m_DRM->AddProperty(plane, "CRTC_Y", static_cast<int32_t>(destRect.y1) & ~1);
+-  m_DRM->AddProperty(plane, "CRTC_W", (static_cast<uint32_t>(destRect.Width()) + 1) & ~1);
+-  m_DRM->AddProperty(plane, "CRTC_H", (static_cast<uint32_t>(destRect.Height()) + 1) & ~1);
++  m_DRM->AddProperty(plane, "CRTC_X", crtcX);
++  m_DRM->AddProperty(plane, "CRTC_Y", crtcY);
++  m_DRM->AddProperty(plane, "CRTC_W", crtcW);
++  m_DRM->AddProperty(plane, "CRTC_H", crtcH);
+ }
+ 
+ void CVideoLayerBridgeDRMPRIME::UpdateVideoPlane()
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
+index c08fafc435..802955a6ee 100644
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
+@@ -708,7 +708,19 @@ void CRenderManager::Render(bool clear, DWORD flags, DWORD alpha, bool gui)
+   if (!gui && m_pRenderer->IsGuiLayer())
+     return;
+ 
+-  if (!gui || m_pRenderer->IsGuiLayer())
++  const bool rendererGuiLayer = m_pRenderer->IsGuiLayer();
++  static bool s_lastGui = false;
++  static bool s_lastRendererGuiLayer = false;
++  if (gui != s_lastGui || rendererGuiLayer != s_lastRendererGuiLayer)
++  {
++    CLog::Log(LOGDEBUG, LOGVIDEO,
++              "CRenderManager::{} - gui={} rendererGuiLayer={} presentSource={}",
++              __FUNCTION__, gui, rendererGuiLayer, m_presentsource);
++    s_lastGui = gui;
++    s_lastRendererGuiLayer = rendererGuiLayer;
++  }
++
++  if (!gui || rendererGuiLayer)
+   {
+     SPresent& m = m_Queue[m_presentsource];
+ 
+diff --git a/xbmc/windowing/gbm/drm/DRMAtomic.cpp b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
+index 7a5e68d30b..6ee627fb33 100644
+--- a/xbmc/windowing/gbm/drm/DRMAtomic.cpp
++++ b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
+@@ -26,6 +26,24 @@ using namespace KODI::WINDOWING::GBM;
+ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool videoLayer)
+ {
+   uint32_t blob_id;
++  const bool hasVisibleControls = CServiceBroker::GetGUI()->GetWindowManager().HasVisibleControls();
++  static bool s_lastRendered = false;
++  static bool s_lastVideoLayer = false;
++  static bool s_lastHasVisibleControls = false;
++  static int s_lastGuiFbId = -1;
++  if (rendered != s_lastRendered || videoLayer != s_lastVideoLayer ||
++      hasVisibleControls != s_lastHasVisibleControls || fb_id != s_lastGuiFbId)
++  {
++    CLog::Log(LOGDEBUG,
++              "CDRMAtomic::{} - gui_fb={} rendered={} videoLayer={} hasVisibleControls={} "
++              "modeset={} active={}",
++              __FUNCTION__, fb_id, rendered, videoLayer, hasVisibleControls, m_need_modeset,
++              m_active);
++    s_lastRendered = rendered;
++    s_lastVideoLayer = videoLayer;
++    s_lastHasVisibleControls = hasVisibleControls;
++    s_lastGuiFbId = fb_id;
++  }
+ 
+   if (flags & DRM_MODE_ATOMIC_ALLOW_MODESET)
+   {
+@@ -71,9 +89,10 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
+       AddProperty(m_gui_plane, "IN_FENCE_FD", m_inFenceFd);
+     }
+   }
+-  else if (videoLayer && !CServiceBroker::GetGUI()->GetWindowManager().HasVisibleControls())
++  else if (videoLayer && !hasVisibleControls)
+   {
+     // disable gui plane when video layer is active and gui has no visible controls
++    CLog::Log(LOGDEBUG, "CDRMAtomic::{} - disabling GUI plane", __FUNCTION__);
+     AddProperty(m_gui_plane, "FB_ID", 0);
+     AddProperty(m_gui_plane, "CRTC_ID", 0);
+   }
+@@ -106,6 +125,9 @@ void CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
+   }
+   else if (m_atomicRequestQueue.size() > 1)
+   {
++    CLog::Log(LOGDEBUG,
++              "CDRMAtomic::{} - atomic commit ok gui_fb={} rendered={} videoLayer={}",
++              __FUNCTION__, fb_id, rendered, videoLayer);
+     m_atomicRequestQueue.pop_front();
+   }
+ 
+-- 
+2.51.2
+

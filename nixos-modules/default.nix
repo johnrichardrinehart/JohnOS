@@ -24,6 +24,7 @@
 
     ./desktop/default.nix
     ./desktop/hyprland.nix
+    ./desktop/kwin.nix
     ./desktop/greetd+niri.nix
     ./desktop/xmonad.nix
     ./desktop/xorg-xmonad.nix

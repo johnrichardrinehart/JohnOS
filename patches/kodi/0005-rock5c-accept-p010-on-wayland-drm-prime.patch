@@ -1,0 +1,39 @@
+From 25be3b68a9a6ab4b69b9d8ffb788178a7ee106f5 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Fri, 3 Apr 2026 17:49:15 -0400
+Subject: [PATCH] VideoPlayer: accept P010 in Wayland DRMPRIME paths
+
+---
+ .../VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp      | 3 ++-
+ xbmc/cores/VideoPlayer/Process/wayland/ProcessInfoWayland.cpp  | 1 +
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
+index 51e77faf19..68b624fa4f 100644
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
+@@ -157,7 +157,8 @@ static bool IsSupportedHwFormat(const enum AVPixelFormat fmt)
+ static bool IsSupportedSwFormat(const enum AVPixelFormat fmt)
+ {
+   return fmt == AV_PIX_FMT_YUV420P || fmt == AV_PIX_FMT_YUVJ420P || fmt == AV_PIX_FMT_YUV422P ||
+-         fmt == AV_PIX_FMT_YUVJ422P || fmt == AV_PIX_FMT_YUV444P || fmt == AV_PIX_FMT_YUVJ444P;
++         fmt == AV_PIX_FMT_YUVJ422P || fmt == AV_PIX_FMT_YUV444P || fmt == AV_PIX_FMT_YUVJ444P ||
++         fmt == AV_PIX_FMT_P010;
+ }
+ 
+ static const AVCodecHWConfig* FindHWConfig(const AVCodec* codec)
+diff --git a/xbmc/cores/VideoPlayer/Process/wayland/ProcessInfoWayland.cpp b/xbmc/cores/VideoPlayer/Process/wayland/ProcessInfoWayland.cpp
+index dbc24eeba3..ee960daaaf 100644
+--- a/xbmc/cores/VideoPlayer/Process/wayland/ProcessInfoWayland.cpp
++++ b/xbmc/cores/VideoPlayer/Process/wayland/ProcessInfoWayland.cpp
+@@ -55,6 +55,7 @@ std::vector<AVPixelFormat> CProcessInfoWayland::GetRenderFormats()
+     // GL & GLES
+     AV_PIX_FMT_YUV420P,
+     AV_PIX_FMT_NV12,
++    AV_PIX_FMT_P010,
+ 
+ #if defined(HAS_GL)
+     // Full GL only at the moment
+-- 
+2.51.2
+

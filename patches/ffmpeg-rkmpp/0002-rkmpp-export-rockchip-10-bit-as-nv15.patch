@@ -1,0 +1,43 @@
+From 86371080632b6d0bd99038609e4646d321bae8ed Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Sun, 5 Apr 2026 19:26:30 -0400
+Subject: [PATCH] avcodec/rkmppdec: export Rockchip 10-bit frames as NV15
+
+---
+ libavcodec/rkmppdec.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/libavcodec/rkmppdec.c b/libavcodec/rkmppdec.c
+index 3a10e1c..3dda553 100644
+--- a/libavcodec/rkmppdec.c
++++ b/libavcodec/rkmppdec.c
+@@ -80,10 +80,10 @@ static MppCodingType rkmpp_get_codingtype(AVCodecContext *avctx)
+ 
+ static uint32_t rkmpp_get_frameformat(MppFrameFormat mppformat)
+ {
+-    switch (mppformat) {
++    switch (mppformat & MPP_FRAME_FMT_MASK) {
+     case MPP_FMT_YUV420SP:          return DRM_FORMAT_NV12;
+-#ifdef DRM_FORMAT_NV12_10
+-    case MPP_FMT_YUV420SP_10BIT:    return DRM_FORMAT_NV12_10;
++#ifdef DRM_FORMAT_NV15
++    case MPP_FMT_YUV420SP_10BIT:    return DRM_FORMAT_NV15;
+ #endif
+     default:                        return 0;
+     }
+@@ -358,7 +358,11 @@ static int rkmpp_retrieve_frame(AVCodecContext *avctx, AVFrame *frame)
+ 
+             hwframes = (AVHWFramesContext*)decoder->frames_ref->data;
+             hwframes->format    = AV_PIX_FMT_DRM_PRIME;
+-            hwframes->sw_format = drmformat == DRM_FORMAT_NV12 ? AV_PIX_FMT_NV12 : AV_PIX_FMT_NONE;
++            hwframes->sw_format = drmformat == DRM_FORMAT_NV12 ? AV_PIX_FMT_NV12
++#ifdef DRM_FORMAT_NV15
++                                      : drmformat == DRM_FORMAT_NV15 ? AV_PIX_FMT_P010
++#endif
++                                                                 : AV_PIX_FMT_NONE;
+             hwframes->width     = avctx->width;
+             hwframes->height    = avctx->height;
+             ret = av_hwframe_ctx_init(decoder->frames_ref);
+-- 
+2.51.2
+

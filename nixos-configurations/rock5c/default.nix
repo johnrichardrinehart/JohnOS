@@ -35,7 +35,7 @@
     enable = true;
     management.enable = true;
     kodi = {
-      variant = "auto";
+      variant = "gbm";
       autostart.enable = true;
       disable_cec_standby_on_poweroff = true;
     };
@@ -50,7 +50,7 @@
   dev.johnrinehart.nix.enable = true;
   dev.johnrinehart.desktop = {
     enable = true;
-    variant = "greetd+niri";
+    variant = "wl-kwin";
   };
   dev.johnrinehart.packages.shell.enable = true;
   dev.johnrinehart.packages.editors.enable = true;
@@ -190,6 +190,11 @@
       Network.EnableIPv6 = true;
     };
   };
+
+  # PowerDevil is initiating suspend requests on this host. Disable the
+  # user service entirely so Plasma cannot auto-suspend the machine.
+  systemd.user.services.plasma-powerdevil.unitConfig.ConditionPathExists =
+    lib.mkForce "/this/path/should/not/exist";
 
   nix.package = pkgs.nixVersions.nix_2_32;
 

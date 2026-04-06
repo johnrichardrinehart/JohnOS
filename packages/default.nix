@@ -69,6 +69,8 @@ let
 
   ffmpegRkmppPatches = [
     ../patches/ffmpeg-rkmpp/0001-rkmpp-retain-packets-on-decoder-backpressure.patch
+    ../patches/ffmpeg-rkmpp/0002-rkmpp-export-rockchip-10-bit-as-nv15.patch
+    ../patches/ffmpeg-rkmpp/0004-rkmpp-use-non-blocking-output-polling.patch
   ];
 
   mkV4l2RequestFfmpeg = ffmpegPkg:
