@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 let
@@ -16,6 +15,18 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    environment.sessionVariables = {
+      NIXOS_OZONE_WL = "1";
+    };
+
     programs.hyprland.enable = true;
+
+    users.users.john.extraGroups = [ "seat" ];
+
+    services.greetd.enable = true;
+    services.greetd.settings.default_session = {
+      command = "${lib.getExe config.programs.hyprland.package}";
+      user = "john";
+    };
   };
 }
