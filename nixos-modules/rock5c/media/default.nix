@@ -324,6 +324,7 @@ in
         let
           commonKodiPatches =
             [
+              ../../../patches/kodi/0003-rock5c-prefer-rkmpp-drm-prime-decoders.patch
               ../../../patches/kodi/0004-rock5c-add-drm-prime-oes-finishing-path.patch
               ../../../patches/kodi/0005-rock5c-accept-p010-on-wayland-drm-prime.patch
             ]
@@ -349,6 +350,11 @@ in
                   # Keep the dedicated GBM build on DRM PRIME decode while
                   # using the GLES/EGL renderer rather than the direct plane path.
                   ../../../patches/kodi/0001-rock5c-force-drm-prime-defaults-on-gbm.patch
+                ]
+                ++ lib.optionals (baseName == "kodi-wayland") [
+                  ../../../patches/kodi/0011-rock5c-force-drm-prime-decode-on-wayland.patch
+                  ../../../patches/kodi/0012-rock5c-include-winsystem-for-forced-drm-prime.patch
+                  ../../../patches/kodi/0013-rock5c-drop-const-winsystem-for-name-lookup.patch
                 ]
                 ++ lib.optionals hasV4l2Request [
                   ../../../patches/kodi/0000-rock5c-enable-v4l2request-drm-prime-codec.patch

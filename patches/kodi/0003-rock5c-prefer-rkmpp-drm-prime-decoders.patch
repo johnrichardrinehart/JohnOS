@@ -1,0 +1,59 @@
+From 7f4eca173c1c8b51d8e63087ebe6e0db34f2bd14 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Mon, 6 Apr 2026 14:04:00 -0400
+Subject: [PATCH] videoplayer: prefer rkmpp DRM PRIME decoders
+
+---
+ .../DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp | 23 ++++++++++++++++++-
+ 1 file changed, 22 insertions(+), 1 deletion(-)
+
+diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
+index 51e77faf19..8fd9ee61d1 100644
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
+@@ -180,9 +180,21 @@ static const AVCodecHWConfig* FindHWConfig(const AVCodec* codec)
+   return nullptr;
+ }
+ 
++static bool IsPreferredRkmppDecoder(const AVCodec* codec)
++{
++  if (!codec)
++    return false;
++
++  if (codec->wrapper_name && strcmp(codec->wrapper_name, "rkmpp") == 0)
++    return true;
++
++  return codec->name && StringUtils::EndsWith(codec->name, "_rkmpp");
++}
++
+ static const AVCodec* FindDecoder(CDVDStreamInfo& hints)
+ {
+   const AVCodec* codec = nullptr;
++  const AVCodec* fallbackHwCodec = nullptr;
+   void* i = 0;
+ 
+   if (!(hints.codecOptions & CODEC_FORCE_SOFTWARE))
+@@ -194,10 +206,19 @@ static const AVCodec* FindDecoder(CDVDStreamInfo& hints)
+         continue;
+ 
+       const AVCodecHWConfig* config = FindHWConfig(codec);
+-      if (config)
++      if (!config)
++        continue;
++
++      if (IsPreferredRkmppDecoder(codec))
+         return codec;
++
++      if (!fallbackHwCodec)
++        fallbackHwCodec = codec;
+     }
+ 
++  if (fallbackHwCodec)
++    return fallbackHwCodec;
++
+   codec = avcodec_find_decoder(hints.codec);
+   if (codec && (codec->capabilities & AV_CODEC_CAP_DR1) == AV_CODEC_CAP_DR1)
+     return codec;
+-- 
+2.51.2
+
