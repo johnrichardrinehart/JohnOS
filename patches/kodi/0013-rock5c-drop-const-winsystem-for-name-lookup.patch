@@ -1,0 +1,25 @@
+From 03eb3370f7d034c7541ea1658f73714378cdec71 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Mon, 6 Apr 2026 17:50:52 -0400
+Subject: [PATCH] videoplayer: drop const winSystem for name lookup
+
+---
+ .../cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
+index e215ea4ddd..66b7921abb 100644
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
+@@ -87,7 +87,7 @@ bool SupportsDRM()
+ 
+ bool IsPrimeDecoderForcedPlatform()
+ {
+-  const auto* winSystem = CServiceBroker::GetWinSystem();
++  auto* winSystem = CServiceBroker::GetWinSystem();
+   if (!winSystem)
+     return false;
+ 
+-- 
+2.51.2
+

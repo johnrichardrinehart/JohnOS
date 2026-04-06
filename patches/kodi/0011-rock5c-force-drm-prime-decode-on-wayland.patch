@@ -1,0 +1,76 @@
+From af2bb9650a6f9e7dc9dade6ea6b99911a3265578 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Mon, 6 Apr 2026 15:48:46 -0400
+Subject: [PATCH] videoplayer: force DRM PRIME decode on Wayland and GBM
+
+---
+ system/settings/linux.xml                     |  2 +-
+ .../DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp | 19 ++++++++++++++++++-
+ 2 files changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/system/settings/linux.xml b/system/settings/linux.xml
+index 6c2db262e1..a0ba0e01f4 100644
+--- a/system/settings/linux.xml
++++ b/system/settings/linux.xml
+@@ -177,7 +177,7 @@
+           <requirement>HAS_GLES</requirement>
+           <visible>false</visible>
+           <level>2</level>
+-          <default>false</default>
++          <default>true</default>
+           <control type="toggle" />
+         </setting>
+         <setting id="videoplayer.useprimedecoderforhw" type="boolean" parent="videoplayer.useprimedecoder" label="13438" help="36172">
+diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
+index 8fd9ee61d1..8584d1f396 100644
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
+@@ -84,6 +84,16 @@ bool SupportsDRM()
+   return false;
+ }
+ 
++bool IsPrimeDecoderForcedPlatform()
++{
++  const auto* winSystem = CServiceBroker::GetWinSystem();
++  if (!winSystem)
++    return false;
++
++  const auto name = winSystem->GetName();
++  return name == "gbm" || name == "wayland";
++}
++
+ } // namespace
+ 
+ CDVDVideoCodecDRMPRIME::CDVDVideoCodecDRMPRIME(CProcessInfo& processInfo)
+@@ -101,6 +111,9 @@ CDVDVideoCodecDRMPRIME::~CDVDVideoCodecDRMPRIME()
+ 
+ std::unique_ptr<CDVDVideoCodec> CDVDVideoCodecDRMPRIME::Create(CProcessInfo& processInfo)
+ {
++  if (IsPrimeDecoderForcedPlatform())
++    return std::make_unique<CDVDVideoCodecDRMPRIME>(processInfo);
++
+   if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
+           CSettings::SETTING_VIDEOPLAYER_USEPRIMEDECODER))
+     return std::make_unique<CDVDVideoCodecDRMPRIME>(processInfo);
+@@ -148,6 +161,9 @@ void CDVDVideoCodecDRMPRIME::Register()
+ 
+ static bool IsSupportedHwFormat(const enum AVPixelFormat fmt)
+ {
++  if (IsPrimeDecoderForcedPlatform())
++    return fmt == AV_PIX_FMT_DRM_PRIME;
++
+   bool hw = CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
+       SETTING_VIDEOPLAYER_USEPRIMEDECODERFORHW);
+ 
+@@ -162,7 +178,8 @@ static bool IsSupportedSwFormat(const enum AVPixelFormat fmt)
+ 
+ static const AVCodecHWConfig* FindHWConfig(const AVCodec* codec)
+ {
+-  if (!CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
++  if (!IsPrimeDecoderForcedPlatform() &&
++      !CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
+           SETTING_VIDEOPLAYER_USEPRIMEDECODERFORHW))
+     return nullptr;
+ 
+-- 
+2.51.2

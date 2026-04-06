@@ -1,0 +1,24 @@
+From 5197cfde21be577c822b6def4b30e2e766e13d81 Mon Sep 17 00:00:00 2001
+From: John Rinehart <johnrichardrinehart@gmail.com>
+Date: Mon, 6 Apr 2026 17:00:19 -0400
+Subject: [PATCH] videoplayer: include WinSystem for forced DRM PRIME platforms
+
+---
+ xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
+index 8584d1f396..e215ea4ddd 100644
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecDRMPRIME.cpp
+@@ -20,6 +20,7 @@
+ #include "utils/CPUInfo.h"
+ #include "utils/StringUtils.h"
+ #include "utils/log.h"
++#include "windowing/WinSystem.h"
+ 
+ #if defined(HAVE_GBM)
+ #include "windowing/gbm/WinSystemGbm.h"
+-- 
+2.51.2
+
