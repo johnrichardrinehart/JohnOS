@@ -7,12 +7,19 @@
 }:
 {
   imports = [
+    ./rock5c.nix
+    ./media-management.nix
+    ./modprobe-render.nix
+    ./netconsole.nix
     inputs.sops-nix.nixosModules.default
+    ./host-policy.nix
     ./swap.nix
     ./tmpfs.nix
   ];
 
   system.build.literals.secondsToWaitForNAS = 20;
+  system.build.sdImage = config.system.build.images.rock5c_raw_image;
+  system.build.eMMCImage = config.system.build.images.rock5c_raw_image;
 
   nixpkgs.hostPlatform = "aarch64-linux";
   nixpkgs.config.allowUnfreePredicate =
@@ -22,37 +29,14 @@
   networking.hostName = "rock5c";
   networking.firewall.logRefusedConnections = false;
   networking.firewall.logRefusedPackets = false;
-  dev.johnrinehart.rock5c.enable = true;
-  dev.johnrinehart.rock5c.videoBackend = "mpp";
-  dev.johnrinehart.rock5c.netconsole = {
-    enable = true;
-    device = "wlan0";
-    targetIP = "172.16.0.3";
-    targetMAC = "f4:7b:09:9b:69:0f";
-  };
-  dev.johnrinehart.rock5c.gstreamerHwdec.enable = true;
-  dev.johnrinehart.rock5c.media = {
-    enable = true;
-    management.enable = true;
-    kodi = {
-      variant = "wayland";
-      autostart.enable = true;
-      disable_cec_standby_on_poweroff = true;
-    };
-  };
-  dev.johnrinehart.rock5c.rkvdec.enable =
-    lib.mkDefault (config.dev.johnrinehart.rock5c.videoBackend == "mainline");
-  dev.johnrinehart.rock5c.ssdStore = {
-    enable = true;
-    users = [ "john" ];
+  home-manager.users.john.idle = {
+    short_timeout_duration = 60 * 5;
+    medium_timeout_duration = 60 * 6;
+    long_timeout_duration = 60 * 10;
   };
   rock5c.enable = true;
   dev.johnrinehart.system.enable = true;
   dev.johnrinehart.nix.enable = true;
-  dev.johnrinehart.desktop = {
-    enable = true;
-    variant = "wl-hyprland";
-  };
   dev.johnrinehart.packages.shell.enable = true;
   dev.johnrinehart.packages.editors.enable = true;
   services.hypridle.enable = lib.mkForce false;
@@ -63,7 +47,7 @@
   boot.kernelModules = [ "dm_cache" ];
 
   fileSystems."/" = {
-    device = "/dev/disk/by-label/${config.dev.johnrinehart.rock5c.rootfsLabel}";
+    device = "/dev/disk/by-label/${config.rock5c.rootfsLabel}";
     fsType = "ext4";
   };
 
@@ -100,7 +84,7 @@
     SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_PATH}=="platform-fde80000.hdmi", ENV{ID_INPUT_KEY}="0", TAG-="power-switch"
     SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="fde80000.hdmi", ENV{ID_INPUT_KEY}="0", TAG-="power-switch"
 
-    ${lib.optionalString (config.dev.johnrinehart.rock5c.videoBackend == "mpp") ''
+    ${lib.optionalString (config.rock5c.videoBackend == "mpp") ''
       # The vendor MPP userspace may look for either /dev/mpp or /dev/mpp_service.
       # The current kernel driver registers the device as "mpp_service", so match
       # that real node for permissions and add a /dev/mpp compatibility symlink.
@@ -167,11 +151,6 @@
     linkConfig.RequiredForOnline = "no";
   };
 
-  systemd.network.links."10-wlan0" = {
-    matchConfig.OriginalName = "wlan*";
-    linkConfig.MACAddress = "88:00:03:00:10:55";
-  };
-
   systemd.network.networks."wlan0" = {
     matchConfig.Name = "wlan*";
     networkConfig.DHCP = "yes";
@@ -183,10 +162,6 @@
   networking.wireless.iwd = {
     enable = true;
     settings = {
-      General = {
-        AddressOverride = "88:00:03:00:10:55";
-        AddressRandomization = "disabled";
-      };
       Network.EnableIPv6 = true;
     };
   };

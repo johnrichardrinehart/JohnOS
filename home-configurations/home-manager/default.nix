@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  inputs,
+  ...
+}:
 {
   options.dev.johnrinehart.home-manager = {
     enable = lib.mkEnableOption "John's Home Manager settings.";

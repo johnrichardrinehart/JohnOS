@@ -16,7 +16,6 @@ lib.mapAttrs (
         ./${dir}
         ../nixos-modules
       ];
-
-    specialArgs = { inherit inputs; };
-  }
+      specialArgs = { inherit inputs; };
+    }
 ) (lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./.))
