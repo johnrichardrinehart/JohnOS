@@ -32,6 +32,5 @@
 
     ./bootloader
     ./kernel
-    ./rock5c
   ];
 }

@@ -7,8 +7,12 @@ lib.mapAttrs (
   lib.nixosSystem {
     modules = [
       {
-        nixpkgs.overlays = [ inputs.self.overlays.default ];
+        nixpkgs.overlays = [
+          inputs.rock5c-nixos.overlays.default
+          inputs.self.overlays.default
+        ];
       }
+      inputs.rock5c-nixos.nixosModules.default
       ./${dir}
       ../nixos-modules
     ];
