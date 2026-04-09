@@ -14,8 +14,13 @@ let
   xcursorTheme = "Adwaita";
   xcursorSize = 24;
 
+  wormhole-send = pkgs.callPackage ./wormhole-send.nix {
+    notifyTimeout = cfg.wormholeNotifyTimeout;
+  };
+
   niri-screenshot = pkgs.callPackage ./niri-screenshot.nix {
     niri = config.programs.niri.package;
+    inherit wormhole-send;
   };
 
   # Shared PAM configuration for fingerprint + password authentication
@@ -49,6 +54,11 @@ in
       enable = lib.mkEnableOption "greetd + niri";
       hypridle.enable = lib.mkEnableOption "hypridle integration" // {
         default = true;
+      };
+      wormholeNotifyTimeout = lib.mkOption {
+        type = lib.types.int;
+        default = 15000;
+        description = "Timeout in ms for wormhole code notifications (0 = persistent)";
       };
     }
     // {
@@ -161,6 +171,8 @@ in
       [
         niri-gather-windows
         niri-screenshot
+        wormhole-send
+        pkgs.magic-wormhole-rs
         pkgs.adwaita-icon-theme # cursor theme
         pkgs.alacritty
         pkgs.brightnessctl
@@ -192,6 +204,7 @@ in
         suspend = "${lib.getExe' pkgs.systemd "systemctl"} suspend-then-hibernate";
         wl-kbptr = lib.getExe pkgs.wl-kbptr;
         niri_screenshot = lib.getExe niri-screenshot;
+        wormhole_send = lib.getExe wormhole-send;
         obs-cmd = lib.getExe pkgs.obs-cmd;
         xcursor_theme = xcursorTheme;
         xcursor_size = toString xcursorSize;
