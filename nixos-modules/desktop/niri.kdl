@@ -619,8 +619,12 @@ binds {
     // Mod+Shift+Space { switch-layout "prev"; }
 
     Mod+Shift+S { spawn-sh r#"grim -g "$(slurp)" - | satty --fullscreen --copy-command wl-copy -f -"#; }
-    // Screenshot menu (fullscreen, delayed, etc.)
+    // Screenshot menu (fullscreen, delayed, wormhole send, etc.)
     Mod+Ctrl+S { spawn "@niri_screenshot@"; }
+    // Send clipboard contents via wormhole
+    Mod+Shift+W { spawn-sh r#"f=$(mktemp /tmp/wh-clip-XXXXXX) && wl-paste > "$f" && @wormhole_send@ "$f""#; }
+    // Quick region screenshot + annotate + wormhole send
+    Mod+Alt+S { spawn-sh r#"f=$(mktemp /tmp/wh-ss-XXXXXX.png) && grim -g "$(slurp)" - | satty --fullscreen --output-filename "$f" --copy-command wl-copy -f - && @wormhole_send@ "$f" &"#; }
     // View clipboard history
     Mod+Shift+C { spawn-sh r#"cliphist list | fuzzel --width 100 --dmenu | cliphist decode | wl-copy"#; }
 
