@@ -166,6 +166,12 @@ in
       };
 
     home.file = {
+      ".gitignore".text = ''
+        result
+        .claude
+        .codex
+        .omx
+      '';
       ".config/satty/config.toml".text = ''
         [general]
         initial-tool = "pointer"
@@ -185,10 +191,16 @@ in
           (_: {
             checkPhase = null;
           });
-    } // lib.optionalAttrs osConfig.dev.johnrinehart.desktop.greetd_niri.hypridle.enable {
+    }
+    // lib.optionalAttrs osConfig.dev.johnrinehart.desktop.greetd_niri.hypridle.enable {
       ".config/hypr/hypridle.conf".source =
         let
-          onIdlePackage = pkgs.callPackage ./on-idle.nix { };
+          onIdlePackage = pkgs.callPackage ./on-idle.nix {
+            idleTimeoutSeconds = config.idle.short_timeout_duration;
+          };
+          onLongIdlePackage = pkgs.callPackage ./suspend-if-no-active-ssh.nix {
+            idleTimeoutSeconds = config.idle.short_timeout_duration;
+          };
         in
         (pkgs.replaceVars ./hypridle.conf {
           lock_command = lib.getExe pkgs.hyprlock;
@@ -196,6 +208,12 @@ in
           monitor_off = "${lib.getExe pkgs.niri} msg action power-off-monitors";
           notify_send = lib.getExe' pkgs.libnotify "notify-send";
           on_idle = lib.getExe onIdlePackage;
+          on_long_idle = lib.getExe onLongIdlePackage;
+          on_long_resume = lib.getExe (
+            pkgs.callPackage ./kill-idle-group.nix {
+              onIdlePackage = onLongIdlePackage;
+            }
+          );
           on_short_resume = lib.getExe (
             pkgs.callPackage ./kill-idle-group.nix {
               inherit onIdlePackage;
@@ -204,7 +222,6 @@ in
           short_timeout_duration = config.idle.short_timeout_duration;
           medium_timeout_duration = config.idle.medium_timeout_duration;
           long_timeout_duration = config.idle.long_timeout_duration;
-          systemctl = lib.getExe' pkgs.systemd "systemctl";
         }).overrideAttrs
           (_: {
             checkPhase = null;
@@ -495,7 +512,7 @@ in
             precmd_functions+=(prompt)
 
         # ${pkgs.zellij}/bin/zellij attach --index 0 || ${pkgs.zellij}/bin/zellij
-      '';
+        '';
     };
 
     home.stateVersion = "24.05";
