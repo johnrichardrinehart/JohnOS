@@ -168,9 +168,9 @@ in
     home.file = {
       ".gitignore".text = ''
         result
-        .claude
-        .codex
-        .omx
+        .claude/
+        .codex/
+        .omx/
       '';
       ".config/satty/config.toml".text = ''
         [general]
