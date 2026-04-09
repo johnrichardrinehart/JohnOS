@@ -3,4 +3,5 @@
 
 {
   agent-deck = pkgs.agent-deck;
+  facefusion = pkgs.facefusion;
 }

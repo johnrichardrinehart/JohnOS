@@ -2,6 +2,7 @@ inputs: {
   default = inputs.nixpkgs.lib.composeManyExtensions [
     (final: prev: {
       agent-deck = final.callPackage ../packages/agent-deck.nix { };
+      facefusion = final.callPackage ../packages/facefusion.nix { };
       # Backport of NixOS/nix#15572 for the stale-file-handle regression tracked
       # in NixOS/nixpkgs#496466. Drop this once nix 2.33 includes that test fix.
       nix_2_33_skip_stale_file_handle_test = prev.nixVersions.nix_2_33.appendPatches [

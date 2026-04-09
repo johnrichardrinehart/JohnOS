@@ -5,6 +5,7 @@
     ./bluetooth.nix
     ./hibernate-resume-optimization.nix
     ./droidcam.nix
+    ./facefusion.nix
     ./filepicker.nix
     ./fonts.nix
     ./gocryptfs.nix

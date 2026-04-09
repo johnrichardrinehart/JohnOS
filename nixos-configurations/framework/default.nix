@@ -47,6 +47,7 @@
   dev.johnrinehart.packages.media.enable = true;
   dev.johnrinehart.packages.system.enable = true;
   dev.johnrinehart.packages.archive.enable = true;
+  dev.johnrinehart.facefusion.enable = true;
   dev.johnrinehart.bluetooth = {
     enable = true;
     autoSuspend.enable = true;

@@ -15,6 +15,9 @@
     inputs.nixos-hardware.nixosModules.framework-11th-gen-intel
   ];
 
+  nixpkgs.config.allowUnfreePredicate =
+    pkg: builtins.elem (lib.getName pkg) [ "facefusion" ];
+
   dev.johnrinehart.droidcam.enable = false; # TODO: broken
   dev.johnrinehart.auto-suspend = {
     notificationLevels = builtins.genList (i: 30 - (i * 5)) 6; # [ 30 25 20 15 10 5 ]
