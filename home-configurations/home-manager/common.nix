@@ -195,11 +195,22 @@ in
     // lib.optionalAttrs osConfig.dev.johnrinehart.desktop.greetd_niri.hypridle.enable {
       ".config/hypr/hypridle.conf".source =
         let
+          sshSessionLockCfg = osConfig.dev.johnrinehart.sshSessionLock;
+          confirmSshActivityPackage =
+            pkgs.callPackage ../../nixos-modules/confirm-ssh-activity-before-suspend.nix {
+              promptTimeoutSeconds = sshSessionLockCfg.suspendPromptTimeoutSeconds;
+            };
+          lockIdleSshPackage =
+            pkgs.callPackage ./lock-idle-ssh-sessions.nix {
+              idleTimeoutSeconds = sshSessionLockCfg.timeoutSeconds;
+              terminalMultiplexer = sshSessionLockCfg.terminalMultiplexer;
+            };
           onIdlePackage = pkgs.callPackage ./on-idle.nix {
             idleTimeoutSeconds = config.idle.short_timeout_duration;
+            idleSshActionCommand = lib.optionalString sshSessionLockCfg.enable (lib.getExe lockIdleSshPackage);
           };
           onLongIdlePackage = pkgs.callPackage ./suspend-if-no-active-ssh.nix {
-            idleTimeoutSeconds = config.idle.short_timeout_duration;
+            confirmSshActivityCommand = lib.optionalString sshSessionLockCfg.enable (lib.getExe confirmSshActivityPackage);
           };
         in
         (pkgs.replaceVars ./hypridle.conf {
@@ -226,6 +237,20 @@ in
           (_: {
             checkPhase = null;
           });
+    };
+
+    programs.tmux = lib.mkIf (
+      osConfig.dev.johnrinehart.sshSessionLock.enable
+      && osConfig.dev.johnrinehart.sshSessionLock.terminalMultiplexer == "tmux"
+    ) {
+      enable = true;
+      extraConfig =
+        let
+          tmuxAuthLock = pkgs.callPackage ./tmux-auth-lock.nix { };
+        in
+        ''
+          set -g lock-command "${lib.getExe tmuxAuthLock}"
+        '';
     };
 
     home.sessionVariables.EDITOR = "vim";
@@ -484,8 +509,20 @@ in
             path = ../../static/full-moon-forest-night-dark-starry-sky-5k-8k-7952x5304-1684.jpg;
             name = "wallpaper.jpg";
           };
+          sshSessionLockCfg = osConfig.dev.johnrinehart.sshSessionLock;
+          multiplexerAutoAttach = lib.optionalString (
+            sshSessionLockCfg.enable
+            && sshSessionLockCfg.forceInteractiveShellsIntoMultiplexer
+            && sshSessionLockCfg.terminalMultiplexer == "tmux"
+          ) ''
+            if [[ -n "$SSH_TTY" && -z "$TMUX" ]]; then
+              exec ${lib.getExe pkgs.tmux} new-session -A -s ${lib.escapeShellArg sshSessionLockCfg.multiplexerSessionName}
+            fi
+          '';
         in
         ''
+        ${multiplexerAutoAttach}
+
         # Use a function instead of an alias so zsh uses _ssh completion
         # rather than expanding to "kitty +kitten ssh" and hitting kitty's
         # broken anchor-based matcher handling.

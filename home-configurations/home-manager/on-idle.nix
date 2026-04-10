@@ -7,6 +7,7 @@
   coreutils,
   gawk,
   idleTimeoutSeconds,
+  idleSshActionCommand ? "",
 }:
 
 writeShellScriptBin "on-idle" ''
@@ -39,9 +40,12 @@ writeShellScriptBin "on-idle" ''
       idle_to_seconds "$idle_field"
     }
 
-    ${libnotify}/bin/notify-send -u normal 'Idle... locking and pruning inactive VT/SSH sessions'
+    ${libnotify}/bin/notify-send -u normal 'Idle... locking the desktop session and applying idle session policy'
     sleep 5
     ${systemd}/bin/loginctl lock-session
+    ${lib.optionalString (idleSshActionCommand != "") ''
+      ${idleSshActionCommand}
+    ''}
 
     while IFS=$'\t' read -r session_id tty_name; do
       [ -n "$session_id" ] || continue
@@ -58,8 +62,7 @@ writeShellScriptBin "on-idle" ''
     map(
       select(
         .tty != null and (
-          ((.tty | test("^tty[0-9]+$")) and .tty != "tty1") or
-          (.tty | test("^pts/[0-9]+$"))
+          ((.tty | test("^tty[0-9]+$")) and .tty != "tty1")
         )
       ) | [.session, .tty] | @tsv
     ) | .[]

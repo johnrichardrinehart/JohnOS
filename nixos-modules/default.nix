@@ -18,6 +18,7 @@
     ./sops.nix
     ./sound.nix
     ./ssh.nix
+    ./ssh-session-lock.nix
     ./system.nix
     ./thunderbolt-debug.nix
     ./virtualisation.nix

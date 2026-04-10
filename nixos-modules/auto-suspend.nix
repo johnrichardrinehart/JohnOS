@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.dev.johnrinehart.auto-suspend;
+  sshSessionLockCfg = config.dev.johnrinehart.sshSessionLock;
 
   # Script to check battery and suspend if needed
   checkBatteryScript = import ./auto-suspend-check-battery.nix {
@@ -13,6 +14,13 @@ let
     lowLevel = cfg.lowLevel;
     criticalLevel = cfg.criticalLevel;
     notificationLevels = cfg.notificationLevels;
+    confirmSshActivityCommand = lib.optionalString sshSessionLockCfg.enable (
+      lib.getExe (
+        pkgs.callPackage ./confirm-ssh-activity-before-suspend.nix {
+          promptTimeoutSeconds = sshSessionLockCfg.suspendPromptTimeoutSeconds;
+        }
+      )
+    );
   };
 in
 {
@@ -68,6 +76,7 @@ in
         1
       ];
     };
+
   };
 
   config = lib.mkIf cfg.enable {

@@ -39,6 +39,14 @@
     enable = true;
     variant = "greetd+niri";
   };
+  dev.johnrinehart.sshSessionLock = {
+    enable = true;
+    timeoutSeconds = 60 * 15;
+    suspendPromptTimeoutSeconds = 60 * 15;
+    terminalMultiplexer = "tmux";
+    forceInteractiveShellsIntoMultiplexer = true;
+    multiplexerSessionName = "main";
+  };
 
   dev.johnrinehart.packages.shell.enable = true;
   dev.johnrinehart.packages.editors.enable = true;

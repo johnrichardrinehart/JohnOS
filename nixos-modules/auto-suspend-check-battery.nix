@@ -3,6 +3,7 @@
   lowLevel,
   criticalLevel,
   notificationLevels,
+  confirmSshActivityCommand ? "",
 }:
 
 pkgs.writeShellScript "check-battery" ''
@@ -142,6 +143,10 @@ pkgs.writeShellScript "check-battery" ''
   # Critical level: UPower says "critical" OR energy below calculated threshold
   if [ "$CAPACITY_LEVEL" = "critical" ] || ([ -n "$ENERGY" ] && [ "$(echo "$ENERGY < $CRITICAL_ENERGY_THRESHOLD" | ${pkgs.bc}/bin/bc)" = "1" ]); then
     if [ "$LAST_ACTION" != "critical" ]; then
+      if [ -n "${confirmSshActivityCommand}" ] && ! ${confirmSshActivityCommand}; then
+        echo "SSH activity detected, deferring battery auto-suspend"
+        exit 0
+      fi
       echo "Battery critical (capacity-level=$CAPACITY_LEVEL or $ENERGY Wh < $CRITICAL_ENERGY_THRESHOLD Wh [${toString criticalLevel}%]), attempting suspend-then-hibernate"
       echo "critical" > "$STATE_FILE"
       do_suspend
@@ -154,6 +159,10 @@ pkgs.writeShellScript "check-battery" ''
   # Low level: UPower says "low" OR energy below calculated threshold
   if [ "$CAPACITY_LEVEL" = "low" ] || ([ -n "$ENERGY" ] && [ "$(echo "$ENERGY < $LOW_ENERGY_THRESHOLD" | ${pkgs.bc}/bin/bc)" = "1" ]); then
     if [ "$LAST_ACTION" != "low" ] && [ "$LAST_ACTION" != "critical" ]; then
+      if [ -n "${confirmSshActivityCommand}" ] && ! ${confirmSshActivityCommand}; then
+        echo "SSH activity detected, deferring battery auto-suspend"
+        exit 0
+      fi
       echo "Battery low (capacity-level=$CAPACITY_LEVEL or $ENERGY Wh < $LOW_ENERGY_THRESHOLD Wh [${toString lowLevel}%]), attempting suspend-then-hibernate"
       echo "low" > "$STATE_FILE"
       do_suspend
