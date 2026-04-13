@@ -71,6 +71,38 @@ let
     .codex
     .omx/
   '';
+  agentDeckConfig = ''
+    # Agent Deck Configuration
+    # Managed by Home Manager
+
+    default_tool = "my-codex"
+    theme = "dark"
+
+    [tools.my-codex]
+    command = "${lib.getExe pkgs.codex-cli-nix}"
+    compatible_with = "codex"
+
+    # OMX currently runs Codex inside the existing tmux pane and may also mutate the
+    # outer tmux window (for example by creating a HUD split and enforcing tmux
+    # ownership checks). These wrappers normalize agent-deck's appended
+    # `resume <session-id>` shape into the OMX argv order that preserves the
+    # intended flags on resumed sessions.
+    [tools.omx-high]
+    command = "${lib.getExe' pkgs.omx-agent-tools "omx-high"}"
+    compatible_with = "codex"
+
+    [tools.omx-high-sandboxed-ralph]
+    command = "${lib.getExe' pkgs.omx-agent-tools "omx-high-sandboxed-ralph"}"
+    compatible_with = "codex"
+
+    [worktree]
+    default_location = "sibling"
+    auto_cleanup = true
+    path_template = "../{branch-escaped}"
+
+    [global_search]
+    recent_days = 90
+  '';
 in
 {
   imports = [
@@ -194,6 +226,9 @@ in
           (_: {
             checkPhase = null;
           });
+    }
+    // lib.optionalAttrs osConfig.dev.johnrinehart.agentTools.enable {
+      ".agent-deck/config.toml".text = agentDeckConfig;
     }
     // lib.optionalAttrs osConfig.dev.johnrinehart.desktop.greetd_niri.hypridle.enable {
       ".config/hypr/hypridle.conf".source =
