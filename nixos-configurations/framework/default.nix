@@ -3,7 +3,6 @@
   imports = [ ./framework.nix ];
 
   nixpkgs.hostPlatform = "x86_64-linux";
-  nix.package = pkgs.nix_2_33_skip_stale_file_handle_test;
   documentation.nixos.enable = false;
 
   dev.johnrinehart.boot.loader.systemd-boot = {
@@ -63,7 +62,6 @@
   services.fprintd.enable = true;
 
   dev.johnrinehart.terminal.filepicker.enable = true;
-
   environment.systemPackages = [
     pkgs.intel-gpu-tools
     pkgs.agent-deck
