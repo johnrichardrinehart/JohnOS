@@ -66,6 +66,11 @@ let
     transparent true
     window_strut bottom
   '';
+  agentToolsGitignoreEntries = lib.optionalString osConfig.dev.johnrinehart.agentTools.enable ''
+    .codex/
+    .codex
+    .omx/
+  '';
 in
 {
   imports = [
@@ -169,9 +174,7 @@ in
       ".gitignore".text = ''
         result
         .claude/
-        .codex/
-        .omx/
-      '';
+      '' + agentToolsGitignoreEntries;
       ".config/satty/config.toml".text = ''
         [general]
         initial-tool = "pointer"

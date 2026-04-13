@@ -34,6 +34,7 @@
   systemd.services."user@".serviceConfig.Delegate = "cpu cpuset io memory pids";
 
   dev.johnrinehart.system.enable = true;
+  dev.johnrinehart.agentTools.enable = true;
   dev.johnrinehart.desktop = {
     enable = true;
     variant = "greetd+niri";
@@ -62,8 +63,5 @@
   services.fprintd.enable = true;
 
   dev.johnrinehart.terminal.filepicker.enable = true;
-  environment.systemPackages = [
-    pkgs.intel-gpu-tools
-    pkgs.agent-deck
-  ];
+  environment.systemPackages = [ pkgs.intel-gpu-tools ];
 }
