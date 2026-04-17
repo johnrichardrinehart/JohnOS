@@ -4,14 +4,18 @@ let
 in
 lib.mapAttrs (
   dir: _:
-  lib.nixosSystem {
-    modules = [
-      {
-        nixpkgs.overlays = [ inputs.self.overlays.default ];
-      }
-      ./${dir}
-      ../nixos-modules
-    ];
+    lib.nixosSystem {
+      modules = [
+        {
+          nixpkgs.overlays = [
+            inputs.rock5c-nixos.overlays.default
+            inputs.self.overlays.default
+          ];
+        }
+        inputs.rock5c-nixos.nixosModules.default
+        ./${dir}
+        ../nixos-modules
+      ];
 
     specialArgs = { inherit inputs; };
   }
