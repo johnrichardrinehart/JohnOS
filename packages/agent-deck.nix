@@ -6,17 +6,17 @@
 }:
 buildGo124Module rec {
   pname = "agent-deck";
-  version = "unstable-2026-04-17";
-  rev = "138dfbedac789fe1a3ea5d6147dd525a5411f22b";
+  version = "unstable-2026-04-19";
+  rev = "118bfc4d391c3eb052c3460982105bf761584ab0";
 
   src = fetchFromGitHub {
     owner = "johnrichardrinehart";
     repo = "agent-deck";
     inherit rev;
-    hash = "sha256-9qgWtjxooX2Chyy05/KZZhuvnAq+MZqEWqWSaSv3Bhg=";
+    hash = "sha256-FLN+GQQ05eB4AN15/mc1mlasT2gIIAVi/CWYJwDG+mA=";
   };
 
-  vendorHash = "sha256-1aCd3tT5Oh+K7kLils2r3kX4YMkDCL3Eqoj5XJ9R8m0=";
+  vendorHash = "sha256-aH32Up3redCpeyjZkjcjiVN0tfYpF+GFB2WVAGm3J2I=";
 
   subPackages = [ "cmd/agent-deck" ];
 
