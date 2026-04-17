@@ -7,6 +7,28 @@ inputs: {
       oh-my-codex = final.callPackage ../packages/oh-my-codex.nix { };
     })
 
+    (final: prev: {
+      pythonPackagesExtensions =
+        prev.pythonPackagesExtensions
+        ++ [
+          (pyFinal: pyPrev: {
+            # These upstream tests are sensitive to low RLIMIT_NOFILE values in
+            # Nix build sandboxes and can fail before reaching the behavior they
+            # are actually trying to exercise.
+            watchdog = pyPrev.watchdog.overridePythonAttrs (old: {
+              disabledTests = (old.disabledTests or [ ]) ++ [ "test_select_fd" ];
+            });
+
+            virtualenv = pyPrev.virtualenv.overridePythonAttrs (old: {
+              disabledTests = (old.disabledTests or [ ]) ++ [ "test_too_many_open_files" ];
+            });
+          })
+        ];
+
+      watchdog = final.python3Packages.watchdog;
+      virtualenv = final.python3Packages.virtualenv;
+    })
+
     # util-linux patch for handling dots in paths properly
     (final: prev: {
       util-linux = prev.util-linux.overrideAttrs (old: {
