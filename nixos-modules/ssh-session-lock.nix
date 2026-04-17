@@ -41,7 +41,7 @@ in
     multiplexerSessionName = lib.mkOption {
       type = lib.types.str;
       default = "main";
-      description = "Session name to attach to when forcing interactive SSH shell logins into the terminal multiplexer.";
+      description = "Session name prefix to use when forcing interactive SSH shell logins into the terminal multiplexer.";
     };
   };
 

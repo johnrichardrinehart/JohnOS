@@ -291,7 +291,10 @@ in
         '';
     };
 
-    home.sessionVariables.EDITOR = "vim";
+    home.sessionVariables = {
+      EDITOR = "vim";
+      TMUX_TMPDIR = lib.mkForce osConfig.dev.johnrinehart.tmux.socketDir;
+    };
 
     dconf.settings = {
       "org/gnome/nautilus/preferences" = {
@@ -548,13 +551,21 @@ in
             name = "wallpaper.jpg";
           };
           sshSessionLockCfg = osConfig.dev.johnrinehart.sshSessionLock;
+          tmuxSocketCfg = osConfig.dev.johnrinehart.tmux;
           multiplexerAutoAttach = lib.optionalString (
             sshSessionLockCfg.enable
             && sshSessionLockCfg.forceInteractiveShellsIntoMultiplexer
             && sshSessionLockCfg.terminalMultiplexer == "tmux"
           ) ''
             if [[ -n "$SSH_TTY" && -z "$TMUX" ]]; then
-              exec ${lib.getExe pkgs.tmux} new-session -A -s ${lib.escapeShellArg sshSessionLockCfg.multiplexerSessionName}
+              tmux_socket_dir=${lib.escapeShellArg tmuxSocketCfg.socketDir}
+              tmux_socket_name=${lib.escapeShellArg tmuxSocketCfg.socketName}
+              tmux_session_prefix=${lib.escapeShellArg sshSessionLockCfg.multiplexerSessionName}
+              tmux_uid="$(${lib.getExe' pkgs.coreutils "id"} -u)"
+              tmux_session_stamp="$(${lib.getExe' pkgs.coreutils "date"} +%Y%m%dT%H%M%S)"
+              tmux_socket="$tmux_socket_dir/tmux-$tmux_uid/$tmux_socket_name"
+              tmux_session="$tmux_session_prefix-$tmux_session_stamp-$$"
+              exec ${lib.getExe pkgs.tmux} -S "$tmux_socket" new-session -s "$tmux_session"
             fi
           '';
         in

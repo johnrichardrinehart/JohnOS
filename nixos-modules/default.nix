@@ -22,6 +22,7 @@
     ./ssh-session-lock.nix
     ./system.nix
     ./thunderbolt-debug.nix
+    ./tmux-socket.nix
     ./virtualisation.nix
 
     ./desktop/default.nix
