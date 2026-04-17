@@ -29,6 +29,32 @@ inputs: {
       virtualenv = final.python3Packages.virtualenv;
     })
 
+    (final: prev:
+      let
+        qt6Overlay = qfinal: qprev: {
+          # QtWebEngine generates linker_ulimit.sh with a hardcoded /bin/bash
+          # shebang, which fails in Nix build sandboxes where /bin/bash does not
+          # exist. Upstream generates the helper from QtConfigureHelpers.cmake
+          # when the open-files limit is below 4096, and a downstream FreeBSD
+          # bug reports the same linker_ulimit.sh behavior:
+          # https://github.com/qt/qtwebengine/blob/dev/cmake/QtConfigureHelpers.cmake
+          # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=270041
+          qtwebengine = qprev.qtwebengine.overrideAttrs (old: {
+            postPatch = (old.postPatch or "") + ''
+              substituteInPlace cmake/QtConfigureHelpers.cmake \
+                --replace-fail '#!/bin/bash' '#!${final.buildPackages.bash}/bin/bash'
+            '';
+          });
+        };
+        patchedQt6 = prev.qt6.overrideScope qt6Overlay;
+      in
+      {
+        qt6 = patchedQt6 // {
+          override = args: (prev.qt6.override args).overrideScope qt6Overlay;
+        };
+        qt6Packages = final.qt6;
+      })
+
     # util-linux patch for handling dots in paths properly
     (final: prev: {
       util-linux = prev.util-linux.overrideAttrs (old: {
