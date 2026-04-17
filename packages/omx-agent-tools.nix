@@ -7,7 +7,11 @@
 }:
 let
   mkOmxWrapper =
-    name: fixedArgs:
+    {
+      name,
+      fixedArgs,
+      extraEnv ? { },
+    }:
     writeShellApplication {
       inherit name;
       runtimeInputs = [
@@ -18,6 +22,9 @@ let
         set -euo pipefail
 
         export OMX_CODEX_BIN="${lib.getExe codex-cli-nix}"
+        ${lib.concatStringsSep "\n" (
+          lib.mapAttrsToList (envName: envValue: "export ${envName}=${lib.escapeShellArg envValue}") extraEnv
+        )}
 
         fixed_args=(${lib.concatMapStringsSep " " lib.escapeShellArg fixedArgs})
 
@@ -56,14 +63,23 @@ let
       '';
     };
 
-  omxHigh = mkOmxWrapper "omx-high" [ "--high" ];
-  omxHighSandboxedRalph = mkOmxWrapper "omx-high-sandboxed-ralph" [
-    "--ask-for-approval"
-    "never"
-    "--sandbox"
-    "workspace-write"
-    "--high"
-  ];
+  omxHigh = mkOmxWrapper {
+    name = "omx-high";
+    fixedArgs = [ "--high" ];
+  };
+  omxHighSandboxedRalph = mkOmxWrapper {
+    name = "omx-high-sandboxed-ralph";
+    fixedArgs = [
+      "--ask-for-approval"
+      "never"
+      "--sandbox"
+      "workspace-write"
+      "--high"
+    ];
+    extraEnv = {
+      OMX_AUTO_ADD_GIT_COMMON_DIR = "1";
+    };
+  };
 in
 symlinkJoin {
   name = "omx-agent-tools";

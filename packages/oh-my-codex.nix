@@ -10,13 +10,13 @@
 let
   pname = "oh-my-codex";
   version = "unstable-2026-04-13";
-  rev = "3d218bcc53b7905636d6fe93d523bbd66287dd8f";
+  rev = "a5ab7df559bd83e1fb2e48333740e09fd7bdb980";
 
   src = fetchFromGitHub {
     owner = "johnrichardrinehart";
     repo = "oh-my-codex";
     inherit rev;
-    hash = "sha256-LJrQ8IsaYbqcpPUz84TYIwlpc2y0j2sMm24wgfZwZZo=";
+    hash = "sha256-VNfB7XOuH4u456B/8CD7sd4yPgcI6XL4OQR72tsKnLY=";
   };
 
   nodePlatform =
