@@ -66,6 +66,13 @@ buildNpmPackage {
 
   npmBuildScript = "build";
 
+  # Codex starts MCP servers in a sparse environment, so first-party servers
+  # must use OMX's managed Node path instead of relying on PATH lookup.
+  postPatch = ''
+    substituteInPlace src/config/generator.ts \
+      --replace-fail "    'command = \"node\"'," '    `command = "''${nodeCommand}"`,'
+  '';
+
   installPhase = ''
     runHook preInstall
 

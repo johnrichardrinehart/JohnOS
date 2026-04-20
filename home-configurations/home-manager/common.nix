@@ -528,6 +528,7 @@ in
           lmkv = fetchLatestKernelVersion "mainline";
           clv = "uname -a | cut -f3 -d' ' | cut -f 1 -d'-' ";
           k = "kubectl";
+          codex = lib.getExe pkgs.codex-cli-nix;
           chess = "scid";
           sudo-nixos-rebuild-flake = "sudo nixos-rebuild switch --flake $HOME/code/repos/mine/nix"; # https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
         };
