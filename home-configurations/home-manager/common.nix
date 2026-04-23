@@ -597,8 +597,6 @@ in
             eval $("${lib.getExe pkgs.oh-my-posh}" init zsh --config "${./oh-my-posh.json}");
             }
             precmd_functions+=(prompt)
-
-        # ${pkgs.zellij}/bin/zellij attach --index 0 || ${pkgs.zellij}/bin/zellij
         '';
     };
 

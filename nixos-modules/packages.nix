@@ -29,7 +29,6 @@ in
         pkgs.fzf
         pkgs.jq
         pkgs.bc
-        pkgs.zellij
         pkgs.htop
         pkgs.tree
         pkgs.git
