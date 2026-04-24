@@ -10,7 +10,9 @@
     ./rock5c.nix
     ./media-management.nix
     ./modprobe-render.nix
-    ./netconsole.nix
+    # Disabled after the 2026-04-24 failure: netconsole over wlan0 hit the
+    # AIC8800 driver's netpoll transmit path and soft-locked CPU 5 for hours.
+    # ./netconsole.nix
     inputs.sops-nix.nixosModules.default
     ./host-policy.nix
     ./swap.nix
