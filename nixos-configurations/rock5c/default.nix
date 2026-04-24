@@ -39,6 +39,11 @@
   rock5c.enable = true;
   dev.johnrinehart.system.enable = true;
   dev.johnrinehart.nix.enable = true;
+  dev.johnrinehart.home-manager.packages = {
+    shell.enable = false;
+    games.enable = false;
+    messaging.enable = false;
+  };
   dev.johnrinehart.packages.shell.enable = true;
   dev.johnrinehart.packages.editors.enable = true;
   services.hypridle.enable = lib.mkForce false;
