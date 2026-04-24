@@ -38,8 +38,6 @@
     {
       nixosConfigurations = import ./nixos-configurations inputs;
 
-      homeConfigurations = import ./home-configurations inputs;
-
       packages.${system} = import ./packages { inherit pkgs; };
 
       devShells.${system} = import ./dev-shells.nix { inherit pkgs; };

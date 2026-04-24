@@ -35,6 +35,10 @@ in
   ];
 
   config = lib.mkIf cfg.enable {
+    dev.johnrinehart.home-manager.packages.shell.enable = lib.mkDefault true;
+    dev.johnrinehart.home-manager.packages.games.enable = lib.mkDefault true;
+    dev.johnrinehart.home-manager.packages.messaging.enable = lib.mkDefault true;
+
     home-manager.users.john.idle = {
       short_timeout_duration = 60*5;
       medium_timeout_duration = 60*6;

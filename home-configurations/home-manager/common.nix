@@ -111,22 +111,6 @@ in
   ];
 
   config = {
-    home.packages = [
-      # games
-      pkgs.gnuchess
-      pkgs.stockfish
-      pkgs.scid-vs-pc
-      # CLI
-      pkgs.fzf
-      # instant messengers
-      pkgs.telegram-desktop
-      pkgs.signal-desktop
-      #pkgs.discord
-      #pkgs.element-desktop
-      #pkgs.skypeforlinux
-      # development tools
-    ];
-
     # only use flameshot with Xorg
     services.flameshot.enable = osConfig.services.xserver.enable;
 

@@ -6,6 +6,7 @@
 
   imports = [
     ./options.nix
+    ./packages.nix
     ({
       home-manager = {
         useGlobalPkgs = true;
