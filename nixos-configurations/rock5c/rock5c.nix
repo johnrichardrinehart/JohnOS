@@ -28,4 +28,12 @@
     enable = true;
     user = "john";
   };
+
+  environment.etc."xdg/hypr/hyprland.conf".text = lib.mkBefore ''
+    # Kodi/mpv HDR playback can enable Hyprland's wide color gamut path. Hyprland
+    # requires a 10-bit output mode for that path; otherwise it warns that wide
+    # color gamut is enabled while the display is still in 8-bit mode.
+    monitor = , preferred, auto, 1, bitdepth, 10, cm, auto
+
+  '';
 }
