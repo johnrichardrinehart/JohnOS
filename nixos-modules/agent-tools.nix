@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.dev.johnrinehart.agentTools;
+
   codexSystemTopLevelConfig = ''
     # Managed by JohnOS. User and project Codex config layers may still override
     # these defaults when needed.
@@ -47,19 +48,27 @@ in
 {
   options.dev.johnrinehart.agentTools = {
     enable = lib.mkEnableOption "agent-oriented local AI tooling";
+
+    "oh-my-codex".enable = lib.mkEnableOption "oh-my-codex multi-agent orchestration layer for Codex CLI";
   };
 
-  config = lib.mkIf cfg.enable {
-    environment.systemPackages = [
-      pkgs.agent-deck
-      pkgs.codex-cli-nix
-      pkgs.omx-agent-tools
-      pkgs.oh-my-codex
-    ];
+  config = lib.mkMerge [
+    (lib.mkIf cfg.enable {
+      environment.systemPackages = [
+        pkgs.agent-deck
+        pkgs.codex-cli-nix
+      ];
+    })
+    (lib.mkIf cfg."oh-my-codex".enable {
+      environment.systemPackages = [
+        pkgs.oh-my-codex
+        pkgs.omx-agent-tools
+      ];
 
-    # Codex discovers hooks.json next to each config.toml layer; keep OMX in
-    # the immutable system layer so user/project hooks can coexist separately.
-    environment.etc."codex/config.toml".source = codexFromOmxSetup;
-    environment.etc."codex/hooks.json".source = codexFromOmxSetup.hooks;
-  };
+      # Codex discovers hooks.json next to each config.toml layer; keep OMX in
+      # the immutable system layer so user/project hooks can coexist separately.
+      environment.etc."codex/config.toml".source = codexFromOmxSetup;
+      environment.etc."codex/hooks.json".source = codexFromOmxSetup.hooks;
+    })
+  ];
 }

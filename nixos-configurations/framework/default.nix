@@ -34,7 +34,12 @@
   systemd.services."user@".serviceConfig.Delegate = "cpu cpuset io memory pids";
 
   dev.johnrinehart.system.enable = true;
-  dev.johnrinehart.agentTools.enable = true;
+
+  dev.johnrinehart.agentTools = {
+    enable = true;
+    "oh-my-codex".enable = false;
+  };
+
   dev.johnrinehart.desktop = {
     enable = true;
     variant = "greetd+niri";
