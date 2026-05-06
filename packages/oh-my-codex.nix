@@ -9,14 +9,14 @@
 }:
 let
   pname = "oh-my-codex";
-  version = "unstable-2026-04-20";
-  rev = "da0c779c4a81016d51201cb11f4a2274192e9c71";
+  version = "unstable-2026-05-06";
+  rev = "7083513ba3a7d0d1d51daae6f182043fe1fa4500";
 
   src = fetchFromGitHub {
     owner = "johnrichardrinehart";
     repo = "oh-my-codex";
     inherit rev;
-    hash = "sha256-u/RWNtybhYS8qP+Ntig9IeDsDtdvrAAZpmbkan7tGAI=";
+    hash = "sha256-KMtvfV7O4V8R2zWtmdNR+PVWs2O+3caO806Pzc18bxI=";
   };
 
   nodePlatform =
@@ -60,18 +60,11 @@ in
 buildNpmPackage {
   inherit pname version src;
 
-  npmDepsHash = "sha256-cL/mooHqQs6BS94PiilNbQGUr4qMLdA3xJyO08jawTA=";
+  npmDepsHash = "sha256-cC9YnA6mEX3oVrd2HNQO9MRct0W/RKwtzTrmIReqjt4=";
 
   nativeBuildInputs = [ makeWrapper ];
 
   npmBuildScript = "build";
-
-  # Codex starts MCP servers in a sparse environment, so first-party servers
-  # must use OMX's managed Node path instead of relying on PATH lookup.
-  postPatch = ''
-    substituteInPlace src/config/generator.ts \
-      --replace-fail "    'command = \"node\"'," '    `command = "''${nodeCommand}"`,'
-  '';
 
   installPhase = ''
     runHook preInstall
