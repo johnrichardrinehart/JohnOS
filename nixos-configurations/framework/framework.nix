@@ -194,7 +194,7 @@
   networking.firewall.checkReversePath = "loose";
 
   # WireGuard to neocache k3s server
-  networking.wg-quick.interfaces.nc = {
+  networking.wg-quick.interfaces.wg-nc = {
     address = [ "10.100.0.10/24" ];
     privateKeyFile = "/var/lib/wireguard/neocache-private-key";
 
@@ -205,6 +205,20 @@
       persistentKeepalive = 25;
     }];
   };
+
+  # Personal WireGuard via the OCI hub. This stays on a separate subnet/port
+  # from the production neocache k3s overlay.
+#  networking.wg-quick.interfaces.personal = {
+#    address = [ "10.101.0.10/24" ];
+#    privateKeyFile = "/var/lib/wireguard/personal-private-key";
+#
+#    peers = [{
+#      publicKey = "VbR4/DUmH7u6i2fcUFffZyj+pne1HGaLufqWaEA0ano=";  # OCI personal VPN
+#      endpoint = "k8s.neocache.io:51821";
+#      allowedIPs = [ "10.101.0.0/24" ];
+#      persistentKeepalive = 25;
+#    }];
+#  };
 
   # Fix tailscaled hanging during shutdown when trying to cleanup UPnP port mappings
   # The daemon has an internal 45s watchdog timeout when closing, which blocks shutdown.
