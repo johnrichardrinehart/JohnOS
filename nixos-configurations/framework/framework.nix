@@ -17,7 +17,9 @@
 
   dev.johnrinehart.droidcam.enable = false; # TODO: broken
   dev.johnrinehart.auto-suspend = {
-    notificationLevels = builtins.genList (i: 30 - (i * 5)) 6; # [ 30 25 20 15 10 5 ]
+    lowLevel = 30;
+    criticalLevel = 20;
+    notificationLevels = builtins.genList (i: 45 - (i * 5)) 6; # [ 45 40 35 30 25 20 ]
     enable = true;
   };
 
