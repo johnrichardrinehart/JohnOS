@@ -684,6 +684,11 @@ recent-windows {
     }
 }
 
+// Optional local config overrides.
+// Place additional niri configuration in /tmp/niri.kdl for quick experimentation.
+// Won't fail if the file doesn't exist. Changes are picked up automatically.
+include optional=true "/tmp/niri.kdl"
+
 switch-events {
     lid-close { spawn "@suspend@"; }
 }
