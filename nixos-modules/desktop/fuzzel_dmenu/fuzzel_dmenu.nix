@@ -6,6 +6,7 @@
   jq,
   fuzzel,
   coreutils,
+  gawk,
 }:
 
 let
@@ -14,6 +15,7 @@ let
     jq
     fuzzel
     coreutils
+    gawk
   ];
 in
 stdenv.mkDerivation {
