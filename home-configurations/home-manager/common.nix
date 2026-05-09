@@ -197,7 +197,15 @@ in
       '';
       ".config/fuzzel/fuzzel.ini".text = ''
         [colors]
-        background=000000ff
+        background=20242df2
+        text=d8dee9ff
+        prompt=8fbcbbff
+        input=e5e9f0ff
+        match=a3be8cff
+        selection=3b4252ff
+        selection-text=eceff4ff
+        selection-match=bfdb9dff
+        border=5e81acff
       '';
       ".config/powerline/themes/gruvbox.theme".source = ./gruvbox.theme;
       ".config/hypr/hyprlock.conf".source = ./hyprlock.conf;
