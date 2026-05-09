@@ -7,8 +7,6 @@
 }:
 let
   cfg = config.dev.johnrinehart.desktop.greetd_niri;
-  niriRev = "b07bde3ee82dd73115e6b949e4f3f63695da35ea";
-  niriShortRev = builtins.substring 0 8 niriRev;
 
   # Cursor theme settings (single source of truth)
   xcursorTheme = "Adwaita";
@@ -75,78 +73,7 @@ in
 
     programs.niri.enable = true;
 
-    # Track upstream niri directly so compositor and Smithay fixes land quickly.
-    programs.niri.package = pkgs.rustPlatform.buildRustPackage rec {
-      pname = "niri";
-      version = "unstable-${niriShortRev}";
-
-      src = pkgs.fetchFromGitHub {
-        owner = "niri-wm";
-        repo = "niri";
-        rev = niriRev;
-        hash = "sha256-3bwx4WqCB06yfQIGB+OgIckOkEDyKxiTD5pOo4Xz2rI=";
-      };
-
-      cargoLock = {
-        # Upstream niri already pins its Git dependencies in Cargo.lock.
-        allowBuiltinFetchGit = true;
-        lockFile = "${src}/Cargo.lock";
-      };
-
-      postPatch = ''
-        patchShebangs resources/niri-session
-        substituteInPlace resources/niri.service \
-          --replace-fail 'ExecStart=niri' "ExecStart=$out/bin/niri"
-      '';
-
-      nativeBuildInputs = with pkgs; [
-        installShellFiles
-        pkg-config
-        rustPlatform.bindgenHook
-      ];
-
-      buildInputs = with pkgs; [
-        dbus
-        libdisplay-info
-        libglvnd
-        libinput
-        libxkbcommon
-        libgbm
-        pango
-        pipewire
-        seatd
-        systemd
-        wayland
-      ];
-
-      buildFeatures = [ "dbus" "xdp-gnome-screencast" "systemd" ];
-      buildNoDefaultFeatures = true;
-
-      checkFlags = [ "--skip=::egl" ];
-
-      postInstall = ''
-        install -Dm0644 resources/niri.desktop -t $out/share/wayland-sessions
-        install -Dm0644 resources/niri-portals.conf -t $out/share/xdg-desktop-portal
-        install -Dm0755 resources/niri-session -t $out/bin
-        install -Dm0644 resources/niri{-shutdown.target,.service} -t $out/lib/systemd/user
-      '';
-
-      env = {
-        RUSTFLAGS = toString (
-          map (arg: "-C link-arg=" + arg) [
-            "-Wl,--push-state,--no-as-needed"
-            "-lEGL"
-            "-lwayland-client"
-            "-Wl,--pop-state"
-          ]
-        );
-        NIRI_BUILD_COMMIT = niriShortRev;
-      };
-
-      passthru.providedSessions = [ "niri" ];
-
-      meta.mainProgram = "niri";
-    };
+    programs.niri.package = pkgs."niri-26.04";
 
     users.users.john.extraGroups = [ "seat" ];
 

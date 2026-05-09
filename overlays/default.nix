@@ -3,6 +3,7 @@ inputs: {
     (final: prev: {
       agent-deck = final.callPackage ../packages/agent-deck.nix { };
       codex-cli-nix = final.callPackage ../packages/codex-cli-nix.nix { };
+      "niri-26.04" = final.callPackage ../packages/niri.nix { };
       omx-agent-tools = final.callPackage ../packages/omx-agent-tools.nix { };
       oh-my-codex = final.callPackage ../packages/oh-my-codex.nix { };
     })
