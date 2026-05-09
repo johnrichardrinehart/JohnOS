@@ -21,6 +21,57 @@ let
     inherit wormhole-send;
   };
 
+  clipboard-store-notify = pkgs.writeShellScriptBin "clipboard-store-notify" ''
+    set -euo pipefail
+
+    cliphist=${lib.getExe pkgs.cliphist}
+    notify=${lib.getExe' pkgs.libnotify "notify-send"}
+    cat=${lib.getExe' pkgs.coreutils "cat"}
+    mkdir=${lib.getExe' pkgs.coreutils "mkdir"}
+    mktemp=${lib.getExe' pkgs.coreutils "mktemp"}
+    rm=${lib.getExe' pkgs.coreutils "rm"}
+    sha256sum=${lib.getExe' pkgs.coreutils "sha256sum"}
+    cut=${lib.getExe' pkgs.coreutils "cut"}
+
+    state_dir="''${XDG_RUNTIME_DIR:-/tmp}/johnos-clipboard-watch"
+    state_file="$state_dir/last-payload.sha256"
+    tmpfile=$($mktemp "''${XDG_RUNTIME_DIR:-/tmp}/clipboard-watch-XXXXXX")
+    trap '$rm -f "$tmpfile"' EXIT
+
+    $cat > "$tmpfile"
+
+    case "''${CLIPBOARD_STATE:-data}" in
+      data)
+        ;;
+      *)
+        $rm -f "$state_file"
+        exit 0
+        ;;
+    esac
+
+    $cliphist store < "$tmpfile"
+
+    $mkdir -p "$state_dir"
+    hash=$($sha256sum "$tmpfile" | $cut -d ' ' -f 1)
+    previous_hash=""
+    if [ -f "$state_file" ]; then
+      previous_hash=$($cat "$state_file")
+    fi
+
+    [ "$hash" != "$previous_hash" ] || exit 0
+
+    printf '%s\n' "$hash" > "$state_file"
+    $notify -t 1500 "Clipboard" "Updated"
+  '';
+
+  clipboard-watch = pkgs.writeShellScriptBin "clipboard-watch" ''
+    set -euo pipefail
+
+    wl_paste=${lib.getExe' pkgs.wl-clipboard "wl-paste"}
+
+    $wl_paste --watch ${lib.getExe clipboard-store-notify}
+  '';
+
   # Shared PAM configuration for fingerprint + password authentication
   fprintPamConfig = ''
     # Account management
@@ -127,12 +178,12 @@ in
       in
       (pkgs.replaceVars ./niri.kdl {
         fuzzel_dmenu = lib.getExe fuzzelDmenu;
+        clipboard_watch = lib.getExe clipboard-watch;
         lock_command = "${lib.getExe' pkgs.systemd "loginctl"} lock-session";
         suspend = "${lib.getExe' pkgs.systemd "systemctl"} suspend-then-hibernate";
         wl-kbptr = lib.getExe pkgs.wl-kbptr;
         niri_screenshot = lib.getExe niri-screenshot;
         wormhole_send = lib.getExe wormhole-send;
-        obs-cmd = lib.getExe pkgs.obs-cmd;
         xcursor_theme = xcursorTheme;
         xcursor_size = toString xcursorSize;
       }).overrideAttrs
