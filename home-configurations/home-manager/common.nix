@@ -291,7 +291,13 @@ in
       enable = true;
       theme = {
         package = pkgs.gnome-themes-extra;
-        name = "Adawaita-dark";
+        name = "Adwaita-dark";
+      };
+      gtk3.extraConfig = {
+        gtk-application-prefer-dark-theme = 1;
+      };
+      gtk4.extraConfig = {
+        gtk-application-prefer-dark-theme = 1;
       };
     };
 
