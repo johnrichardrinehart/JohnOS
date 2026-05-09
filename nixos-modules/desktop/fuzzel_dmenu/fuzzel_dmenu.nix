@@ -6,7 +6,6 @@
   jq,
   fuzzel,
   coreutils,
-  gnugrep,
 }:
 
 let
@@ -15,7 +14,6 @@ let
     jq
     fuzzel
     coreutils
-    gnugrep
   ];
 in
 stdenv.mkDerivation {

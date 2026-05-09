@@ -196,6 +196,9 @@ in
         initial-tool = "pointer"
       '';
       ".config/fuzzel/fuzzel.ini".text = ''
+        [main]
+        width=60
+
         [colors]
         background=20242df2
         text=d8dee9ff
