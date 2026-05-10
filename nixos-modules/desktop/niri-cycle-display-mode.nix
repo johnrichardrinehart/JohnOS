@@ -7,6 +7,7 @@
 pkgs.writeShellScriptBin "niri-cycle-display-mode" ''
   set -euo pipefail
 
+  command="''${1:-cycle}"
   niri=${lib.getExe niri}
   jq=${lib.getExe pkgs.jq}
   wl_mirror=${lib.getExe' pkgs.wl-mirror "wl-mirror"}
@@ -14,14 +15,6 @@ pkgs.writeShellScriptBin "niri-cycle-display-mode" ''
   nohup=${lib.getExe' pkgs.coreutils "nohup"}
   rm=${lib.getExe' pkgs.coreutils "rm"}
   sleep=${lib.getExe' pkgs.coreutils "sleep"}
-
-  outputs_json="$($niri msg --json outputs)"
-  mapfile -t outputs < <($jq -r 'to_entries | map(.value.name // .key) | sort | .[]' <<< "$outputs_json")
-  mapfile -t active_outputs < <($jq -r 'to_entries[] | select(.value.logical != null) | .value.name // .key' <<< "$outputs_json")
-
-  if [ "''${#outputs[@]}" -le 1 ]; then
-    exit 0
-  fi
 
   state_dir="''${XDG_RUNTIME_DIR:-/tmp}/johnos-niri-display-mode"
   mirror_pid_file="$state_dir/wl-mirror.pids"
@@ -33,17 +26,30 @@ pkgs.writeShellScriptBin "niri-cycle-display-mode" ''
     esac
   }
 
-  single_outputs=()
-  for output in "''${outputs[@]}"; do
-    if ! is_internal_output "$output"; then
-      single_outputs+=("$output")
+  load_outputs() {
+    if ! outputs_json="$($niri msg --json outputs 2>/dev/null)"; then
+      return 1
     fi
-  done
-  for output in "''${outputs[@]}"; do
-    if is_internal_output "$output"; then
+
+    mapfile -t outputs < <($jq -r 'to_entries | map(.value.name // .key) | sort | .[]' <<< "$outputs_json")
+    mapfile -t active_outputs < <($jq -r 'to_entries[] | select(.value.logical != null) | .value.name // .key' <<< "$outputs_json")
+
+    single_outputs=()
+    internal_outputs=()
+    external_outputs=()
+
+    for output in "''${outputs[@]}"; do
+      if is_internal_output "$output"; then
+        internal_outputs+=("$output")
+      else
+        external_outputs+=("$output")
+        single_outputs+=("$output")
+      fi
+    done
+    for output in "''${internal_outputs[@]}"; do
       single_outputs+=("$output")
-    fi
-  done
+    done
+  }
 
   first_single_target() {
     printf '%s\n' "''${single_outputs[0]}"
@@ -94,6 +100,8 @@ pkgs.writeShellScriptBin "niri-cycle-display-mode" ''
   apply_extend() {
     stop_mirror
 
+    [ "''${#outputs[@]}" -gt 0 ] || return 0
+
     for output in "''${outputs[@]}"; do
       $niri msg output "$output" on || true
     done
@@ -105,6 +113,8 @@ pkgs.writeShellScriptBin "niri-cycle-display-mode" ''
   apply_mirror() {
     source_output="$1"
     stop_mirror
+
+    [ "''${#outputs[@]}" -gt 1 ] || return 0
 
     for output in "''${outputs[@]}"; do
       $niri msg output "$output" on || true
@@ -141,18 +151,66 @@ pkgs.writeShellScriptBin "niri-cycle-display-mode" ''
     $niri msg action focus-monitor "$target" || true
   }
 
-  if mirror_is_active; then
-    apply_extend
-  elif [ "''${#active_outputs[@]}" -gt 1 ]; then
-    apply_single "$(first_single_target)"
-  elif [ "''${#active_outputs[@]}" -eq 1 ]; then
-    current_output="''${active_outputs[0]}"
-    if next_output="$(next_single_target "$current_output")"; then
-      apply_single "$next_output"
+  output_is_active() {
+    candidate="$1"
+
+    for output in "''${active_outputs[@]}"; do
+      if [ "$output" = "$candidate" ]; then
+        return 0
+      fi
+    done
+
+    return 1
+  }
+
+  ensure_internal_when_alone() {
+    load_outputs || return 0
+    [ "''${#internal_outputs[@]}" -gt 0 ] || return 0
+    [ "''${#external_outputs[@]}" -eq 0 ] || return 0
+
+    internal_output="''${internal_outputs[0]}"
+    output_is_active "$internal_output" && return 0
+
+    apply_single "$internal_output"
+  }
+
+  watch_outputs() {
+    while true; do
+      ensure_internal_when_alone
+      $sleep 2
+    done
+  }
+
+  cycle_display_mode() {
+    load_outputs || exit 0
+    [ "''${#outputs[@]}" -gt 0 ] || exit 0
+
+    if mirror_is_active; then
+      apply_extend
+    elif [ "''${#outputs[@]}" -eq 1 ]; then
+      if [ "''${#active_outputs[@]}" -eq 0 ]; then
+        apply_single "$(first_single_target)"
+      fi
+    elif [ "''${#active_outputs[@]}" -gt 1 ]; then
+      apply_single "$(first_single_target)"
+    elif [ "''${#active_outputs[@]}" -eq 1 ]; then
+      current_output="''${active_outputs[0]}"
+      if next_output="$(next_single_target "$current_output")"; then
+        apply_single "$next_output"
+      else
+        apply_mirror "$current_output"
+      fi
     else
-      apply_mirror "$current_output"
+      apply_single "$(first_single_target)"
     fi
-  else
-    apply_single "$(first_single_target)"
-  fi
+  }
+
+  case "$command" in
+    --watch) watch_outputs ;;
+    cycle) cycle_display_mode ;;
+    *)
+      echo "Usage: niri-cycle-display-mode [--watch]" >&2
+      exit 2
+      ;;
+  esac
 ''
