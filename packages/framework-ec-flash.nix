@@ -32,12 +32,18 @@ writeShellApplication {
     expected_dmi_board_name="''${FRAMEWORK_EC_FLASH_EXPECTED_DMI_BOARD_NAME:-FRANBMCP0A}"
     require_ac="''${FRAMEWORK_EC_FLASH_REQUIRE_AC:-1}"
     min_battery_capacity="''${FRAMEWORK_EC_FLASH_MIN_BATTERY_CAPACITY:-50}"
+    power_refusal_exit_code="''${FRAMEWORK_EC_FLASH_POWER_REFUSAL_EXIT_CODE:-1}"
 
     status() {
       echo "framework-ec-flash: $*"
       if [ -n "''${NOTIFY_SOCKET:-}" ]; then
         systemd-notify --status="framework-ec-flash: $*" || true
       fi
+    }
+
+    refuse_power() {
+      echo "framework-ec-flash: $*" >&2
+      exit "$power_refusal_exit_code"
     }
 
     report_mismatch() {
@@ -143,8 +149,7 @@ writeShellApplication {
       done
 
       if [ "$ac_online" != "1" ]; then
-        echo "framework-ec-flash: refusing to flash Framework EC image without AC power" >&2
-        exit 1
+        refuse_power "refusing to flash Framework EC image without AC power"
       fi
     }
 
@@ -162,20 +167,17 @@ writeShellApplication {
         battery_capacity="$(cat "$capacity_path" 2>/dev/null || true)"
         case "$battery_capacity" in
           ""|*[!0-9]*)
-            echo "framework-ec-flash: refusing to flash Framework EC image: could not read battery percentage from $capacity_path" >&2
-            exit 1
+            refuse_power "refusing to flash Framework EC image: could not read battery percentage from $capacity_path"
             ;;
         esac
 
         if [ "$battery_capacity" -lt "$min_battery_capacity" ]; then
-          echo "framework-ec-flash: refusing to flash Framework EC image: battery is below $min_battery_capacity% ($battery_capacity%)" >&2
-          exit 1
+          refuse_power "refusing to flash Framework EC image: battery is below $min_battery_capacity% ($battery_capacity%)"
         fi
       done
 
       if [ "$battery_seen" != "1" ]; then
-        echo "framework-ec-flash: refusing to flash Framework EC image: no battery capacity reading found" >&2
-        exit 1
+        refuse_power "refusing to flash Framework EC image: no battery capacity reading found"
       fi
     }
 
