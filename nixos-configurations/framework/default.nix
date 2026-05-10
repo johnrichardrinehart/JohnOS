@@ -40,6 +40,9 @@
     "oh-my-codex".enable = false;
   };
 
+  dev.johnrinehart.firmware.framework-ec.features = [ "F9-display-toggle" ];
+  dev.johnrinehart.firmware.framework-ec.flashService.enable = true;
+
   dev.johnrinehart.desktop = {
     enable = true;
     variant = "greetd+niri";
@@ -68,5 +71,7 @@
   services.fprintd.enable = true;
 
   dev.johnrinehart.terminal.filepicker.enable = true;
-  environment.systemPackages = [ pkgs.intel-gpu-tools ];
+  environment.systemPackages = [
+    pkgs.intel-gpu-tools
+  ];
 }

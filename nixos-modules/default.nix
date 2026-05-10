@@ -7,6 +7,7 @@
     ./hibernate-resume-optimization.nix
     ./droidcam.nix
     ./filepicker.nix
+    ./firmware/framework-ec.nix
     ./fonts.nix
     ./gocryptfs.nix
     ./ide.nix

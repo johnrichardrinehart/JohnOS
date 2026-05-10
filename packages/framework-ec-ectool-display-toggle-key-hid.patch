@@ -1,0 +1,99 @@
+diff --git a/util/ectool.c b/util/ectool.c
+index d957a16fa1..1360ab5365 100644
+--- a/util/ectool.c
++++ b/util/ectool.c
+@@ -104,6 +104,8 @@ const char help_str[] =
+ 	"      Prints supported version mask for a command number\n"
+ 	"  console\n"
+ 	"      Prints the last output to the EC debug console\n"
++	"  displaytogglekeyhid <0|1>\n"
++	"      Set Framework F9 display key HID display-toggle mode\n"
+ 	"  cec\n"
+ 	"      Read or write CEC messages and settings\n"
+ 	"  echash [CMDS]\n"
+@@ -889,35 +891,70 @@ int cmd_cmdversions(int argc, char *argv[])
+ {
+ 	struct ec_params_get_cmd_versions p;
++	struct ec_params_get_cmd_versions_v1 p_v1;
+ 	struct ec_response_get_cmd_versions r;
+ 	char *e;
+-	int cmd;
++	long cmd;
+ 	int rv;
+ 
+ 	if (argc < 2) {
+ 		fprintf(stderr, "Usage: %s <cmd>\n", argv[0]);
+ 		return -1;
+ 	}
+ 	cmd = strtol(argv[1], &e, 0);
+-	if ((e && *e) || cmd < 0 || cmd > 0xff) {
++	if ((e && *e) || cmd < 0 || cmd > 0xffff) {
+ 		fprintf(stderr, "Bad command number.\n");
+ 		return -1;
+ 	}
+ 
+-	p.cmd = cmd;
+-	rv = ec_command(EC_CMD_GET_CMD_VERSIONS, 0, &p, sizeof(p),
+-			&r, sizeof(r));
++	if (cmd <= 0xff) {
++		p.cmd = cmd;
++		rv = ec_command(EC_CMD_GET_CMD_VERSIONS, 0, &p, sizeof(p),
++				&r, sizeof(r));
++	} else {
++		p_v1.cmd = cmd;
++		rv = ec_command(EC_CMD_GET_CMD_VERSIONS, 1, &p_v1,
++				sizeof(p_v1), &r, sizeof(r));
++	}
+ 	if (rv < 0) {
+ 		if (rv == -EC_RES_INVALID_PARAM)
+-			printf("Command 0x%02x not supported by EC.\n", cmd);
++			printf("Command 0x%04lx not supported by EC.\n", cmd);
+ 
+ 		return rv;
+ 	}
+ 
+-	printf("Command 0x%02x supports version mask 0x%08x\n",
++	printf("Command 0x%04lx supports version mask 0x%08x\n",
+ 	       cmd, r.version_mask);
+ 	return 0;
+ }
+ 
++#define EC_CMD_DISPLAY_TOGGLE_KEY_HID 0x3E16
++
++struct ec_params_display_toggle_key_hid {
++	uint8_t enable;
++};
++
++int cmd_display_toggle_key_hid(int argc, char *argv[])
++{
++	struct ec_params_display_toggle_key_hid p;
++	char *e;
++	long enable;
++
++	if (argc != 2) {
++		fprintf(stderr, "Usage: %s <0|1>\n", argv[0]);
++		return -1;
++	}
++
++	enable = strtol(argv[1], &e, 0);
++	if ((e && *e) || (enable != 0 && enable != 1)) {
++		fprintf(stderr, "Bad display toggle HID value: %s\n", argv[1]);
++		return -1;
++	}
++
++	p.enable = enable;
++	return ec_command(EC_CMD_DISPLAY_TOGGLE_KEY_HID, 0, &p, sizeof(p),
++			  NULL, 0);
++}
++
+ /*
+  * Convert a reset cause ID to human-readable string, providing total coverage
+  * of the 'cause' space.  The returned string points to static storage and must
+@@ -10049,6 +10086,7 @@ const struct command commands[] = {
+ 	{"chargestate", cmd_charge_state},
+ 	{"chipinfo", cmd_chipinfo},
+ 	{"cmdversions", cmd_cmdversions},
++	{"displaytogglekeyhid", cmd_display_toggle_key_hid},
+ 	{"console", cmd_console},
+ 	{"cec", cmd_cec},
+ 	{"echash", cmd_ec_hash},
