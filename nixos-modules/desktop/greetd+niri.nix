@@ -21,6 +21,10 @@ let
     inherit wormhole-send;
   };
 
+  niri-cycle-display-mode = pkgs.callPackage ./niri-cycle-display-mode.nix {
+    niri = config.programs.niri.package;
+  };
+
   clipboard-store-notify = pkgs.writeShellScriptBin "clipboard-store-notify" ''
     set -euo pipefail
 
@@ -148,6 +152,7 @@ in
       in
       [
         niri-gather-windows
+        niri-cycle-display-mode
         niri-screenshot
         wormhole-send
         pkgs.magic-wormhole-rs
@@ -182,6 +187,7 @@ in
         lock_command = "${lib.getExe' pkgs.systemd "loginctl"} lock-session";
         suspend = "${lib.getExe' pkgs.systemd "systemctl"} suspend-then-hibernate";
         wl-kbptr = lib.getExe pkgs.wl-kbptr;
+        niri_cycle_display_mode = lib.getExe niri-cycle-display-mode;
         niri_screenshot = lib.getExe niri-screenshot;
         wormhole_send = lib.getExe wormhole-send;
         xcursor_theme = xcursorTheme;
