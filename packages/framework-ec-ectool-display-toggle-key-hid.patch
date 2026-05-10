@@ -7,7 +7,7 @@ index d957a16fa1..1360ab5365 100644
  	"  console\n"
  	"      Prints the last output to the EC debug console\n"
 +	"  displaytogglekeyhid <0|1>\n"
-+	"      Set Framework F9 display key HID display-toggle mode\n"
++	"      Persistently set Framework F9 display key HID display-toggle mode\n"
  	"  cec\n"
  	"      Read or write CEC messages and settings\n"
  	"  echash [CMDS]\n"

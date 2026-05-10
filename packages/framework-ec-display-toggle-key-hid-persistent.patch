@@ -1,0 +1,97 @@
+diff --git a/baseboard/fwk/flash_storage.h b/baseboard/fwk/flash_storage.h
+index 5ad61134b0..1c48140000 100644
+--- a/baseboard/fwk/flash_storage.h
++++ b/baseboard/fwk/flash_storage.h
+@@ -13,6 +13,8 @@
+ enum ec_flash_flags_idx {
+ 	FLASH_FLAGS_ACPOWERON = 0,
+ 	FLASH_FLAGS_STANDALONE = 1,
++	FLASH_FLAGS_DISPLAY_TOGGLE_KEY_HID_CONFIGURED = 62,
++	FLASH_FLAGS_DISPLAY_TOGGLE_KEY_HID_VALUE = 63,
+ 	FLASH_FLAGS_MAX = 64
+ };
+ 
+diff --git a/board/hx20/host_command_customization.c b/board/hx20/host_command_customization.c
+index 2b90d445ec..bfe667d2a9 100644
+--- a/board/hx20/host_command_customization.c
++++ b/board/hx20/host_command_customization.c
+@@ -296,6 +296,9 @@ static enum ec_status display_toggle_key_hid(struct host_cmd_handler_args *args)
+ 	const struct ec_params_display_toggle_key_hid *p = args->params;
+ 
+ 	set_display_toggle_key_hid(p->enable);
++	flash_storage_update(FLASH_FLAGS_DISPLAY_TOGGLE_KEY_HID_CONFIGURED, 1);
++	flash_storage_update(FLASH_FLAGS_DISPLAY_TOGGLE_KEY_HID_VALUE, p->enable ? 1 : 0);
++	flash_storage_commit();
+ 	return EC_RES_SUCCESS;
+ 
+ }
+diff --git a/board/hx20/keyboard_customization.c b/board/hx20/keyboard_customization.c
+index 32bebb7b7d..75e82f8e6f 100644
+--- a/board/hx20/keyboard_customization.c
++++ b/board/hx20/keyboard_customization.c
+@@ -17,6 +17,7 @@
+ #include "hooks.h"
+ #include "system.h"
+ 
++#include "flash_storage.h"
+ #include "i2c_hid_mediakeys.h"
+ /* Console output macros */
+ #define CPUTS(outstr) cputs(CC_KEYBOARD, outstr)
+@@ -224,6 +225,15 @@ void set_display_toggle_key_hid(uint8_t enable)
+ 	display_toggle_key_hid = enable;
+ }
+ 
++static void display_toggle_key_hid_init(void)
++{
++	int configured = flash_storage_get(FLASH_FLAGS_DISPLAY_TOGGLE_KEY_HID_CONFIGURED);
++	int enable = flash_storage_get(FLASH_FLAGS_DISPLAY_TOGGLE_KEY_HID_VALUE);
++
++	set_display_toggle_key_hid(!configured || enable > 0);
++}
++DECLARE_HOOK(HOOK_INIT, display_toggle_key_hid_init, HOOK_PRIO_DEFAULT);
++
+ #ifdef CONFIG_KEYBOARD_CUSTOMIZATION_COMBINATION_KEY
+ #define FN_PRESSED BIT(0)
+ #define FN_LOCKED BIT(1)
+diff --git a/board/hx30/host_command_customization.c b/board/hx30/host_command_customization.c
+index 394e5c0822..c7c20e8266 100644
+--- a/board/hx30/host_command_customization.c
++++ b/board/hx30/host_command_customization.c
+@@ -359,6 +359,9 @@ static enum ec_status display_toggle_key_hid(struct host_cmd_handler_args *args)
+ 	const struct ec_params_display_toggle_key_hid *p = args->params;
+ 
+ 	set_display_toggle_key_hid(p->enable);
++	flash_storage_update(FLASH_FLAGS_DISPLAY_TOGGLE_KEY_HID_CONFIGURED, 1);
++	flash_storage_update(FLASH_FLAGS_DISPLAY_TOGGLE_KEY_HID_VALUE, p->enable ? 1 : 0);
++	flash_storage_commit();
+ 	return EC_RES_SUCCESS;
+ 
+ }
+diff --git a/board/hx30/keyboard_customization.c b/board/hx30/keyboard_customization.c
+index 32bebb7b7d..75e82f8e6f 100644
+--- a/board/hx30/keyboard_customization.c
++++ b/board/hx30/keyboard_customization.c
+@@ -17,6 +17,7 @@
+ #include "hooks.h"
+ #include "system.h"
+ 
++#include "flash_storage.h"
+ #include "i2c_hid_mediakeys.h"
+ /* Console output macros */
+ #define CPUTS(outstr) cputs(CC_KEYBOARD, outstr)
+@@ -224,6 +225,15 @@ void set_display_toggle_key_hid(uint8_t enable)
+ 	display_toggle_key_hid = enable;
+ }
+ 
++static void display_toggle_key_hid_init(void)
++{
++	int configured = flash_storage_get(FLASH_FLAGS_DISPLAY_TOGGLE_KEY_HID_CONFIGURED);
++	int enable = flash_storage_get(FLASH_FLAGS_DISPLAY_TOGGLE_KEY_HID_VALUE);
++
++	set_display_toggle_key_hid(!configured || enable > 0);
++}
++DECLARE_HOOK(HOOK_INIT, display_toggle_key_hid_init, HOOK_PRIO_DEFAULT);
++
+ #ifdef CONFIG_KEYBOARD_CUSTOMIZATION_COMBINATION_KEY
+ #define FN_PRESSED BIT(0)
+ #define FN_LOCKED BIT(1)
