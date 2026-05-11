@@ -1,6 +1,22 @@
-{ inputs, ... }:
+{ inputs, lib, ... }:
 {
+  config._module.args.inputs = inputs;
+
+  options.dev.johnrinehart.users = {
+    primary = lib.mkOption {
+      type = lib.types.strMatching "[A-Za-z_][A-Za-z0-9_-]*";
+      default = "john";
+      example = "jrinehart";
+      description = ''
+        Primary login user for JohnOS system and Home Manager configuration.
+      '';
+    };
+  };
+
   imports = [
+    inputs.home-manager.nixosModules.default
+    inputs.sops-nix.nixosModules.default
+
     ./agent-tools.nix
     ./auto-suspend.nix
     ./bluetooth.nix
@@ -17,7 +33,6 @@
     ./nix.nix
     ./packages.nix
     ./s3_mount.nix
-    ./sops.nix
     ./sound.nix
     ./ssh.nix
     ./ssh-session-lock.nix

@@ -1,4 +1,7 @@
-{ lib, pkgs, ... }:
+{ config, lib, pkgs, ... }:
+let
+  primaryUser = config.dev.johnrinehart.users.primary;
+in
 {
   imports = [ ./framework.nix ];
 
@@ -19,7 +22,7 @@
   services.sshd.enable = true;
   virtualisation.containers.enable = true;
 
-  users.users.john.extraGroups = [ "input" ];
+  users.users.${primaryUser}.extraGroups = [ "input" ];
 
   # Enable cgroup delegation for the john user's systemd user manager.
   # This is required for running Kubernetes (k3s) inside rootless Podman containers.

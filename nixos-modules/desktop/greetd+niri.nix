@@ -2,11 +2,11 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.dev.johnrinehart.desktop.greetd_niri;
+  primaryUser = config.dev.johnrinehart.users.primary;
 
   # Cursor theme settings (single source of truth)
   xcursorTheme = "Adwaita";
@@ -130,7 +130,7 @@ in
 
     programs.niri.package = pkgs."niri-26.04";
 
-    users.users.john.extraGroups = [ "seat" ];
+    users.users.${primaryUser}.extraGroups = [ "seat" ];
 
     services.greetd.enable = true;
     # Raise the fd soft limit so children (waybar, etc.) don't hit the
@@ -138,7 +138,7 @@ in
     systemd.services.greetd.serviceConfig.LimitNOFILE = "524288";
     services.greetd.settings.default_session = {
       command = "${lib.getExe' config.programs.niri.package "niri-session"}";
-      user = "john";
+      user = primaryUser;
     };
 
     environment.systemPackages =

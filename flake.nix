@@ -38,6 +38,11 @@
     {
       nixosConfigurations = import ./nixos-configurations inputs;
 
+      nixosModules.default = import ./nixos-modules {
+        inherit inputs;
+        lib = inputs.nixpkgs.lib;
+      };
+
       packages.${system} = import ./packages { inherit pkgs; };
 
       devShells.${system} = import ./dev-shells.nix { inherit pkgs; };

@@ -1,4 +1,7 @@
 { config, lib, ... }:
+let
+  primaryUser = config.dev.johnrinehart.users.primary;
+in
 {
   options.dev.johnrinehart.home-manager = {
     enable = lib.mkEnableOption "John's Home Manager settings.";
@@ -12,7 +15,7 @@
         useGlobalPkgs = true;
         useUserPackages = true;
         users = {
-          john = ./common.nix;
+          ${primaryUser} = ./common.nix;
         };
       };
     })

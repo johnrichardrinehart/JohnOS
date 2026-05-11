@@ -1,5 +1,4 @@
 {
-  inputs,
   config,
   pkgs,
   lib,
@@ -7,6 +6,7 @@
 }:
 let
   cfg = config.dev.johnrinehart.desktop;
+  primaryUser = config.dev.johnrinehart.users.primary;
 in
 {
   options.dev.johnrinehart.desktop = {
@@ -28,7 +28,6 @@ in
 
   imports = [
     ../../home-configurations/home-manager
-    inputs.home-manager.nixosModules.default
     ./xorg-xmonad.nix
     ./hyprland.nix
     ./greetd+niri.nix
@@ -39,10 +38,10 @@ in
     dev.johnrinehart.home-manager.packages.games.enable = lib.mkDefault true;
     dev.johnrinehart.home-manager.packages.messaging.enable = lib.mkDefault true;
 
-    home-manager.users.john.idle = {
-      short_timeout_duration = 60*5;
-      medium_timeout_duration = 60*6;
-      long_timeout_duration = 60*10;
+    home-manager.users.${primaryUser}.idle = {
+      short_timeout_duration = 60 * 5;
+      medium_timeout_duration = 60 * 6;
+      long_timeout_duration = 60 * 10;
     };
     networking.networkmanager.enable = true;
     dev.johnrinehart.desktop.xorg-xmonad.enable = (cfg.variant == "xorg-xmonad");

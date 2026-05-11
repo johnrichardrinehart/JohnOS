@@ -11,6 +11,7 @@
 }:
 let
   cfg = config.dev.johnrinehart.system;
+  primaryUser = config.dev.johnrinehart.users.primary;
 in
 {
   options.dev.johnrinehart.system = {
@@ -30,10 +31,10 @@ in
     ## consider using https://stackoverflow.com/a/54505212 for merging extraGroups
     users = {
       groups = {
-        john = { };
+        ${primaryUser} = { };
       };
       users = {
-        john = {
+        ${primaryUser} = {
           isNormalUser = true;
           extraGroups = [
             "wheel"
@@ -44,8 +45,7 @@ in
             "video"
           ]; # Enable ‘sudo’ for the user. And enable access to VBox shared folders
           shell = pkgs.zsh;
-          group = "john";
-          initialPassword = "john";
+          group = primaryUser;
         };
       };
     };

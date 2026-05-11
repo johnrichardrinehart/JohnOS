@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.dev.johnrinehart.home-manager.packages;
+  primaryUser = config.dev.johnrinehart.users.primary;
 in
 {
   options.dev.johnrinehart.home-manager.packages = {
@@ -16,13 +17,13 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf cfg.shell.enable {
-      home-manager.users.john.home.packages = [
+      home-manager.users.${primaryUser}.home.packages = [
         pkgs.fzf
       ];
     })
 
     (lib.mkIf cfg.games.enable {
-      home-manager.users.john.home.packages = [
+      home-manager.users.${primaryUser}.home.packages = [
         pkgs.gnuchess
         pkgs.stockfish
         pkgs.scid-vs-pc
@@ -30,7 +31,7 @@ in
     })
 
     (lib.mkIf cfg.messaging.enable {
-      home-manager.users.john.home.packages = [
+      home-manager.users.${primaryUser}.home.packages = [
         pkgs.telegram-desktop
         pkgs.signal-desktop
       ];

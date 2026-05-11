@@ -10,6 +10,9 @@
   inputs,
   ...
 }:
+let
+  primaryUser = config.dev.johnrinehart.users.primary;
+in
 {
   imports = [
     inputs.nixos-hardware.nixosModules.framework-11th-gen-intel
@@ -26,7 +29,7 @@
   nix = {
     settings = {
       extra-experimental-features = "nix-command flakes ca-derivations";
-      trusted-users = [ "john" ];
+      trusted-users = [ primaryUser ];
     };
 
     distributedBuilds = true;
@@ -34,7 +37,7 @@
     buildMachines = [
       {
         hostName = "100.74.54.40";
-        sshUser = "john";
+        sshUser = primaryUser;
         protocol = "ssh-ng";
         system = "x86_64-linux";
         maxJobs = 12;
