@@ -7,6 +7,7 @@ inputs: {
       framework-ec-flash = final.callPackage ../packages/framework-ec-flash.nix {
         frameworkTool = final.framework-tool;
       };
+      herdr = final.callPackage ../packages/herdr.nix { };
       "niri-26.04" = final.callPackage ../packages/niri.nix { };
       omx-agent-tools = final.callPackage ../packages/omx-agent-tools.nix { };
       oh-my-codex = final.callPackage ../packages/oh-my-codex.nix { };

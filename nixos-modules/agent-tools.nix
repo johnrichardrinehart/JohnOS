@@ -57,6 +57,7 @@ in
       environment.systemPackages = [
         pkgs.agent-deck
         pkgs.codex-cli-nix
+        pkgs.herdr
       ];
     })
     (lib.mkIf cfg."oh-my-codex".enable {
