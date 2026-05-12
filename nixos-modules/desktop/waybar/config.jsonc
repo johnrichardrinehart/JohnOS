@@ -8,7 +8,8 @@
   // Choose the order of the modules
   "modules-left": [
     "niri/workspaces",
-    "niri/window"
+    "niri/window",
+    "custom/display-mode"
   ],
   "modules-center": [
   ],
@@ -197,5 +198,13 @@
     "format": "⏻ ",
     "tooltip": false,
     "on-click": "sh /etc/xdg/waybar/power-menu.sh"
+  },
+  "custom/display-mode": {
+    "exec": "niri-cycle-display-mode status",
+    "return-type": "json",
+    "interval": 2,
+    "format": "{text}",
+    "escape": true,
+    "tooltip": true
   }
 }

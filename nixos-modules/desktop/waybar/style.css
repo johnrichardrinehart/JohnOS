@@ -100,10 +100,37 @@ tooltip label {
 #window {
 	background: @background-secondary;
 	color: @text;
-	padding: 8px 16px;
+	margin: 6px 2px;
+	padding: 6px 14px;
 	border-radius: 12px;
 	border: 1px solid @border-color;
 	font-weight: 500;
+}
+
+#custom-display-mode {
+	background: @background-primary;
+	color: @lavender;
+	margin: 6px 2px;
+	padding: 6px 12px;
+	border-radius: 12px;
+	border: 1px solid @border-color;
+	font-weight: 500;
+}
+
+#custom-display-mode.single {
+	color: @yellow;
+}
+
+#custom-display-mode.extend {
+	color: @green;
+}
+
+#custom-display-mode.mirror {
+	color: @mauve;
+}
+
+#custom-display-mode.unknown {
+	color: @subtext0;
 }
 
 /* -----------------------------------------------------------------------------

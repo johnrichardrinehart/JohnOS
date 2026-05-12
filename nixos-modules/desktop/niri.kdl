@@ -412,6 +412,7 @@ binds {
     XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "+4%"; }
     XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "4%-"; }
     XF86Display allow-when-locked=true allow-inhibiting=false { spawn "@niri_cycle_display_mode@"; }
+    Shift+XF86Display allow-when-locked=true allow-inhibiting=false { spawn "@niri_cycle_display_mode@" "pick"; }
 
     // Open/close the Overview: a zoomed-out view of workspaces and windows.
     // You can also move the mouse into the top-left hot corner,

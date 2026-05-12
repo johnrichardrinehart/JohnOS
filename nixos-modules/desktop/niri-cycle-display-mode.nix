@@ -10,6 +10,7 @@ pkgs.writeShellScriptBin "niri-cycle-display-mode" ''
   command="''${1:-cycle}"
   niri=${lib.getExe niri}
   jq=${lib.getExe pkgs.jq}
+  fuzzel=${lib.getExe pkgs.fuzzel}
   wl_mirror=${lib.getExe' pkgs.wl-mirror "wl-mirror"}
   mkdir=${lib.getExe' pkgs.coreutils "mkdir"}
   nohup=${lib.getExe' pkgs.coreutils "nohup"}
@@ -18,6 +19,8 @@ pkgs.writeShellScriptBin "niri-cycle-display-mode" ''
 
   state_dir="''${XDG_RUNTIME_DIR:-/tmp}/johnos-niri-display-mode"
   mirror_pid_file="$state_dir/wl-mirror.pids"
+  mirror_source_file="$state_dir/wl-mirror.source"
+  f9_picker_pid_file="$state_dir/f9-picker.pid"
 
   is_internal_output() {
     case "$1" in
@@ -94,7 +97,7 @@ pkgs.writeShellScriptBin "niri-cycle-display-mode" ''
       kill "$pid" 2>/dev/null || true
     done < "$mirror_pid_file"
 
-    $rm -f "$mirror_pid_file"
+    $rm -f "$mirror_pid_file" "$mirror_source_file"
   }
 
   apply_extend() {
@@ -124,6 +127,7 @@ pkgs.writeShellScriptBin "niri-cycle-display-mode" ''
     $niri msg action load-config-file || true
     $mkdir -p "$state_dir"
     : > "$mirror_pid_file"
+    printf '%s\n' "$source_output" > "$mirror_source_file"
 
     for output in "''${outputs[@]}"; do
       if [ "$output" != "$source_output" ]; then
@@ -174,6 +178,110 @@ pkgs.writeShellScriptBin "niri-cycle-display-mode" ''
     apply_single "$internal_output"
   }
 
+  focused_output() {
+    $niri msg --json focused-output 2>/dev/null | $jq -r '.name // empty'
+  }
+
+  json_status() {
+    text="$1"
+    class="$2"
+
+    $jq -cn --arg text "$text" --arg class "$class" \
+      '{text: $text, tooltip: $text, class: $class}'
+  }
+
+  display_status() {
+    load_outputs || exit 1
+    [ "''${#outputs[@]}" -gt 1 ] || exit 1
+
+    if mirror_is_active; then
+      json_status "mirror" "mirror"
+      exit 0
+    fi
+
+    current_output="$(focused_output || true)"
+    if [ -z "$current_output" ] || ! output_is_active "$current_output"; then
+      current_output="''${active_outputs[0]:-}"
+    fi
+
+    if [ -z "$current_output" ]; then
+      json_status "(no output)" "unknown"
+    elif [ "''${#active_outputs[@]}" -gt 1 ]; then
+      json_status "$current_output (extend)" "extend"
+    else
+      json_status "$current_output (single)" "single"
+    fi
+  }
+
+  current_mirror_source() {
+    local source_output
+
+    if [ -f "$mirror_source_file" ] && IFS= read -r source_output < "$mirror_source_file"; then
+      if [ -n "$source_output" ] && output_is_active "$source_output"; then
+        printf '%s\n' "$source_output"
+        return 0
+      fi
+    fi
+
+    focused_output
+  }
+
+  picker_is_active() {
+    [ -f "$f9_picker_pid_file" ] || return 1
+
+    if IFS= read -r pid < "$f9_picker_pid_file"; then
+      [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null && return 0
+    fi
+
+    $rm -f "$f9_picker_pid_file"
+    return 1
+  }
+
+  display_picker() {
+    picker_is_active && return 0
+
+    load_outputs || exit 0
+    [ "''${#outputs[@]}" -gt 1 ] || exit 0
+
+    if mirror_is_active; then
+      source_output="$(current_mirror_source || true)"
+      if [ -n "$source_output" ] && output_is_active "$source_output"; then
+        $niri msg action focus-monitor "$source_output" || true
+        $sleep 0.1
+      fi
+    fi
+
+    $mkdir -p "$state_dir"
+    printf '%s\n' "$$" > "$f9_picker_pid_file"
+    trap '$rm -f "$f9_picker_pid_file"' EXIT
+
+    menu="Extend"
+    for output in "''${outputs[@]}"; do
+      menu="$menu
+Single: $output"
+    done
+    menu="$menu
+Mirror"
+
+    selection=$(printf '%s\n' "$menu" | $fuzzel --dmenu --prompt "Display: ") || exit 0
+
+    case "$selection" in
+      Extend)
+        apply_extend
+        ;;
+      "Single: "*)
+        apply_single "''${selection#Single: }"
+        ;;
+      Mirror)
+        source_output="$(focused_output || true)"
+        if [ -z "$source_output" ] || ! output_is_active "$source_output"; then
+          source_output="''${active_outputs[0]:-$(first_single_target)}"
+        fi
+        apply_mirror "$source_output"
+        ;;
+    esac
+  }
+
   watch_outputs() {
     while true; do
       ensure_internal_when_alone
@@ -206,10 +314,12 @@ pkgs.writeShellScriptBin "niri-cycle-display-mode" ''
   }
 
   case "$command" in
+    pick) display_picker ;;
+    status) display_status ;;
     --watch) watch_outputs ;;
     cycle) cycle_display_mode ;;
     *)
-      echo "Usage: niri-cycle-display-mode [--watch]" >&2
+      echo "Usage: niri-cycle-display-mode [pick|status|--watch|cycle]" >&2
       exit 2
       ;;
   esac
