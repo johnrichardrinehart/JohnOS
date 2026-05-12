@@ -98,7 +98,7 @@ let
     [worktree]
     default_location = "sibling"
     auto_cleanup = true
-    path_template = "../{branch-escaped}"
+    path_template = "{repo-root}/{branch-escaped}"
 
     [global_search]
     recent_days = 90
