@@ -41,6 +41,7 @@ in
   dev.johnrinehart.agentTools = {
     enable = true;
     "oh-my-codex".enable = false;
+    codexCli.statusLinePlugins = [ "codex-weekly-pace" ];
   };
 
   dev.johnrinehart.firmware.framework-ec.features = [ "F9-display-toggle" ];
