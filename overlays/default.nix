@@ -2,6 +2,7 @@ inputs: {
   default = inputs.nixpkgs.lib.composeManyExtensions [
     (final: prev: {
       agent-deck = final.callPackage ../packages/agent-deck.nix { };
+      codex-weekly-pace = final.callPackage ../packages/codex-weekly-pace.nix { };
       codex-cli-nix = final.callPackage ../packages/codex-cli-nix.nix { };
       framework-ec = final.callPackage ../packages/framework-ec.nix { };
       framework-ec-flash = final.callPackage ../packages/framework-ec-flash.nix {

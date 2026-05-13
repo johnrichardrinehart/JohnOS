@@ -3,6 +3,7 @@
 
 {
   agent-deck = pkgs.agent-deck;
+  codex-weekly-pace = pkgs.codex-weekly-pace;
   codex-cli-nix = pkgs.codex-cli-nix;
   framework-ec = pkgs.framework-ec;
   framework-ec-flash = pkgs.framework-ec-flash;
