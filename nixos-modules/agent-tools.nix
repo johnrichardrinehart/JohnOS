@@ -6,13 +6,66 @@
 }:
 let
   cfg = config.dev.johnrinehart.agentTools;
+  mkMergedCodexConfig =
+    {
+      name,
+      layers,
+    }:
+    pkgs.runCommand name {
+      nativeBuildInputs = [
+        pkgs.jq
+        pkgs.remarshal
+      ];
+    } ''
+      i=0
+      json_inputs=()
+
+      for layer in ${lib.escapeShellArgs layers}; do
+        i=$((i + 1))
+        remarshal -if toml -of json "$layer" > "$TMPDIR/layer-$i.json"
+        json_inputs+=("$TMPDIR/layer-$i.json")
+      done
+
+      jq -s '
+        def merge(a; b):
+          reduce (b | keys_unsorted[]) as $k
+            (a; .[$k] = if ((a[$k] | type) == "object" and (b[$k] | type) == "object")
+                         then merge(a[$k]; b[$k])
+                         else b[$k]
+                         end);
+
+        reduce .[] as $item ({}; merge(.; $item))
+        | .features = ((.features // {}) + { hooks: true })
+        | .features |= del(.codex_hooks)
+      ' "''${json_inputs[@]}" > "$TMPDIR/config.merged.json"
+
+      remarshal -if json -of toml "$TMPDIR/config.merged.json" > "$out"
+    '';
+
+  codexPluginTopLevelConfig = lib.optionalString (cfg.codexCli.statusLinePlugins != [ ]) ''
+    [dev.johnrinehart.agentTools.codexCli]
+    statusLinePlugins = ${builtins.toJSON cfg.codexCli.statusLinePlugins}
+  '';
 
   codexSystemTopLevelConfig = ''
     # Managed by JohnOS. User and project Codex config layers may still override
     # these defaults when needed.
 
     sandbox_mode = "workspace-write"
-  '';
+    suppress_unstable_features_warning = true
+
+    [tui]
+    status_line = [
+      "model-with-reasoning",
+      "git-branch",
+      "context-remaining",
+      "total-input-tokens",
+      "total-output-tokens",
+      "weekly-limit",
+    ]
+  ''
+  + codexPluginTopLevelConfig;
+
   codexSandboxWorkspaceConfig = ''
     # codex-cli 0.120.x does not honor the newer `[permissions.<profile>]`
     # filesystem schema here; it expects the legacy workspace-write sandbox
@@ -26,30 +79,50 @@ let
   '';
   codexSystemTopLevelFile = pkgs.writeText "codex-system-top-level.toml" codexSystemTopLevelConfig;
   codexSandboxWorkspaceFile = pkgs.writeText "codex-sandbox-workspace.toml" codexSandboxWorkspaceConfig;
-  codexFromOmxSetup = pkgs.runCommand "codex-from-omx-setup" { outputs = [ "out" "hooks" ]; } ''
-    export HOME="$TMPDIR/home"
-    export CODEX_HOME="$HOME/.codex"
-
-    mkdir -p "$HOME" "$TMPDIR/work"
-    cd "$TMPDIR/work"
-
-    ${lib.getExe pkgs.oh-my-codex} setup --scope user --force --verbose > "$TMPDIR/setup.log"
-    ${lib.getExe pkgs.oh-my-codex} doctor > "$TMPDIR/doctor.log"
-
-    if ! grep -Fq "[OK] Native hooks: hooks.json includes OMX-managed coverage for all native hook events" "$TMPDIR/doctor.log"; then
-      cat "$TMPDIR/doctor.log" >&2
-      exit 1
-    fi
-
-    cat ${codexSystemTopLevelFile} "$CODEX_HOME/config.toml" ${codexSandboxWorkspaceFile} > "$out"
-    cp "$CODEX_HOME/hooks.json" "$hooks"
-  '';
+  codexMergedConfig = mkMergedCodexConfig {
+    name = "codex-config-merged.toml";
+    layers = [
+      codexSystemTopLevelFile
+    ]
+    ++ cfg.codexCli.configLayers
+    ++ [
+      codexSandboxWorkspaceFile
+    ];
+  };
 in
 {
   options.dev.johnrinehart.agentTools = {
     enable = lib.mkEnableOption "agent-oriented local AI tooling";
 
     "oh-my-codex".enable = lib.mkEnableOption "oh-my-codex multi-agent orchestration layer for Codex CLI";
+
+    codexCli.statusLinePlugins = lib.mkOption {
+      type = with lib.types; listOf str;
+      default = [ ];
+      example = [ "codex-weekly-pace" ];
+      description = ''
+        Status-line plugin names to expose in the system Codex config layer.
+        When this contains "codex-weekly-pace", the corresponding helper
+        package is installed into systemPackages.
+      '';
+    };
+
+    codexCli.configLayers = lib.mkOption {
+      type = with lib.types; listOf path;
+      default = [ ];
+      description = ''
+        Additional Codex config.toml layers to merge between the base system
+        layer and sandbox layer. Submodules can publish configuration here.
+      '';
+    };
+
+    codexCli.hooksSource = lib.mkOption {
+      type = with lib.types; nullOr path;
+      default = null;
+      description = ''
+        Optional hooks.json source published by a submodule.
+      '';
+    };
   };
 
   config = lib.mkMerge [
@@ -59,17 +132,52 @@ in
         pkgs.codex-cli-nix
         pkgs.herdr
       ];
-    })
-    (lib.mkIf cfg."oh-my-codex".enable {
-      environment.systemPackages = [
-        pkgs.oh-my-codex
-        pkgs.omx-agent-tools
-      ];
 
-      # Codex discovers hooks.json next to each config.toml layer; keep OMX in
-      # the immutable system layer so user/project hooks can coexist separately.
-      environment.etc."codex/config.toml".source = codexFromOmxSetup;
-      environment.etc."codex/hooks.json".source = codexFromOmxSetup.hooks;
+      # Always publish a system Codex config layer for agentTools-enabled hosts,
+      # even when OMX is disabled.
+      environment.etc."codex/config.toml".source = codexMergedConfig;
+    })
+    (lib.mkIf (cfg.enable && lib.elem "codex-weekly-pace" cfg.codexCli.statusLinePlugins) {
+      environment.systemPackages = [ pkgs.codex-weekly-pace ];
+    })
+    (lib.mkIf cfg."oh-my-codex".enable (
+      let
+        codexOmxLayer = pkgs.runCommand "codex-omx-layer" {
+          outputs = [ "config" "hooks" ];
+        } ''
+          export HOME="$TMPDIR/home"
+          export CODEX_HOME="$HOME/.codex"
+
+          mkdir -p "$HOME" "$TMPDIR/work"
+          cd "$TMPDIR/work"
+
+          ${lib.getExe pkgs.oh-my-codex} setup --scope user --force --verbose > "$TMPDIR/setup.log"
+          ${lib.getExe pkgs.oh-my-codex} doctor > "$TMPDIR/doctor.log"
+
+          if ! grep -Fq "[OK] Native hooks: hooks.json includes OMX-managed coverage for all native hook events" "$TMPDIR/doctor.log"; then
+            cat "$TMPDIR/doctor.log" >&2
+            exit 1
+          fi
+
+          cp "$CODEX_HOME/config.toml" "$config"
+          cp "$CODEX_HOME/hooks.json" "$hooks"
+        '';
+      in
+      {
+        environment.systemPackages = [
+          pkgs.oh-my-codex
+          pkgs.omx-agent-tools
+        ];
+
+        dev.johnrinehart.agentTools.codexCli.configLayers = lib.mkAfter [ codexOmxLayer.config ];
+        dev.johnrinehart.agentTools.codexCli.hooksSource = lib.mkDefault codexOmxLayer.hooks;
+
+        # Codex discovers hooks.json next to each config.toml layer; keep OMX in
+        # the immutable system layer so user/project hooks can coexist separately.
+        environment.etc."codex/hooks.json".source = cfg.codexCli.hooksSource;
+      }))
+    (lib.mkIf (cfg.enable && cfg.codexCli.hooksSource != null) {
+      environment.etc."codex/hooks.json".source = cfg.codexCli.hooksSource;
     })
   ];
 }
