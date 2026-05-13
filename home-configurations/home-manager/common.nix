@@ -212,6 +212,7 @@ in
       '';
       ".config/powerline/themes/gruvbox.theme".source = ./gruvbox.theme;
       ".config/hypr/hyprlock.conf".source = ./hyprlock.conf;
+      ".codex/skills/usage-status".source = ./skills/usage-status;
       ".config/hypr/hyprpaper.conf".source =
         let
           wallpaper = builtins.path {
