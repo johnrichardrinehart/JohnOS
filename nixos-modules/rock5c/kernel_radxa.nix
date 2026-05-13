@@ -13,7 +13,7 @@ let
 in
 {
   nixpkgs.overlays = [
-    (self: super: {
+    (_self: _super: {
       radxaLinux = pkgs.linuxPackagesFor (
         pkgs.buildLinux {
           src = pkgs.fetchFromGitHub {

@@ -6,7 +6,6 @@
   lib,
   pkgs,
   options,
-  modulesPath,
   inputs,
   ...
 }:
@@ -129,8 +128,8 @@ in
   # in boot.extraModprobeConfig (disables TB power saving as a workaround).
   dev.johnrinehart.thunderbolt-debug = {
     enable = true;
-    kernelPatches = true;  # Apply D3cold/D3hot retry patches
-    bootVerbose = true;   # Set true for boot-time verbose logging
+    kernelPatches = true; # Apply D3cold/D3hot retry patches
+    bootVerbose = true; # Set true for boot-time verbose logging
   };
 
   # Optimize hibernate resume for faster session interactivity
@@ -203,27 +202,29 @@ in
     address = [ "10.100.0.10/24" ];
     privateKeyFile = "/var/lib/wireguard/neocache-private-key";
 
-    peers = [{
-      publicKey = "Atr/U/uxf3pfLhrIFZz6SD6qxlO4GvT0kZBht+r1oEk=";  # k3s server
-      endpoint = "k8s.neocache.io:51820";
-      allowedIPs = [ "10.100.0.0/24" ];
-      persistentKeepalive = 25;
-    }];
+    peers = [
+      {
+        publicKey = "Atr/U/uxf3pfLhrIFZz6SD6qxlO4GvT0kZBht+r1oEk="; # k3s server
+        endpoint = "k8s.neocache.io:51820";
+        allowedIPs = [ "10.100.0.0/24" ];
+        persistentKeepalive = 25;
+      }
+    ];
   };
 
   # Personal WireGuard via the OCI hub. This stays on a separate subnet/port
   # from the production neocache k3s overlay.
-#  networking.wg-quick.interfaces.personal = {
-#    address = [ "10.101.0.10/24" ];
-#    privateKeyFile = "/var/lib/wireguard/personal-private-key";
-#
-#    peers = [{
-#      publicKey = "VbR4/DUmH7u6i2fcUFffZyj+pne1HGaLufqWaEA0ano=";  # OCI personal VPN
-#      endpoint = "k8s.neocache.io:51821";
-#      allowedIPs = [ "10.101.0.0/24" ];
-#      persistentKeepalive = 25;
-#    }];
-#  };
+  #  networking.wg-quick.interfaces.personal = {
+  #    address = [ "10.101.0.10/24" ];
+  #    privateKeyFile = "/var/lib/wireguard/personal-private-key";
+  #
+  #    peers = [{
+  #      publicKey = "VbR4/DUmH7u6i2fcUFffZyj+pne1HGaLufqWaEA0ano=";  # OCI personal VPN
+  #      endpoint = "k8s.neocache.io:51821";
+  #      allowedIPs = [ "10.101.0.0/24" ];
+  #      persistentKeepalive = 25;
+  #    }];
+  #  };
 
   # Fix tailscaled hanging during shutdown when trying to cleanup UPnP port mappings
   # The daemon has an internal 45s watchdog timeout when closing, which blocks shutdown.
@@ -317,20 +318,17 @@ in
 
   dev.johnrinehart.sound.enable = true;
 
-  virtualisation.vmVariant = (
-    { ... }:
-    {
-      fileSystems."/" = {
-        device = "/dev/sda";
-        fsType = "ext4";
-      };
+  virtualisation.vmVariant = _: {
+    fileSystems."/" = {
+      device = "/dev/sda";
+      fsType = "ext4";
+    };
 
-      boot.resumeDevice = lib.mkForce "";
-      swapDevices = lib.mkForce [ ];
+    boot.resumeDevice = lib.mkForce "";
+    swapDevices = lib.mkForce [ ];
 
-      networking.interfaces = lib.mkForce { };
-    }
-  );
+    networking.interfaces = lib.mkForce { };
+  };
 
   hardware.keyboard.zsa.enable = true;
 

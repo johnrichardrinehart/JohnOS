@@ -2,8 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
   "blocks": [
     {
-      "segments": [
-      ],
+      "segments": [],
       "type": "rprompt"
     },
     {
@@ -35,7 +34,7 @@
           "properties": {
             "style": "letter"
           },
-	  "exclude_folders": [ ],
+          "exclude_folders": [],
           "style": "powerline",
           "type": "path"
         },
@@ -62,9 +61,7 @@
         },
         {
           "background": "#00897b",
-          "background_templates": [
-            "{{ if gt .Code 0 }}#e91e63{{ end }}"
-          ],
+          "background_templates": ["{{ if gt .Code 0 }}#e91e63{{ end }}"],
           "foreground": "#ffffff",
           "template": "<parentBackground></>  ",
           "properties": {

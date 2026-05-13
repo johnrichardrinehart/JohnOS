@@ -1,3 +1,5 @@
 result
 *.sw?
 .claude
+.direnv/
+.pre-commit-config.yaml

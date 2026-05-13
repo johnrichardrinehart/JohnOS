@@ -63,7 +63,7 @@ build_desktop_index() {
       emit(desktop_id)
       emit(startup_wm_class)
     }
-  ' "$@" > "$desktop_index_file"
+  ' "$@" >"$desktop_index_file"
 }
 
 build_desktop_index
@@ -107,13 +107,13 @@ printf '%s\n' "$window_list" | jq -r 'map(select(.is_focused | not)) | .[] | [.i
 
 [ -s "$labels_file" ] || exit 0
 
-width=$(wc -L < "$labels_file" | tr -d ' ')
+width=$(wc -L <"$labels_file" | tr -d ' ')
 width=$((width + 2))
 [ "$width" -lt 40 ] && width=40
 [ "$width" -gt 90 ] && width=90
 
 tab=$(printf '\t')
-id=$(fuzzel --dmenu --with-nth=2 --accept-nth=1 --nth-delimiter="$tab" --width "$width" < "$input_file") || exit 0
+id=$(fuzzel --dmenu --with-nth=2 --accept-nth=1 --nth-delimiter="$tab" --width "$width" <"$input_file") || exit 0
 [ -n "$id" ] || exit 0
 
 niri msg action focus-window --id "$id"

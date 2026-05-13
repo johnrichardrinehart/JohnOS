@@ -2,13 +2,13 @@
 { pkgs }:
 
 {
-  agent-deck = pkgs.agent-deck;
-  codex-weekly-pace = pkgs.codex-weekly-pace;
-  codex-cli-nix = pkgs.codex-cli-nix;
-  framework-ec = pkgs.framework-ec;
-  framework-ec-flash = pkgs.framework-ec-flash;
-  herdr = pkgs.herdr;
+  inherit (pkgs) agent-deck;
+  inherit (pkgs) codex-weekly-pace;
+  inherit (pkgs) codex-cli-nix;
+  inherit (pkgs) framework-ec;
+  inherit (pkgs) framework-ec-flash;
+  inherit (pkgs) herdr;
   "niri-26.04" = pkgs."niri-26.04";
-  omx-agent-tools = pkgs.omx-agent-tools;
-  oh-my-codex = pkgs.oh-my-codex;
+  inherit (pkgs) omx-agent-tools;
+  inherit (pkgs) oh-my-codex;
 }

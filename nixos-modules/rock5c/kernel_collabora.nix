@@ -11,10 +11,10 @@ let
 in
 {
   nixpkgs.overlays = [
-    (self: super: {
+    (_self: _super: {
       # this linux doesn't work for some reason
       linuxRock5C = pkgs.linuxPackagesFor (
-        (pkgs.linux_latest.override {
+        pkgs.linux_latest.override {
           defconfig = "rockchip_linux_defconfig";
           argsOverride =
             let
@@ -34,7 +34,7 @@ in
             EARLY_PRINTK = yes;
             CONFIG_DEBUG = yes;
           };
-        })
+        }
       );
     })
   ];

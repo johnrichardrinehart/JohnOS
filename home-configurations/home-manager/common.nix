@@ -6,58 +6,6 @@
   ...
 }:
 let
-  configureKeyboards = ''
-    configureKeyboards() {
-    ################################################################################
-    ########## Useful URLs from research
-    ################################################################################
-    # https://www.in-ulm.de/~mascheck/X11/xmodmap.html
-    # https://wiki.archlinux.org/title/Xorg/Keyboard_configuration#Using_X_configuration_files
-    # https://askubuntu.com/a/337431
-    #
-    ################################################################################
-    ########## Helpful commands to find the keyboard map
-    ################################################################################
-    # setxkbmap -query
-    # input list-props $NUMBER_YOURE_INTERESTED_IN
-    # localctl list-x11-keymap models
-    #
-    #  setxkbmap -model sun_type7_usb -layout gb -option ctrl:swapcaps
-    #  setxkbmap -model pc104 -layout cz,us -variant ,dvorak -option grp:alt_shift_toggle
-    #  localectl [--no-convert] set-x11-keymap layout [model [variant [options]]]
-
-    LAPTOP_KBD="AT Translated Set 2 keyboard";
-    LAPTOP_KBD_ID=$(${pkgs.xorg.xinput}/bin/xinput | grep "''${LAPTOP_KBD}" | cut -f 2 | cut -d = -f 2);
-    ${pkgs.xorg.setxkbmap}/bin/setxkbmap -device $LAPTOP_KBD_ID -layout us -variant dvorak;
-    ${pkgs.xorg.setxkbmap}/bin/setxkbmap -device 8 -layout us
-      }
-
-    configureKeyboards;
-  '';
-
-  configureMonitors =
-    let
-      laptopResolution = "2256x1504";
-    in
-    ''
-        configureMonitors() {
-        LAP_MONITOR="eDP-1"
-        ${pkgs.xorg.xrandr}/bin/xrandr --output "''${LAP_MONITOR}" --mode ${laptopResolution}
-        ${pkgs.xorg.xrandr}/bin/xrandr --setprovideroutputsource 1 0
-
-      # looks like: https://bugs.freedesktop.org/show_bug.cgi?id=110830
-      # which referencese: https://gist.github.com/szpak/71081b40217fb27c7a565b8c7b972067
-      # consider filing a bug at: https://gitlab.freedesktop.org/drm/nouveau/
-        for monitor in $(${pkgs.xorg.xrandr}/bin/xrandr | grep " connected" | cut -f1 -d " "); do
-        if [[ "''${monitor}" != "''${LAP_MONITOR}" ]]
-        then
-          ${pkgs.xorg.xrandr}/bin/xrandr --output "''${monitor}" --mode 2560x1440 --right-of "''${LAP_MONITOR}"
-        fi
-        done
-        }
-
-        configureMonitors;
-    '';
   stalonetrayrc = pkgs.writeText "stalonetrayrc" ''
     background "#3B4252"
     geometry "3x1+1150-0"
@@ -148,7 +96,7 @@ in
       in
       {
         # only use polybar with Xorg
-        enable = osConfig.services.xserver.enable;
+        inherit (osConfig.services.xserver) enable;
         package = pkgs.polybar.override {
           alsaSupport = true;
           pulseSupport = true;
@@ -190,7 +138,8 @@ in
       ".gitignore".text = ''
         result
         .claude/
-      '' + agentToolsGitignoreEntries;
+      ''
+      + agentToolsGitignoreEntries;
       ".config/satty/config.toml".text = ''
         [general]
         initial-tool = "pointer"
@@ -235,20 +184,22 @@ in
         let
           sshSessionLockCfg = osConfig.dev.johnrinehart.sshSessionLock;
           confirmSshActivityPackage =
-            pkgs.callPackage ../../nixos-modules/confirm-ssh-activity-before-suspend.nix {
-              promptTimeoutSeconds = sshSessionLockCfg.suspendPromptTimeoutSeconds;
-            };
-          lockIdleSshPackage =
-            pkgs.callPackage ./lock-idle-ssh-sessions.nix {
-              idleTimeoutSeconds = sshSessionLockCfg.timeoutSeconds;
-              terminalMultiplexer = sshSessionLockCfg.terminalMultiplexer;
-            };
+            pkgs.callPackage ../../nixos-modules/confirm-ssh-activity-before-suspend.nix
+              {
+                promptTimeoutSeconds = sshSessionLockCfg.suspendPromptTimeoutSeconds;
+              };
+          lockIdleSshPackage = pkgs.callPackage ./lock-idle-ssh-sessions.nix {
+            idleTimeoutSeconds = sshSessionLockCfg.timeoutSeconds;
+            inherit (sshSessionLockCfg) terminalMultiplexer;
+          };
           onIdlePackage = pkgs.callPackage ./on-idle.nix {
             idleTimeoutSeconds = config.idle.short_timeout_duration;
             idleSshActionCommand = lib.optionalString sshSessionLockCfg.enable (lib.getExe lockIdleSshPackage);
           };
           onLongIdlePackage = pkgs.callPackage ./suspend-if-no-active-ssh.nix {
-            confirmSshActivityCommand = lib.optionalString sshSessionLockCfg.enable (lib.getExe confirmSshActivityPackage);
+            confirmSshActivityCommand = lib.optionalString sshSessionLockCfg.enable (
+              lib.getExe confirmSshActivityPackage
+            );
           };
         in
         (pkgs.replaceVars ./hypridle.conf {
@@ -268,28 +219,31 @@ in
               inherit onIdlePackage;
             }
           );
-          short_timeout_duration = config.idle.short_timeout_duration;
-          medium_timeout_duration = config.idle.medium_timeout_duration;
-          long_timeout_duration = config.idle.long_timeout_duration;
+          inherit (config.idle) short_timeout_duration;
+          inherit (config.idle) medium_timeout_duration;
+          inherit (config.idle) long_timeout_duration;
         }).overrideAttrs
           (_: {
             checkPhase = null;
           });
     };
 
-    programs.tmux = lib.mkIf (
-      osConfig.dev.johnrinehart.sshSessionLock.enable
-      && osConfig.dev.johnrinehart.sshSessionLock.terminalMultiplexer == "tmux"
-    ) {
-      enable = true;
-      extraConfig =
-        let
-          tmuxAuthLock = pkgs.callPackage ./tmux-auth-lock.nix { };
-        in
-        ''
-          set -g lock-command "${lib.getExe tmuxAuthLock}"
-        '';
-    };
+    programs.tmux =
+      lib.mkIf
+        (
+          osConfig.dev.johnrinehart.sshSessionLock.enable
+          && osConfig.dev.johnrinehart.sshSessionLock.terminalMultiplexer == "tmux"
+        )
+        {
+          enable = true;
+          extraConfig =
+            let
+              tmuxAuthLock = pkgs.callPackage ./tmux-auth-lock.nix { };
+            in
+            ''
+              set -g lock-command "${lib.getExe tmuxAuthLock}"
+            '';
+        };
 
     home.sessionVariables = {
       EDITOR = "vim";
@@ -559,50 +513,53 @@ in
           };
           sshSessionLockCfg = osConfig.dev.johnrinehart.sshSessionLock;
           tmuxSocketCfg = osConfig.dev.johnrinehart.tmux;
-          multiplexerAutoAttach = lib.optionalString (
-            sshSessionLockCfg.enable
-            && sshSessionLockCfg.forceInteractiveShellsIntoMultiplexer
-            && sshSessionLockCfg.terminalMultiplexer == "tmux"
-          ) ''
-            if [[ -n "$SSH_TTY" && -z "$TMUX" ]]; then
-              tmux_socket_dir=${lib.escapeShellArg tmuxSocketCfg.socketDir}
-              tmux_socket_name=${lib.escapeShellArg tmuxSocketCfg.socketName}
-              tmux_session_prefix=${lib.escapeShellArg sshSessionLockCfg.multiplexerSessionName}
-              tmux_uid="$(${lib.getExe' pkgs.coreutils "id"} -u)"
-              tmux_session_stamp="$(${lib.getExe' pkgs.coreutils "date"} +%Y%m%dT%H%M%S)"
-              tmux_socket="$tmux_socket_dir/tmux-$tmux_uid/$tmux_socket_name"
-              tmux_session="$tmux_session_prefix-$tmux_session_stamp-$$"
-              exec ${lib.getExe pkgs.tmux} -S "$tmux_socket" new-session -s "$tmux_session"
-            fi
-          '';
+          multiplexerAutoAttach =
+            lib.optionalString
+              (
+                sshSessionLockCfg.enable
+                && sshSessionLockCfg.forceInteractiveShellsIntoMultiplexer
+                && sshSessionLockCfg.terminalMultiplexer == "tmux"
+              )
+              ''
+                if [[ -n "$SSH_TTY" && -z "$TMUX" ]]; then
+                  tmux_socket_dir=${lib.escapeShellArg tmuxSocketCfg.socketDir}
+                  tmux_socket_name=${lib.escapeShellArg tmuxSocketCfg.socketName}
+                  tmux_session_prefix=${lib.escapeShellArg sshSessionLockCfg.multiplexerSessionName}
+                  tmux_uid="$(${lib.getExe' pkgs.coreutils "id"} -u)"
+                  tmux_session_stamp="$(${lib.getExe' pkgs.coreutils "date"} +%Y%m%dT%H%M%S)"
+                  tmux_socket="$tmux_socket_dir/tmux-$tmux_uid/$tmux_socket_name"
+                  tmux_session="$tmux_session_prefix-$tmux_session_stamp-$$"
+                  exec ${lib.getExe pkgs.tmux} -S "$tmux_socket" new-session -s "$tmux_session"
+                fi
+              '';
         in
         ''
-        ${multiplexerAutoAttach}
+          ${multiplexerAutoAttach}
 
-        # Use a function instead of an alias so zsh uses _ssh completion
-        # rather than expanding to "kitty +kitten ssh" and hitting kitty's
-        # broken anchor-based matcher handling.
-        ssh() { kitty +kitten ssh "$@" }
+          # Use a function instead of an alias so zsh uses _ssh completion
+          # rather than expanding to "kitty +kitten ssh" and hitting kitty's
+          # broken anchor-based matcher handling.
+          ssh() { kitty +kitten ssh "$@" }
 
-            export BGIMG="${bgimg}"
-            if [ ! -f $BGIMG ]; then
-            curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
-            fi
+              export BGIMG="${bgimg}"
+              if [ ! -f $BGIMG ]; then
+              curl -o $BGIMG "https://images.wallpapersden.com/image/download/ocean-sea-horizon_ZmpraG2UmZqaraWkpJRnamtlrWZpaWU.jpg"
+              fi
 
-        # zoxide - smarter cd (uses 'j' command like jump did)
-            command -v zoxide &>/dev/null && eval "$(zoxide init zsh --cmd j)"
+          # zoxide - smarter cd (uses 'j' command like jump did)
+              command -v zoxide &>/dev/null && eval "$(zoxide init zsh --cmd j)"
 
 
-        # https://github.com/nix-community/nix-direnv
-            eval "$(direnv hook zsh)"
+          # https://github.com/nix-community/nix-direnv
+              eval "$(direnv hook zsh)"
 
-        # https://blog.vghaisas.com/zsh-beep-sound/
-            unsetopt BEEP
+          # https://blog.vghaisas.com/zsh-beep-sound/
+              unsetopt BEEP
 
-            prompt() {
-            eval $("${lib.getExe pkgs.oh-my-posh}" init zsh --config "${./oh-my-posh.json}");
-            }
-            precmd_functions+=(prompt)
+              prompt() {
+              eval $("${lib.getExe pkgs.oh-my-posh}" init zsh --config "${./oh-my-posh.json}");
+              }
+              precmd_functions+=(prompt)
         '';
     };
 

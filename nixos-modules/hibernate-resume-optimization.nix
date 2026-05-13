@@ -194,201 +194,217 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable (lib.mkMerge [
-    # Base configuration - always applied when module is enabled
-    {
-      # Post-resume service that coordinates deferred restarts
-      systemd.services.hibernate-resume-optimize = {
-        description = "Optimize system state after hibernate resume";
-        after = [ "hibernate.target" "suspend-then-hibernate.target" ];
-        wantedBy = [ "hibernate.target" "suspend-then-hibernate.target" ];
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      # Base configuration - always applied when module is enabled
+      {
+        # Post-resume service that coordinates deferred restarts
+        systemd.services.hibernate-resume-optimize = {
+          description = "Optimize system state after hibernate resume";
+          after = [
+            "hibernate.target"
+            "suspend-then-hibernate.target"
+          ];
+          wantedBy = [
+            "hibernate.target"
+            "suspend-then-hibernate.target"
+          ];
 
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = pkgs.writeShellScript "hibernate-resume-optimize" ''
-            # Log resume time for debugging
-            echo "hibernate-resume-optimize: Session thawed at $(date)"
+          serviceConfig = {
+            Type = "oneshot";
+            ExecStart = pkgs.writeShellScript "hibernate-resume-optimize" ''
+              # Log resume time for debugging
+              echo "hibernate-resume-optimize: Session thawed at $(date)"
 
-            # Give compositor a head start
-            sleep 0.5
+              # Give compositor a head start
+              sleep 0.5
 
-            # Signal that optimization service has run
-            mkdir -p /run/hibernate-resume
-            touch /run/hibernate-resume/optimized
-          '';
+              # Signal that optimization service has run
+              mkdir -p /run/hibernate-resume
+              touch /run/hibernate-resume/optimized
+            '';
+          };
         };
-      };
-    }
+      }
 
-    # Defer networking after resume
-    (lib.mkIf cfg.deferNetworking.enable {
-      # Override post-resume to not immediately reload dhcpcd
-      powerManagement.resumeCommands = ''
-        # Defer network restart - let user session become interactive first
-        (
-          sleep ${toString cfg.deferNetworking.delaySeconds}
+      # Defer networking after resume
+      (lib.mkIf cfg.deferNetworking.enable {
+        # Override post-resume to not immediately reload dhcpcd
+        powerManagement.resumeCommands = ''
+          # Defer network restart - let user session become interactive first
+          (
+            sleep ${toString cfg.deferNetworking.delaySeconds}
 
-          # Reload dhcpcd if running
-          if systemctl is-active dhcpcd.service >/dev/null 2>&1; then
-            systemctl reload dhcpcd.service || true
-          fi
-
-          # Poke NetworkManager to reassociate
-          if systemctl is-active NetworkManager.service >/dev/null 2>&1; then
-            ${pkgs.networkmanager}/bin/nmcli networking off 2>/dev/null || true
-            sleep 0.5
-            ${pkgs.networkmanager}/bin/nmcli networking on 2>/dev/null || true
-          fi
-        ) &
-      '';
-
-      # Prevent dhcpcd from being reloaded synchronously in post-resume.service
-      # The default NixOS post-resume.service runs: systemctl reload dhcpcd.service
-      # We override this by making our own post-resume that defers it
-      systemd.services.post-resume = {
-        serviceConfig = {
-          # Replace the ExecStart entirely - we handle dhcpcd in resumeCommands
-          ExecStart = lib.mkForce (pkgs.writeShellScript "post-resume-deferred" ''
-            # Try-restart post-resume.target for any dependent units
-            systemctl try-restart --no-block post-resume.target || true
-
-            # dhcpcd reload is handled by hibernate-resume-optimize with delay
-            # Do NOT reload it here synchronously
-          '');
-        };
-      };
-
-      # Make tailscale less aggressive on resume
-      systemd.services.tailscaled.serviceConfig = {
-        # Delay tailscale's network checks on resume
-        ExecStartPost = lib.mkAfter [
-          "-${pkgs.coreutils}/bin/sleep 2"
-        ];
-      };
-    })
-
-    # Defer bluetooth reconnection
-    (lib.mkIf cfg.deferBluetooth.enable {
-      # Service to defer bluetooth after resume
-      systemd.services.bluetooth-resume-defer = {
-        description = "Defer bluetooth reconnection after hibernate resume";
-        after = [ "hibernate.target" "suspend-then-hibernate.target" ];
-        wantedBy = [ "hibernate.target" "suspend-then-hibernate.target" ];
-        before = [ "bluetooth.target" ];
-
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = pkgs.writeShellScript "bluetooth-resume-defer" ''
-            # Check if bluetooth is available
-            if ! command -v bluetoothctl &>/dev/null; then
-              exit 0
+            # Reload dhcpcd if running
+            if systemctl is-active dhcpcd.service >/dev/null 2>&1; then
+              systemctl reload dhcpcd.service || true
             fi
 
-            # Briefly power off bluetooth to stop reconnection attempts
-            bluetoothctl power off 2>/dev/null || true
+            # Poke NetworkManager to reassociate
+            if systemctl is-active NetworkManager.service >/dev/null 2>&1; then
+              ${pkgs.networkmanager}/bin/nmcli networking off 2>/dev/null || true
+              sleep 0.5
+              ${pkgs.networkmanager}/bin/nmcli networking on 2>/dev/null || true
+            fi
+          ) &
+        '';
 
-            # Wait for user session to stabilize
-            sleep ${toString cfg.deferBluetooth.delaySeconds}
+        # Prevent dhcpcd from being reloaded synchronously in post-resume.service
+        # The default NixOS post-resume.service runs: systemctl reload dhcpcd.service
+        # We override this by making our own post-resume that defers it
+        systemd.services.post-resume = {
+          serviceConfig = {
+            # Replace the ExecStart entirely - we handle dhcpcd in resumeCommands
+            ExecStart = lib.mkForce (
+              pkgs.writeShellScript "post-resume-deferred" ''
+                # Try-restart post-resume.target for any dependent units
+                systemctl try-restart --no-block post-resume.target || true
 
-            # Re-enable bluetooth
-            bluetoothctl power on 2>/dev/null || true
-          '';
+                # dhcpcd reload is handled by hibernate-resume-optimize with delay
+                # Do NOT reload it here synchronously
+              ''
+            );
+          };
         };
-      };
-    })
 
-    # Prioritize user session
-    (lib.mkIf cfg.prioritizeUserSession.enable {
-      # Give user slice higher CPU priority
-      systemd.slices.user = {
-        sliceConfig = {
-          CPUWeight = cfg.prioritizeUserSession.userSliceCPUWeight;
+        # Make tailscale less aggressive on resume
+        systemd.services.tailscaled.serviceConfig = {
+          # Delay tailscale's network checks on resume
+          ExecStartPost = lib.mkAfter [
+            "-${pkgs.coreutils}/bin/sleep 2"
+          ];
         };
-      };
+      })
 
-      # Make rtkit less aggressive about demoting threads
-      # rtkit demotes threads when it thinks the system is overloaded
-      # After resume, it incorrectly detects overload due to timestamp skew
-      systemd.services.rtkit-daemon.serviceConfig = {
-        # Give rtkit itself higher priority so it can make decisions faster
-        Nice = -5;
-        # Increase the watchdog timeout to prevent false "starving" detection
-        Environment = [
-          "RTKIT_CANARY_WATCHDOG_MSEC=30000"
-        ];
-      };
+      # Defer bluetooth reconnection
+      (lib.mkIf cfg.deferBluetooth.enable {
+        # Service to defer bluetooth after resume
+        systemd.services.bluetooth-resume-defer = {
+          description = "Defer bluetooth reconnection after hibernate resume";
+          after = [
+            "hibernate.target"
+            "suspend-then-hibernate.target"
+          ];
+          wantedBy = [
+            "hibernate.target"
+            "suspend-then-hibernate.target"
+          ];
+          before = [ "bluetooth.target" ];
 
-      # User service to boost session priority immediately after resume
-      # This runs in user context and affects the compositor directly
-      systemd.user.services.session-priority-boost = {
-        description = "Boost session priority after resume";
-        wantedBy = [ "graphical-session.target" ];
-        after = [ "graphical-session.target" ];
-
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          # Renice the entire user session to higher priority
-          # $$PPID gets the session leader
-          ExecStart = pkgs.writeShellScript "boost-session" ''
-            # Get our session's process group
-            SESSION_LEADER=$(ps -o ppid= -p $$ | tr -d ' ')
-
-            # Try to renice the session (may fail without CAP_SYS_NICE)
-            ${pkgs.util-linux}/bin/renice -n -5 -g $SESSION_LEADER 2>/dev/null || true
-
-            # Also try to set the compositor specifically if we can identify it
-            for compositor in niri Hyprland sway; do
-              PID=$(${pkgs.procps}/bin/pgrep -u $USER "^$compositor$" 2>/dev/null | head -1)
-              if [ -n "$PID" ]; then
-                ${pkgs.util-linux}/bin/renice -n -10 -p $PID 2>/dev/null || true
-                # Try to set realtime IO priority for compositor
-                ${pkgs.util-linux}/bin/ionice -c 1 -n 0 -p $PID 2>/dev/null || true
+          serviceConfig = {
+            Type = "oneshot";
+            ExecStart = pkgs.writeShellScript "bluetooth-resume-defer" ''
+              # Check if bluetooth is available
+              if ! command -v bluetoothctl &>/dev/null; then
+                exit 0
               fi
-            done
 
-            exit 0
-          '';
+              # Briefly power off bluetooth to stop reconnection attempts
+              bluetoothctl power off 2>/dev/null || true
+
+              # Wait for user session to stabilize
+              sleep ${toString cfg.deferBluetooth.delaySeconds}
+
+              # Re-enable bluetooth
+              bluetoothctl power on 2>/dev/null || true
+            '';
+          };
         };
-      };
+      })
 
-      # Allow the user to renice their own processes (for session-priority-boost)
-      security.pam.loginLimits = [
-        {
-          domain = "@users";
-          type = "-";
-          item = "nice";
-          value = "-10";
-        }
-      ];
-    })
+      # Prioritize user session
+      (lib.mkIf cfg.prioritizeUserSession.enable {
+        # Give user slice higher CPU priority
+        systemd.slices.user = {
+          sliceConfig = {
+            CPUWeight = cfg.prioritizeUserSession.userSliceCPUWeight;
+          };
+        };
 
-    # Reduce hibernate image size
-    (lib.mkIf cfg.reduceHibernateImageSize.enable {
-      # Set image_size via tmpfiles (applied at boot)
-      systemd.tmpfiles.rules = [
-        "w /sys/power/image_size - - - - ${toString cfg.reduceHibernateImageSize.imageSizeBytes}"
-      ];
-    })
+        # Make rtkit less aggressive about demoting threads
+        # rtkit demotes threads when it thinks the system is overloaded
+        # After resume, it incorrectly detects overload due to timestamp skew
+        systemd.services.rtkit-daemon.serviceConfig = {
+          # Give rtkit itself higher priority so it can make decisions faster
+          Nice = -5;
+          # Increase the watchdog timeout to prevent false "starving" detection
+          Environment = [
+            "RTKIT_CANARY_WATCHDOG_MSEC=30000"
+          ];
+        };
 
-    # Enable resume compression (remove nocompress)
-    (lib.mkIf cfg.enableResumeCompression.enable {
-      # Note: This doesn't remove existing nocompress from boot.kernelParams
-      # User needs to remove it manually. We just warn here.
-      warnings = lib.optional
-        (lib.any (p: p == "nocompress") config.boot.kernelParams)
-        "hibernate-resume-optimization: enableResumeCompression is set but 'nocompress' is in boot.kernelParams. Remove 'nocompress' to enable compression.";
-    })
+        # User service to boost session priority immediately after resume
+        # This runs in user context and affects the compositor directly
+        systemd.user.services.session-priority-boost = {
+          description = "Boost session priority after resume";
+          wantedBy = [ "graphical-session.target" ];
+          after = [ "graphical-session.target" ];
 
-    # Debug timing
-    (lib.mkIf cfg.debugTiming.enable {
-      # Enable PM timing via tmpfiles
-      systemd.tmpfiles.rules = [
-        "w /sys/power/pm_print_times - - - - 1"
-      ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            # Renice the entire user session to higher priority
+            # $$PPID gets the session leader
+            ExecStart = pkgs.writeShellScript "boost-session" ''
+              # Get our session's process group
+              SESSION_LEADER=$(ps -o ppid= -p $$ | tr -d ' ')
 
-      # Also add kernel param for early boot timing
-      boot.kernelParams = [ "pm_print_times=1" ];
-    })
-  ]);
+              # Try to renice the session (may fail without CAP_SYS_NICE)
+              ${pkgs.util-linux}/bin/renice -n -5 -g $SESSION_LEADER 2>/dev/null || true
+
+              # Also try to set the compositor specifically if we can identify it
+              for compositor in niri Hyprland sway; do
+                PID=$(${pkgs.procps}/bin/pgrep -u $USER "^$compositor$" 2>/dev/null | head -1)
+                if [ -n "$PID" ]; then
+                  ${pkgs.util-linux}/bin/renice -n -10 -p $PID 2>/dev/null || true
+                  # Try to set realtime IO priority for compositor
+                  ${pkgs.util-linux}/bin/ionice -c 1 -n 0 -p $PID 2>/dev/null || true
+                fi
+              done
+
+              exit 0
+            '';
+          };
+        };
+
+        # Allow the user to renice their own processes (for session-priority-boost)
+        security.pam.loginLimits = [
+          {
+            domain = "@users";
+            type = "-";
+            item = "nice";
+            value = "-10";
+          }
+        ];
+      })
+
+      # Reduce hibernate image size
+      (lib.mkIf cfg.reduceHibernateImageSize.enable {
+        # Set image_size via tmpfiles (applied at boot)
+        systemd.tmpfiles.rules = [
+          "w /sys/power/image_size - - - - ${toString cfg.reduceHibernateImageSize.imageSizeBytes}"
+        ];
+      })
+
+      # Enable resume compression (remove nocompress)
+      (lib.mkIf cfg.enableResumeCompression.enable {
+        # Note: This doesn't remove existing nocompress from boot.kernelParams
+        # User needs to remove it manually. We just warn here.
+        warnings =
+          lib.optional (lib.any (p: p == "nocompress") config.boot.kernelParams)
+            "hibernate-resume-optimization: enableResumeCompression is set but 'nocompress' is in boot.kernelParams. Remove 'nocompress' to enable compression.";
+      })
+
+      # Debug timing
+      (lib.mkIf cfg.debugTiming.enable {
+        # Enable PM timing via tmpfiles
+        systemd.tmpfiles.rules = [
+          "w /sys/power/pm_print_times - - - - 1"
+        ];
+
+        # Also add kernel param for early boot timing
+        boot.kernelParams = [ "pm_print_times=1" ];
+      })
+    ]
+  );
 }

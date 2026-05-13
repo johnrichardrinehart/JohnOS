@@ -1,20 +1,10 @@
 { lib, pkgs, ... }:
-let
-  listOfFiles = builtins.attrNames (
-    lib.filterAttrs (_: v: v == "regular") (builtins.readDir ./6.10_patches)
-  );
-  listOfPatches = lib.filter (v: (builtins.match ".*.patch" v) != null) listOfFiles;
-  patches = builtins.map (p: {
-    name = p;
-    patch = ./6.10_patches + /${p};
-  }) listOfPatches;
-in
 {
   nixpkgs.overlays = [
-    (self: super: {
+    (_self: _super: {
       # this linux doesn't work for some reason
       linuxRock5C = pkgs.linuxPackagesFor (
-        (pkgs.linux_latest.override {
+        pkgs.linux_latest.override {
           argsOverride =
             let
               version = "6.13";
@@ -36,7 +26,7 @@ in
             CONFIG_DEBUG = yes;
             CONFIG_DYNAMIC_DEBUG = yes;
           };
-        })
+        }
       );
     })
   ];

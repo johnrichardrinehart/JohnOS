@@ -10,14 +10,23 @@ in
   imports = [
     ./options.nix
     ./packages.nix
-    ({
-      home-manager = {
-        useGlobalPkgs = true;
-        useUserPackages = true;
-        users = {
-          ${primaryUser} = ./common.nix;
-        };
-      };
-    })
   ];
+
+  config = {
+    users = {
+      groups.${primaryUser} = { };
+      users.${primaryUser} = {
+        isNormalUser = true;
+        group = primaryUser;
+      };
+    };
+
+    home-manager = {
+      useGlobalPkgs = true;
+      useUserPackages = true;
+      users = {
+        ${primaryUser} = ./common.nix;
+      };
+    };
+  };
 }

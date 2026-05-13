@@ -1,5 +1,23 @@
 {
   "nodes": {
+    "flake-parts": {
+      "inputs": {
+        "nixpkgs-lib": "nixpkgs-lib"
+      },
+      "locked": {
+        "lastModified": 1777988971,
+        "narHash": "sha256-qIoWPDs+0/8JecyYgE3gpKQxW/4bLW/gp45vow9ioCQ=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "0678d8986be1661af6bb555f3489f2fdfc31f6ff",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
     "flake-templates": {
       "locked": {
         "lastModified": 1760444628,
@@ -91,10 +109,10 @@
     "nixpkgs": {
       "locked": {
         "lastModified": 1778631156,
-        "narHash": "sha256-L1ZqvLm0r3HhI40L1Kz5n1cwwK4b56KtVW3VtxGYfTk=",
+        "narHash": "sha256-abDzFETxolWyGKV540X4MqDAiaNBi49UzUqoWfC6cVs=",
         "owner": "johnrichardrinehart",
         "repo": "nixpkgs",
-        "rev": "4ff4ee9cad83044aaf4e59970c08e3eae4f13706",
+        "rev": "31037110e2690bf48b4d81a07e1125a9be547eb8",
         "type": "github"
       },
       "original": {
@@ -104,8 +122,24 @@
         "type": "github"
       }
     },
+    "nixpkgs-lib": {
+      "locked": {
+        "lastModified": 1777168982,
+        "narHash": "sha256-GOkGPcboWE9BmGCRMLX3worL4EMnsnG8MyKmXNeYuhQ=",
+        "owner": "nix-community",
+        "repo": "nixpkgs.lib",
+        "rev": "f5901329dade4a6ea039af1433fb087bd9c1fe14",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nixpkgs.lib",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
+        "flake-parts": "flake-parts",
         "flake-templates": "flake-templates",
         "home-manager": "home-manager",
         "nixos-generators": "nixos-generators",

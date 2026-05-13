@@ -30,7 +30,7 @@ in
 {
   config = lib.mkIf cfg.useMinimalKernel {
     nixpkgs.overlays = [
-      (final: prev: {
+      (_final: _prev: {
         linux_rock5c_minimal = pkgs.linuxManualConfig {
           src = builtins.fetchGit {
             url = "git@github.com:johnrichardrinehart/linux";
@@ -46,7 +46,7 @@ in
       })
     ];
 
-    boot.kernelPackages = pkgs.linuxPackagesFor pkgs.linuxKernel.kernels.linux_6_16;
+    boot.kernelPackages = pkgs.linuxPackagesFor pkgs.linux_rock5c_minimal;
 
     # try to add hw-acceleration for the rk3588 (cf.
     # https://jellyfin.org/docs/general/post-install/transcoding/hardware-acceleration/rockchip/)

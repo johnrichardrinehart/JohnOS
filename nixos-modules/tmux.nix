@@ -2,13 +2,11 @@
 let
   cfg = config.dev.johnrinehart.tmux.clipboard;
 
-  terminalFeaturePatterns =
-    if cfg.assumeAllTerminals then
-      [ "*" ]
-    else
-      cfg.terminalPatterns;
+  terminalFeaturePatterns = if cfg.assumeAllTerminals then [ "*" ] else cfg.terminalPatterns;
 
-  terminalFeatures = lib.concatMapStringsSep "," (pattern: "${pattern}:clipboard") terminalFeaturePatterns;
+  terminalFeatures = lib.concatMapStringsSep "," (
+    pattern: "${pattern}:clipboard"
+  ) terminalFeaturePatterns;
 in
 {
   options.dev.johnrinehart.tmux.clipboard = {
@@ -90,7 +88,9 @@ in
         # Enable OSC 52 clipboard writes through tmux, including nested tmux.
         # The local terminal emulator must support and allow OSC 52.
         set -s set-clipboard on
-        ${lib.optionalString (terminalFeaturePatterns != [ ]) "set -as terminal-features ',${terminalFeatures}'"}
+        ${lib.optionalString (
+          terminalFeaturePatterns != [ ]
+        ) "set -as terminal-features ',${terminalFeatures}'"}
       '';
     };
   };

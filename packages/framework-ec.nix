@@ -27,7 +27,8 @@ stdenv.mkDerivation {
 
   patches = [
     ./framework-ec-ectool-display-toggle-key-hid.patch
-  ] ++ patches;
+  ]
+  ++ patches;
 
   src = fetchFromGitHub {
     owner = "FrameworkComputer";

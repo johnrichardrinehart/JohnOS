@@ -11,9 +11,9 @@ let
   # Script to check battery and suspend if needed
   checkBatteryScript = import ./auto-suspend-check-battery.nix {
     inherit pkgs;
-    lowLevel = cfg.lowLevel;
-    criticalLevel = cfg.criticalLevel;
-    notificationLevels = cfg.notificationLevels;
+    inherit (cfg) lowLevel;
+    inherit (cfg) criticalLevel;
+    inherit (cfg) notificationLevels;
     confirmSshActivityCommand = lib.optionalString sshSessionLockCfg.enable (
       lib.getExe (
         pkgs.callPackage ./confirm-ssh-activity-before-suspend.nix {

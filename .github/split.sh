@@ -24,7 +24,7 @@ cd "${NIX_BUILD_RESULT_ISO_DIR}" || exit 1
 
 NIX_BUILD_RESULT_ISO_NAME="" # default empty
 for iso in *.iso; do
-  if [[ "${NIX_BUILD_RESULT_ISO_NAME}" != "" ]]; then
+  if [[ ${NIX_BUILD_RESULT_ISO_NAME} != "" ]]; then
     tree -l L 8 "${GITHUB_WORKSPACE}"
     echo "we have more than one built ISO. we shouldn't..."
     exit 1
@@ -40,13 +40,12 @@ split -d -b 128MiB \
 echo "generating checksum file"
 # generate SHA256 checksums of all pieces
 cd "${SPLIT_DIR}" || exit 1
-for i in JohnOS-*.iso.*; do sha256sum "$i" >> "${CHECKSUM_FILE}"; done
+for i in JohnOS-*.iso.*; do sha256sum "$i" >>"${CHECKSUM_FILE}"; done
 
 # generate SHA256 checksum of pre-split ISO
 cd "${NIX_BUILD_RESULT_ISO_DIR}" || exit 1 # keep only basename in checksum file
 JOHNOS_ISO_FILENAME="JohnOS-${GITHUB_REF_NAME}-${SHORT_SHA}.iso"
 sudo ln -s "${NIX_BUILD_RESULT_ISO}" "${JOHNOS_ISO_FILENAME}"
-sha256sum "${JOHNOS_ISO_FILENAME}"  >> "${CHECKSUM_FILE}"
+sha256sum "${JOHNOS_ISO_FILENAME}" >>"${CHECKSUM_FILE}"
 
 tree -l -L 8 "${GITHUB_WORKSPACE}"
-

@@ -1,4 +1,4 @@
-args@{
+{
   config,
   pkgs,
   lib,
@@ -6,6 +6,7 @@ args@{
 }:
 {
   nixpkgs.hostPlatform = "x86_64-linux";
+  system.stateVersion = "24.05";
 
   # Boot configuration
   boot.loader.grub = {
@@ -49,7 +50,7 @@ args@{
         );
       latest_stable = pkgs.callPackage latest_stable_pkg { };
     in
-    pkgs.recurseIntoAttrs (pkgs.linuxPackagesFor latest_stable)
+    lib.recurseIntoAttrs (pkgs.linuxPackagesFor latest_stable)
   );
 
   # disabled by installation-cd-minimal
@@ -117,9 +118,9 @@ args@{
 
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
-  hardware.opengl.extraPackages = with pkgs; [
-    vaapiIntel
-    vaapiVdpau
+  hardware.graphics.extraPackages = with pkgs; [
+    intel-vaapi-driver
+    libva-vdpau-driver
     libvdpau-va-gl
     intel-media-driver
   ];

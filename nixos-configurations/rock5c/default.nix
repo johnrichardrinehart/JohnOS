@@ -10,6 +10,10 @@
   dev.johnrinehart.system.enable = true;
   dev.johnrinehart.nix.enable = true;
 
-  nixpkgs.config.permittedInsecurePackages = [ "python-2.7.18.8" ];
+  fileSystems."/" = {
+    device = "/dev/disk/by-label/NIXOS_SD";
+    fsType = "ext4";
+  };
 
+  nixpkgs.config.permittedInsecurePackages = [ "python-2.7.18.8" ];
 }

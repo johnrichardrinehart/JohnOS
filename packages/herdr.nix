@@ -1,12 +1,12 @@
-{ lib
-, bash
-, callPackage
-, coreutils
-, fetchFromGitHub
-, python3
-, rustPlatform
-, zig
-,
+{
+  lib,
+  bash,
+  callPackage,
+  coreutils,
+  fetchFromGitHub,
+  python3,
+  rustPlatform,
+  zig,
 }:
 rustPlatform.buildRustPackage rec {
   pname = "herdr";

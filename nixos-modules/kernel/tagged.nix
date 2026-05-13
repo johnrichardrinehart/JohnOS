@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  nixpkgs,
   pkgs,
   ...
 }:
@@ -18,7 +17,7 @@ in
     # add JohnOS-kernel as a package
     nixpkgs.overlays = [
       (
-        self: super:
+        _self: super:
         let
           kernelTag = "JohnOS";
         in

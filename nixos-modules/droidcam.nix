@@ -9,8 +9,8 @@ let
   cfg = config.dev.johnrinehart.droidcam;
   droidcamDrv =
     let
-      stdenv = pkgs.stdenv;
-      kernel = config.boot.kernelPackages.kernel;
+      inherit (pkgs) stdenv;
+      inherit (config.boot.kernelPackages) kernel;
     in
     stdenv.mkDerivation rec {
       pname = "v4l2loopback-dc";

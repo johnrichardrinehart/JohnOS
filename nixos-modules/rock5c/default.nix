@@ -35,9 +35,9 @@ in
     boot.loader.generic-extlinux-compatible.enable = true;
 
     system.build.sdImage = pkgs.callPackage (
-      { ... }:
+      _:
       let
-        rootfsImage = pkgs.callPackage "${modulesPath}/../lib/make-ext4-fs.nix" ({
+        rootfsImage = pkgs.callPackage "${modulesPath}/../lib/make-ext4-fs.nix" {
           storePaths = [ config.system.build.toplevel ];
           volumeLabel = "NIXOS_SD";
           populateImageCommands = ''
@@ -47,7 +47,7 @@ in
               -n "rockchip/rk3588s-rock-5c.dtb" \
             ;
           '';
-        });
+        };
         name = "rock-5c-sdcard-image";
       in
       pkgs.stdenv.mkDerivation {

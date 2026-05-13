@@ -44,7 +44,10 @@ let
     inherit version src;
 
     cargoLock.lockFile = "${src}/Cargo.lock";
-    cargoBuildFlags = [ "-p" "omx-explore-harness" ];
+    cargoBuildFlags = [
+      "-p"
+      "omx-explore-harness"
+    ];
     doCheck = false;
   };
 
@@ -53,7 +56,10 @@ let
     inherit version src;
 
     cargoLock.lockFile = "${src}/Cargo.lock";
-    cargoBuildFlags = [ "-p" "omx-sparkshell" ];
+    cargoBuildFlags = [
+      "-p"
+      "omx-sparkshell"
+    ];
     doCheck = false;
   };
 in

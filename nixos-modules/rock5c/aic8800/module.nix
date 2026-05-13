@@ -19,7 +19,7 @@ in
     '';
 
     nixpkgs.overlays = [
-      (final: prev: {
+      (_final: prev: {
         aic8800 = prev.callPackage ./aic8800.nix {
           inherit (config.boot.kernelPackages) kernel kernelModuleMakeFlags;
         };

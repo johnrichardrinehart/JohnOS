@@ -1,6 +1,7 @@
-args@{ config, pkgs, ... }:
+{ pkgs, ... }:
 {
   nixpkgs.hostPlatform = "x86_64-linux";
+  system.stateVersion = "24.05";
 
   # Boot configuration
   boot.loader.grub = {

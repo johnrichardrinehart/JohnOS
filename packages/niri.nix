@@ -1,4 +1,21 @@
-{ lib, rustPlatform, fetchFromGitHub, installShellFiles, pkg-config, dbus, libdisplay-info, libglvnd, libinput, libxkbcommon, libgbm, pango, pipewire, seatd, systemd, wayland }:
+{
+  lib,
+  rustPlatform,
+  fetchFromGitHub,
+  installShellFiles,
+  pkg-config,
+  dbus,
+  libdisplay-info,
+  libglvnd,
+  libinput,
+  libxkbcommon,
+  libgbm,
+  pango,
+  pipewire,
+  seatd,
+  systemd,
+  wayland,
+}:
 
 rustPlatform.buildRustPackage rec {
   pname = "niri";
@@ -42,7 +59,11 @@ rustPlatform.buildRustPackage rec {
     wayland
   ];
 
-  buildFeatures = [ "dbus" "xdp-gnome-screencast" "systemd" ];
+  buildFeatures = [
+    "dbus"
+    "xdp-gnome-screencast"
+    "systemd"
+  ];
   buildNoDefaultFeatures = true;
 
   checkFlags = [ "--skip=::egl" ];

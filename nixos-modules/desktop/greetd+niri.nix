@@ -180,18 +180,33 @@ in
     environment.etc."niri/config.kdl".source =
       let
         fuzzelDmenu = pkgs.callPackage ./fuzzel_dmenu/fuzzel_dmenu.nix { };
+        niriBase = pkgs.replaceVarsWith {
+          src = ./niri.kdl;
+          replacements = {
+            fuzzel_dmenu = lib.getExe fuzzelDmenu;
+            clipboard_watch = lib.getExe clipboard-watch;
+            lock_command = "${lib.getExe' pkgs.systemd "loginctl"} lock-session";
+            suspend = "${lib.getExe' pkgs.systemd "systemctl"} suspend-then-hibernate";
+            wl-kbptr = lib.getExe pkgs.wl-kbptr;
+            niri_cycle_display_mode = lib.getExe niri-cycle-display-mode;
+            niri_screenshot = lib.getExe niri-screenshot;
+            wormhole_send = lib.getExe wormhole-send;
+            xcursor_theme = xcursorTheme;
+
+            # PipeWire's wpctl resolves these at runtime. Passing null tells
+            # replaceVarsWith that these @...@ tokens are intentional leftovers.
+            DEFAULT_AUDIO_SINK = null;
+            DEFAULT_AUDIO_SOURCE = null;
+          };
+        };
       in
-      (pkgs.replaceVars ./niri.kdl {
-        fuzzel_dmenu = lib.getExe fuzzelDmenu;
-        clipboard_watch = lib.getExe clipboard-watch;
-        lock_command = "${lib.getExe' pkgs.systemd "loginctl"} lock-session";
-        suspend = "${lib.getExe' pkgs.systemd "systemctl"} suspend-then-hibernate";
-        wl-kbptr = lib.getExe pkgs.wl-kbptr;
-        niri_cycle_display_mode = lib.getExe niri-cycle-display-mode;
-        niri_screenshot = lib.getExe niri-screenshot;
-        wormhole_send = lib.getExe wormhole-send;
-        xcursor_theme = xcursorTheme;
-        xcursor_size = toString xcursorSize;
+      (pkgs.substitute {
+        src = niriBase;
+        substitutions = [
+          "--replace-fail"
+          "xcursor-size 24"
+          "xcursor-size ${toString xcursorSize}"
+        ];
       }).overrideAttrs
         (_: {
           checkPhase = null;

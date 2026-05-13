@@ -40,9 +40,24 @@ in
   config = lib.mkIf cfg.enable {
     # PAM limits for the @audio group — foundation for realtime audio
     security.pam.loginLimits = [
-      { domain = "@audio"; type = "-"; item = "memlock"; value = "unlimited"; }
-      { domain = "@audio"; type = "-"; item = "rtprio";  value = "95"; }
-      { domain = "@audio"; type = "-"; item = "nice";    value = "-15"; }
+      {
+        domain = "@audio";
+        type = "-";
+        item = "memlock";
+        value = "unlimited";
+      }
+      {
+        domain = "@audio";
+        type = "-";
+        item = "rtprio";
+        value = "95";
+      }
+      {
+        domain = "@audio";
+        type = "-";
+        item = "nice";
+        value = "-15";
+      }
     ];
 
     services.pipewire = {
@@ -119,7 +134,10 @@ in
                 "playback.props" = {
                   "node.name" = "mic-monitor-playback";
                   "node.description" = "Mic Monitor";
-                  "audio.position" = [ "FL" "FR" ];
+                  "audio.position" = [
+                    "FL"
+                    "FR"
+                  ];
                 };
               };
             }

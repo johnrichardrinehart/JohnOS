@@ -1,11 +1,9 @@
 {
-  pkgs,
   stdenv,
   lib,
   fetchFromGitHub,
   kernel,
   kmod,
-  kernelModuleMakeFlags,
   buildPackages,
 }:
 
@@ -49,7 +47,7 @@ stdenv.mkDerivation rec {
   patches =
     let
       patchFiles = lib.strings.filter (x: x != "") (
-        lib.strings.splitStringBy (prev: cur: cur == "\n") false (
+        lib.strings.splitStringBy (_prev: cur: cur == "\n") false (
           builtins.readFile "${src}/debian/patches/series"
         )
       );

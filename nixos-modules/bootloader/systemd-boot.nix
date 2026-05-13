@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  options,
   ...
 }:
 let
@@ -20,7 +19,7 @@ in
   config = lib.mkIf cfg.enable {
     boot.loader.systemd-boot = {
       enable = true;
-      configurationLimit = cfg.configurationLimit;
+      inherit (cfg) configurationLimit;
     };
 
     # Mount point '/boot' which backs the random seed file is world accessible, which is a security hole!

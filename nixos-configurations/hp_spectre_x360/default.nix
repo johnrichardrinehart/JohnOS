@@ -1,6 +1,11 @@
-args@{ config, pkgs, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
 {
   nixpkgs.hostPlatform = "x86_64-linux";
+  system.stateVersion = "24.05";
 
   # Boot configuration
   boot.loader.grub = {
@@ -8,7 +13,10 @@ args@{ config, pkgs, ... }:
     device = "/dev/sda";
   };
 
-  dev.johnrinehart.desktop.enable = true;
+  dev.johnrinehart = {
+    desktop.enable = true;
+    sound.enable = lib.mkForce false;
+  };
 
   boot.extraModprobeConfig = ''
     options snd-hda-intel model=alc295-hp-x360

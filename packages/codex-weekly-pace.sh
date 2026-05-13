@@ -6,18 +6,18 @@ interval=30
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --watch)
-      watch_mode=1
-      ;;
-    --interval)
-      shift
-      interval="$1"
-      ;;
-    *)
-      echo "Unknown argument: $1" >&2
-      echo "Usage: codex-weekly-pace [--watch] [--interval SECONDS]" >&2
-      exit 2
-      ;;
+  --watch)
+    watch_mode=1
+    ;;
+  --interval)
+    shift
+    interval="$1"
+    ;;
+  *)
+    echo "Unknown argument: $1" >&2
+    echo "Usage: codex-weekly-pace [--watch] [--interval SECONDS]" >&2
+    exit 2
+    ;;
   esac
   shift
 done
@@ -43,12 +43,6 @@ else
   C_YELLOW=""
   C_RED=""
   C_RESET=""
-fi
-
-if printf '\u2014' >/dev/null 2>&1; then
-  UNDER_MARKER="——"
-else
-  UNDER_MARKER="--"
 fi
 
 find_latest_snapshot_json() {
@@ -100,7 +94,7 @@ one_shot() {
     return 1
   }
 
-  local used win_min reset now start elapsed remain expected gap expected_h
+  local used win_min reset now start elapsed remain on_pace gap on_pace_h
   used="$(printf '%s\n' "$snapshot" | jq -r '.payload.rate_limits.secondary.used_percent')"
   win_min="$(printf '%s\n' "$snapshot" | jq -r '.payload.rate_limits.secondary.window_minutes')"
   reset="$(printf '%s\n' "$snapshot" | jq -r '.payload.rate_limits.secondary.resets_at')"
@@ -117,17 +111,17 @@ one_shot() {
     remain=0
   fi
 
-  expected="$(awk -v e="$elapsed" -v w="$win_min" 'BEGIN { if (w <= 0) print 0; else print (e / (w * 60.0)) * 100.0 }')"
-  gap="$(awk -v u="$used" -v x="$expected" 'BEGIN { print u - x }')"
-  expected_h="$(awk 'BEGIN { print 100.0 / 168.0 }')"
+  on_pace="$(awk -v e="$elapsed" -v w="$win_min" 'BEGIN { if (w <= 0) print 0; else print (e / (w * 60.0)) * 100.0 }')"
+  gap="$(awk -v u="$used" -v p="$on_pace" 'BEGIN { print u - p }')"
+  on_pace_h="$(awk 'BEGIN { print 100.0 / 168.0 }')"
 
   local sign magnitude
-  sign="$(awk -v g="$gap" -v u="$UNDER_MARKER" 'BEGIN { if (g > 0.000001) print "+"; else if (g < -0.000001) print u; else print "="; }')"
+  sign="$(awk -v g="$gap" 'BEGIN { if (g > 0.000001) print "+"; else if (g < -0.000001) print "-"; else print "="; }')"
   magnitude="$(awk -v g="$gap" 'BEGIN { if (g < 0) g = -g; print g }')"
 
-  printf "weekly %s%.2f%% (used %.2f%% vs expected %.2f%%) | reset in %s\n" \
+  printf "weekly %s%.2f%% (used %.2f%% vs. on-pace %.2f%%) | reset in %s\n" \
     "$sign" "$magnitude" \
-    "$used" "$expected" "$(format_minutes $(((remain + 59) / 60)))"
+    "$used" "$on_pace" "$(format_minutes $(((remain + 59) / 60)))"
 
   local rates rate drift eta_h eta_min remain_min label
   rates="0.1 0.25 0.5"
@@ -135,7 +129,7 @@ one_shot() {
 
   for rate in $rates; do
     label="$(printf '%s%%/h' "$rate")"
-    drift="$(awk -v r="$rate" -v e="$expected_h" 'BEGIN { print r - e }')"
+    drift="$(awk -v r="$rate" -v p="$on_pace_h" 'BEGIN { print r - p }')"
 
     if awk -v g="$gap" 'BEGIN { exit !(g > 0.000001) }'; then
       if awk -v d="$drift" 'BEGIN { exit !(d < -0.000001) }'; then
@@ -154,7 +148,7 @@ one_shot() {
     fi
 
     if [ -z "$eta_h" ]; then
-      printf "  %s: %snever%s\n" "$label" "$C_RED" "$C_RESET"
+      printf "  %s: %s----%s\n" "$label" "$C_RED" "$C_RESET"
       continue
     fi
 

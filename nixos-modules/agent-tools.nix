@@ -11,36 +11,48 @@ let
       name,
       layers,
     }:
-    pkgs.runCommand name {
-      nativeBuildInputs = [
-        pkgs.jq
-        pkgs.remarshal
-      ];
-    } ''
-      i=0
-      json_inputs=()
+    pkgs.runCommand name
+      {
+        nativeBuildInputs = [
+          pkgs.jq
+          pkgs.remarshal
+        ];
+      }
+      ''
+        i=0
+        json_inputs=()
 
-      for layer in ${lib.escapeShellArgs layers}; do
-        i=$((i + 1))
-        remarshal -if toml -of json "$layer" > "$TMPDIR/layer-$i.json"
-        json_inputs+=("$TMPDIR/layer-$i.json")
-      done
+        for layer in ${lib.escapeShellArgs layers}; do
+          i=$((i + 1))
+          remarshal -if toml -of json "$layer" > "$TMPDIR/layer-$i.json"
+          json_inputs+=("$TMPDIR/layer-$i.json")
+        done
 
-      jq -s '
-        def merge(a; b):
-          reduce (b | keys_unsorted[]) as $k
-            (a; .[$k] = if ((a[$k] | type) == "object" and (b[$k] | type) == "object")
-                         then merge(a[$k]; b[$k])
-                         else b[$k]
-                         end);
+        jq -s '
+          def merge(a; b):
+            reduce (b | keys_unsorted[]) as $k
+              (a; .[$k] = if ((a[$k] | type) == "object" and (b[$k] | type) == "object")
+                           then merge(a[$k]; b[$k])
+                           else b[$k]
+                           end);
 
-        reduce .[] as $item ({}; merge(.; $item))
-        | .features = ((.features // {}) + { hooks: true })
-        | .features |= del(.codex_hooks)
-      ' "''${json_inputs[@]}" > "$TMPDIR/config.merged.json"
+          reduce .[] as $item ({}; merge(.; $item))
+          | .features = ((.features // {}) + { hooks: true })
+          | .features |= del(.codex_hooks)
+        ' "''${json_inputs[@]}" > "$TMPDIR/config.merged.json"
 
-      remarshal -if json -of toml "$TMPDIR/config.merged.json" > "$out"
-    '';
+        remarshal -if json -of toml "$TMPDIR/config.merged.json" > "$TMPDIR/config.merged.toml"
+        cat ${codexMergedConfigHeader} "$TMPDIR/config.merged.toml" > "$out"
+      '';
+
+  codexMergedConfigHeader = pkgs.writeText "codex-config-header.toml" ''
+    # Managed by JohnOS. User and project Codex config layers may still override
+    # these defaults when needed.
+    #
+    # Unix socket permissions are supported by codex-cli 0.130.0 via
+    # openai/codex dd30c8eedd171d2dda71c43fac27dc42f457da5f (#15120).
+
+  '';
 
   codexPluginTopLevelConfig = lib.optionalString (cfg.codexCli.statusLinePlugins != [ ]) ''
     [dev.johnrinehart.agentTools.codexCli]
@@ -66,19 +78,23 @@ let
   ''
   + codexPluginTopLevelConfig;
 
-  codexSandboxWorkspaceConfig = ''
-    # codex-cli 0.120.x does not honor the newer `[permissions.<profile>]`
-    # filesystem schema here; it expects the legacy workspace-write sandbox
-    # settings instead.
-    [sandbox_workspace_write]
-    writable_roots = [
-      "current_working_directory",
-      "/nix/var/nix/daemon-socket",
-    ]
-    network_access = true
+  codexPermissionsConfig = ''
+    default_permissions = "johnos-workspace"
+
+    [permissions.johnos-workspace.filesystem]
+    ":root" = "read"
+    ":project_roots" = "write"
+    ":tmpdir" = "write"
+    "/tmp" = "write"
+
+    [permissions.johnos-workspace.network]
+    enabled = true
+
+    [permissions.johnos-workspace.network.unix_sockets]
+    "/nix/var/nix/daemon-socket/socket" = "allow"
   '';
   codexSystemTopLevelFile = pkgs.writeText "codex-system-top-level.toml" codexSystemTopLevelConfig;
-  codexSandboxWorkspaceFile = pkgs.writeText "codex-sandbox-workspace.toml" codexSandboxWorkspaceConfig;
+  codexPermissionsFile = pkgs.writeText "codex-permissions.toml" codexPermissionsConfig;
   codexMergedConfig = mkMergedCodexConfig {
     name = "codex-config-merged.toml";
     layers = [
@@ -86,7 +102,7 @@ let
     ]
     ++ cfg.codexCli.configLayers
     ++ [
-      codexSandboxWorkspaceFile
+      codexPermissionsFile
     ];
   };
 in
@@ -94,7 +110,8 @@ in
   options.dev.johnrinehart.agentTools = {
     enable = lib.mkEnableOption "agent-oriented local AI tooling";
 
-    "oh-my-codex".enable = lib.mkEnableOption "oh-my-codex multi-agent orchestration layer for Codex CLI";
+    "oh-my-codex".enable =
+      lib.mkEnableOption "oh-my-codex multi-agent orchestration layer for Codex CLI";
 
     codexCli.statusLinePlugins = lib.mkOption {
       type = with lib.types; listOf str;
@@ -142,26 +159,32 @@ in
     })
     (lib.mkIf cfg."oh-my-codex".enable (
       let
-        codexOmxLayer = pkgs.runCommand "codex-omx-layer" {
-          outputs = [ "config" "hooks" ];
-        } ''
-          export HOME="$TMPDIR/home"
-          export CODEX_HOME="$HOME/.codex"
+        codexOmxLayer =
+          pkgs.runCommand "codex-omx-layer"
+            {
+              outputs = [
+                "config"
+                "hooks"
+              ];
+            }
+            ''
+              export HOME="$TMPDIR/home"
+              export CODEX_HOME="$HOME/.codex"
 
-          mkdir -p "$HOME" "$TMPDIR/work"
-          cd "$TMPDIR/work"
+              mkdir -p "$HOME" "$TMPDIR/work"
+              cd "$TMPDIR/work"
 
-          ${lib.getExe pkgs.oh-my-codex} setup --scope user --force --verbose > "$TMPDIR/setup.log"
-          ${lib.getExe pkgs.oh-my-codex} doctor > "$TMPDIR/doctor.log"
+              ${lib.getExe pkgs.oh-my-codex} setup --scope user --force --verbose > "$TMPDIR/setup.log"
+              ${lib.getExe pkgs.oh-my-codex} doctor > "$TMPDIR/doctor.log"
 
-          if ! grep -Fq "[OK] Native hooks: hooks.json includes OMX-managed coverage for all native hook events" "$TMPDIR/doctor.log"; then
-            cat "$TMPDIR/doctor.log" >&2
-            exit 1
-          fi
+              if ! grep -Fq "[OK] Native hooks: hooks.json includes OMX-managed coverage for all native hook events" "$TMPDIR/doctor.log"; then
+                cat "$TMPDIR/doctor.log" >&2
+                exit 1
+              fi
 
-          cp "$CODEX_HOME/config.toml" "$config"
-          cp "$CODEX_HOME/hooks.json" "$hooks"
-        '';
+              cp "$CODEX_HOME/config.toml" "$config"
+              cp "$CODEX_HOME/hooks.json" "$hooks"
+            '';
       in
       {
         environment.systemPackages = [
@@ -175,7 +198,8 @@ in
         # Codex discovers hooks.json next to each config.toml layer; keep OMX in
         # the immutable system layer so user/project hooks can coexist separately.
         environment.etc."codex/hooks.json".source = cfg.codexCli.hooksSource;
-      }))
+      }
+    ))
     (lib.mkIf (cfg.enable && cfg.codexCli.hooksSource != null) {
       environment.etc."codex/hooks.json".source = cfg.codexCli.hooksSource;
     })

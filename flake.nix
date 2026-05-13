@@ -2,6 +2,8 @@
   inputs = {
     nixpkgs.url = "github:johnrichardrinehart/nixpkgs?ref=rock-5c-nixos-25.11";
 
+    flake-parts.url = "github:hercules-ci/flake-parts";
+
     flake-templates.url = "github:NixOS/templates/master";
 
     home-manager = {
@@ -26,27 +28,84 @@
   };
 
   outputs =
-    inputs:
-    let
-      system = "x86_64-linux";
-      overlays = import ./overlays inputs;
-      pkgs = import inputs.nixpkgs {
-        inherit system;
-        overlays = [ overlays.default ];
-      };
-    in
-    {
-      nixosConfigurations = import ./nixos-configurations inputs;
+    inputs@{ flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [ inputs.flake-parts.flakeModules.partitions ];
 
-      nixosModules.default = import ./nixos-modules {
-        inherit inputs;
-        lib = inputs.nixpkgs.lib;
+      systems = [ "x86_64-linux" ];
+
+      partitionedAttrs = {
+        checks = "dev";
+        devShells = "dev";
+        formatter = "dev";
       };
 
-      packages.${system} = import ./packages { inherit pkgs; };
+      partitions.dev = {
+        extraInputsFlake = ./dev;
+        module =
+          { inputs, ... }:
+          {
+            perSystem =
+              { system, ... }:
+              let
+                overlays = import ./overlays inputs;
+                pkgs = import inputs.nixpkgs {
+                  inherit system;
+                  overlays = [ overlays.default ];
+                };
+                treefmtEval = inputs."treefmt-nix".lib.evalModule pkgs ./treefmt.nix;
+                preCommitCheck = inputs."git-hooks".lib.${system}.run {
+                  src = ./.;
+                  hooks = {
+                    treefmt-nix = {
+                      enable = true;
+                      name = "treefmt";
+                      entry = "${treefmtEval.config.build.wrapper}/bin/treefmt --fail-on-change";
+                      language = "system";
+                      pass_filenames = false;
+                    };
+                  };
+                };
+              in
+              {
+                devShells = import ./dev-shells.nix {
+                  inherit pkgs;
+                  inherit preCommitCheck;
+                  treefmtBin = treefmtEval.config.build.wrapper;
+                };
 
-      devShells.${system} = import ./dev-shells.nix { inherit pkgs; };
+                checks = {
+                  pre-commit = preCommitCheck;
+                  formatting = treefmtEval.config.build.check inputs.self;
+                };
 
-      inherit overlays;
+                formatter = treefmtEval.config.build.wrapper;
+              };
+          };
+      };
+
+      flake = {
+        nixosConfigurations = import ./nixos-configurations inputs;
+
+        nixosModules.default = import ./nixos-modules {
+          inherit inputs;
+          inherit (inputs.nixpkgs) lib;
+        };
+
+        overlays = import ./overlays inputs;
+      };
+
+      perSystem =
+        { system, ... }:
+        let
+          overlays = import ./overlays inputs;
+          pkgs = import inputs.nixpkgs {
+            inherit system;
+            overlays = [ overlays.default ];
+          };
+        in
+        {
+          packages = import ./packages { inherit pkgs; };
+        };
     };
 }

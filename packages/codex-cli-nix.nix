@@ -1,4 +1,8 @@
-{ lib, nix, writeShellApplication }:
+{
+  lib,
+  nix,
+  writeShellApplication,
+}:
 writeShellApplication {
   name = "codex-cli-nix";
   runtimeInputs = [ nix ];
