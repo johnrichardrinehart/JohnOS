@@ -7,6 +7,7 @@ state_dir="${XDG_RUNTIME_DIR:-/tmp}/johnos-niri-display-mode"
 mirror_pid_file="$state_dir/wl-mirror.pids"
 mirror_source_file="$state_dir/wl-mirror.source"
 f9_picker_pid_file="$state_dir/f9-picker.pid"
+mirror_target_position_base=100000
 
 is_internal_output() {
   case "$1" in
@@ -26,6 +27,7 @@ load_outputs() {
   single_outputs=()
   internal_outputs=()
   external_outputs=()
+  active_external_outputs=()
 
   for output in "${outputs[@]}"; do
     if is_internal_output "$output"; then
@@ -33,6 +35,9 @@ load_outputs() {
     else
       external_outputs+=("$output")
       single_outputs+=("$output")
+      if output_is_active "$output"; then
+        active_external_outputs+=("$output")
+      fi
     fi
   done
   for output in "${internal_outputs[@]}"; do
@@ -86,6 +91,30 @@ stop_mirror() {
   rm -f "$mirror_pid_file" "$mirror_source_file"
 }
 
+isolate_mirror_targets() {
+  source_output="$1"
+  target_index=1
+
+  for output in "${outputs[@]}"; do
+    if [ "$output" != "$source_output" ]; then
+      niri msg output "$output" position set "$((mirror_target_position_base * target_index))" 0 || true
+      target_index=$((target_index + 1))
+    fi
+  done
+}
+
+keep_mirror_source_focused() {
+  local source_output
+
+  [ -f "$mirror_source_file" ] || return 0
+  IFS= read -r source_output <"$mirror_source_file" || return 0
+  [ -n "$source_output" ] || return 0
+  output_is_active "$source_output" || return 0
+
+  isolate_mirror_targets "$source_output"
+  niri msg action focus-monitor "$source_output" || true
+}
+
 apply_extend() {
   stop_mirror
 
@@ -97,6 +126,7 @@ apply_extend() {
 
   sleep 0.2
   niri msg action load-config-file || true
+  sleep 0.2
 }
 
 apply_mirror() {
@@ -111,6 +141,8 @@ apply_mirror() {
 
   sleep 0.2
   niri msg action load-config-file || true
+  sleep 0.2
+  isolate_mirror_targets "$source_output"
   mkdir -p "$state_dir"
   : >"$mirror_pid_file"
   printf '%s\n' "$source_output" >"$mirror_source_file"
@@ -156,12 +188,16 @@ output_is_active() {
 ensure_internal_when_alone() {
   load_outputs || return 0
   [ "${#internal_outputs[@]}" -gt 0 ] || return 0
-  [ "${#external_outputs[@]}" -eq 0 ] || return 0
+  [ "${#active_external_outputs[@]}" -eq 0 ] || return 0
 
   internal_output="${internal_outputs[0]}"
-  output_is_active "$internal_output" && return 0
+  stop_mirror
 
-  apply_single "$internal_output"
+  if ! output_is_active "$internal_output"; then
+    apply_single "$internal_output" || return 0
+  fi
+
+  niri msg action focus-monitor "$internal_output" || true
 }
 
 focused_output() {
@@ -270,7 +306,8 @@ display_picker() {
 
 watch_outputs() {
   while true; do
-    ensure_internal_when_alone
+    load_outputs && keep_mirror_source_focused || true
+    ensure_internal_when_alone || true
     sleep 2
   done
 }
