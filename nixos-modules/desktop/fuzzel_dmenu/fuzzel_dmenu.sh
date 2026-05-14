@@ -66,6 +66,20 @@ build_desktop_index() {
   ' "$@" >"$desktop_index_file"
 }
 
+wait_for_layer_shell_namespace_to_close() {
+  namespace=$1
+  attempts=25
+
+  while [ "$attempts" -gt 0 ]; do
+    if niri msg --json layers | jq -e --arg namespace "$namespace" 'all(.[]; .namespace != $namespace)' >/dev/null; then
+      return 0
+    fi
+
+    attempts=$((attempts - 1))
+    sleep 0.01
+  done
+}
+
 build_desktop_index
 
 printf '%s\n' "$window_list" | jq -r 'map(select(.is_focused | not)) | .[] | [.id, .app_id, .title] | @tsv' |
@@ -113,7 +127,12 @@ width=$((width + 2))
 [ "$width" -gt 90 ] && width=90
 
 tab=$(printf '\t')
-id=$(fuzzel --dmenu --with-nth=2 --accept-nth=1 --nth-delimiter="$tab" --width "$width" <"$input_file") || exit 0
+namespace="fuzzel-dmenu-window-picker-$$"
+id=$(
+  fuzzel --dmenu --namespace="$namespace" --with-nth=2 --accept-nth=1 --nth-delimiter="$tab" --width "$width" <"$input_file"
+) || exit 0
 [ -n "$id" ] || exit 0
 
+# Avoid the fuzzel-close/niri-focus race that can leave the chosen floating window unfocused.
+wait_for_layer_shell_namespace_to_close "$namespace"
 niri msg action focus-window --id "$id"
