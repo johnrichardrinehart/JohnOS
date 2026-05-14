@@ -174,6 +174,21 @@ in
       user = primaryUser;
     };
 
+    systemd.user.services.niri-display-mode-watch = {
+      description = "Keep niri display mode recoverable after output disconnects";
+      wantedBy = [ "graphical-session.target" ];
+      partOf = [ "graphical-session.target" ];
+      after = [
+        "niri.service"
+        "graphical-session.target"
+      ];
+      serviceConfig = {
+        ExecStart = "${lib.getExe niri-cycle-display-mode} --watch";
+        Restart = "always";
+        RestartSec = "1s";
+      };
+    };
+
     environment.systemPackages =
       let
         myMako = pkgs.mako.overrideAttrs (old: {

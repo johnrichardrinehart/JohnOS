@@ -250,7 +250,6 @@ spawn-at-startup "waybar"
 spawn-at-startup "hyprpaper"
 spawn-at-startup "wlsunset" "-l" "41.9695" "-L" "-71.1821" "-t" "3000" "-g" ".9"
 spawn-at-startup "@clipboard_watch@"
-spawn-at-startup "@niri_cycle_display_mode@" "--watch"
 spawn-at-startup "wl-clip-persist" "--clipboard" "regular"
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
