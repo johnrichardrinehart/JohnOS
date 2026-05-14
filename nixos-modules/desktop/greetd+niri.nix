@@ -200,7 +200,6 @@ in
         pkgs.hyprpaper
         pkgs.satty
         pkgs.slurp
-        pkgs.swaylock
         pkgs.waybar
         pkgs.wl-clip-persist
         pkgs.wl-clipboard

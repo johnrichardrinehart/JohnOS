@@ -10,8 +10,8 @@ in
 {
   options.dev.johnrinehart.packages = {
     shell.enable = lib.mkEnableOption "Shell tools (zoxide, tmux, fzf, ripgrep, fd, etc.)";
-    editors.enable = lib.mkEnableOption "Text editors (vim, helix, neovim)";
-    gui.enable = lib.mkEnableOption "GUI apps (brave, vscodium, rofi, keepassxc, etc.)";
+    editors.enable = lib.mkEnableOption "Text editors (vim)";
+    gui.enable = lib.mkEnableOption "GUI apps (brave, vscodium, keepassxc, etc.)";
     devops.enable = lib.mkEnableOption "DevOps tools (minikube, kubectl)";
     media.enable = lib.mkEnableOption "Media tools (mpv, ffmpeg, obs-studio, etc.)";
     system.enable = lib.mkEnableOption "System utilities (htop, tree, lsof, etc.)";
@@ -38,8 +38,6 @@ in
     (lib.mkIf cfg.editors.enable {
       environment.systemPackages = [
         pkgs.vim
-        pkgs.helix
-        pkgs.neovim
       ];
     })
 
@@ -48,11 +46,9 @@ in
         pkgs.dconf
         pkgs.libnotify
         pkgs.gnome-icon-theme
-        pkgs.rofi
         pkgs.vscodium
         pkgs.brave
         pkgs.keepassxc
-        pkgs.stalonetray
         pkgs.pavucontrol
         pkgs.gparted
       ];
@@ -60,9 +56,7 @@ in
 
     (lib.mkIf cfg.devops.enable {
       environment.systemPackages = [
-        pkgs.minikube
         pkgs.kubectl
-        pkgs.dive
       ];
     })
 
@@ -85,7 +79,6 @@ in
         pkgs.alsa-tools
         pkgs.alsa-utils
         pkgs.dig
-        pkgs.htop
         pkgs.tree
         pkgs.killall
         pkgs.lsof
@@ -94,11 +87,8 @@ in
         pkgs.file
         pkgs.pv
         pkgs.ncdu
-        pkgs.xsel
         pkgs.ntfs3g
         pkgs.libqalculate
-        pkgs.gnumake
-        pkgs.nixpkgs-fmt
         pkgs.tokei
         pkgs.libxml2
         pkgs.openconnect
