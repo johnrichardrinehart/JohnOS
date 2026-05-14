@@ -27,9 +27,7 @@ let
     inherit wormhole-send;
   };
 
-  niri-cycle-display-mode = pkgs.callPackage ./niri-cycle-display-mode.nix {
-    niri = config.programs.niri.package;
-  };
+  inherit (pkgs) niri-cycle-display-mode;
 
   clipboard-store-notify = pkgs.writeShellScriptBin "clipboard-store-notify" ''
     set -euo pipefail

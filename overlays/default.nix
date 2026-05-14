@@ -10,6 +10,9 @@ inputs: {
       };
       herdr = final.callPackage ../packages/herdr.nix { };
       "niri-26.04" = final.callPackage ../packages/niri.nix { };
+      niri-cycle-display-mode = final.callPackage ../packages/niri-cycle-display-mode.nix {
+        niri = final."niri-26.04";
+      };
       omx-agent-tools = final.callPackage ../packages/omx-agent-tools.nix { };
       oh-my-codex = final.callPackage ../packages/oh-my-codex.nix { };
     })
