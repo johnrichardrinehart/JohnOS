@@ -1,6 +1,6 @@
 inputs: {
   default = inputs.nixpkgs.lib.composeManyExtensions [
-    (final: _prev: {
+    (final: prev: {
       agent-deck = final.callPackage ../packages/agent-deck.nix { };
       codex-weekly-pace = final.callPackage ../packages/codex-weekly-pace.nix { };
       codex-cli-nix = final.callPackage ../packages/codex-cli-nix.nix { };
@@ -8,6 +8,14 @@ inputs: {
       framework-ec-flash = final.callPackage ../packages/framework-ec-flash.nix {
         frameworkTool = final.framework-tool;
       };
+      fuzzel_1_14_1 = prev.fuzzel.overrideAttrs (_old: rec {
+        version = "1.14.1";
+        src = final.fetchurl {
+          url = "https://codeberg.org/dnkl/fuzzel/archive/${version}.tar.gz";
+          hash = "sha256-xkFnhsOgYAuK2R7ZUcQ8ACpjmHDDgjtKYMkQRC9K4Jc=";
+        };
+      });
+      fuzzel = final.fuzzel_1_14_1;
       herdr = final.callPackage ../packages/herdr.nix { };
       "niri-26.04" = final.callPackage ../packages/niri.nix { };
       niri-cycle-display-mode = final.callPackage ../packages/niri-cycle-display-mode.nix {
