@@ -12,6 +12,12 @@ let
   xcursorTheme = "Adwaita";
   xcursorSize = 24;
 
+  indentKdlLines =
+    prefix: text:
+    lib.concatStringsSep "\n" (
+      map (line: if line == "" then "" else "${prefix}${line}") (lib.splitString "\n" text)
+    );
+
   wormhole-send = pkgs.callPackage ./wormhole-send.nix {
     notifyTimeout = cfg.wormholeNotifyTimeout;
   };
@@ -113,6 +119,35 @@ in
         default = 15000;
         description = "Timeout in ms for wormhole code notifications (0 = persistent)";
       };
+      niri = {
+        extraConfig = lib.mkOption {
+          type = lib.types.lines;
+          default = "";
+          example = ''
+            window-rule {
+                match app-id="^org.example.App$"
+                open-floating true
+            }
+          '';
+          description = ''
+            Extra raw KDL configuration appended to the generated niri
+            configuration as top-level entries.
+          '';
+        };
+        extraKeybindings = lib.mkOption {
+          type = lib.types.lines;
+          default = "";
+          example = ''
+            Mod+Shift+Return {
+                spawn "alacritty"
+            }
+          '';
+          description = ''
+            Extra raw KDL keybindings appended inside the generated niri
+            binds block.
+          '';
+        };
+      };
     }
     // {
       default = false;
@@ -192,6 +227,10 @@ in
             niri_screenshot = lib.getExe niri-screenshot;
             wormhole_send = lib.getExe wormhole-send;
             xcursor_theme = xcursorTheme;
+            extra_niri_config = cfg.niri.extraConfig;
+            extra_niri_keybindings = lib.optionalString (
+              cfg.niri.extraKeybindings != ""
+            ) "\n${indentKdlLines "    " cfg.niri.extraKeybindings}";
 
             # PipeWire's wpctl resolves these at runtime. Passing null tells
             # replaceVarsWith that these @...@ tokens are intentional leftovers.
