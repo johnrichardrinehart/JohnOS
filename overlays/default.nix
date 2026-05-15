@@ -23,6 +23,9 @@ inputs: {
       };
       omx-agent-tools = final.callPackage ../packages/omx-agent-tools.nix { };
       oh-my-codex = final.callPackage ../packages/oh-my-codex.nix { };
+      repo-manager = final.callPackage ../packages/repo-manager.nix {
+        inherit (final.stdenv.hostPlatform) system;
+      };
     })
 
     (final: prev: {

@@ -12,4 +12,5 @@
   inherit (pkgs) niri-cycle-display-mode;
   inherit (pkgs) omx-agent-tools;
   inherit (pkgs) oh-my-codex;
+  inherit (pkgs) repo-manager;
 }

@@ -32,6 +32,7 @@ in
         pkgs.htop
         pkgs.tree
         pkgs.git
+        pkgs.repo-manager
       ];
     })
 
