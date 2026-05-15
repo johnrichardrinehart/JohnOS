@@ -28,6 +28,7 @@ in
   nix = {
     settings = {
       extra-experimental-features = "nix-command flakes ca-derivations";
+      keep-outputs = true;
       trusted-users = [ primaryUser ];
     };
 
