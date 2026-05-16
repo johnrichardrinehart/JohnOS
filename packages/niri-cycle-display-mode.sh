@@ -368,7 +368,9 @@ ensure_internal_when_alone() {
     apply_single_outputs "$internal_output" || return 0
   fi
 
-  niri msg action focus-monitor "$internal_output" || true
+  if [ "$(focused_output || true)" != "$internal_output" ]; then
+    niri msg action focus-monitor "$internal_output" || true
+  fi
 }
 
 focused_output() {
