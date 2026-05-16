@@ -29,7 +29,7 @@ require_tool() {
   fi
 }
 
-for cmd in jq rg awk sed date; do
+for cmd in jq awk date find xargs; do
   require_tool "$cmd"
 done
 
@@ -46,24 +46,36 @@ else
 fi
 
 find_latest_snapshot_json() {
-  local today_dir line
-  today_dir="$HOME/.codex/sessions/$(date +%Y/%m/%d)"
+  local line
+  latest_snapshot_from_files() {
+    xargs -r -0 jq -rc '
+        select(.type == "event_msg")
+        | select(.payload.type == "token_count")
+        | select(.payload.rate_limits.limit_id == "codex")
+        | select(.payload.rate_limits.secondary != null)
+        | select(.payload.rate_limits.secondary.used_percent != null)
+        | [.timestamp, .]
+      ' 2>/dev/null |
+      jq -src 'sort_by(.[0]) | last | .[1]' 2>/dev/null
+  }
 
-  if [ -d "$today_dir" ]; then
-    line="$(rg -n '"type":"token_count".*"limit_id":"codex"' -S "$today_dir" --glob '*.jsonl' | tail -n 1 || true)"
-  else
-    line=""
+  line="$(
+    find "$HOME/.codex/sessions" -type f -name '*.jsonl' -mtime -14 -print0 2>/dev/null |
+      latest_snapshot_from_files
+  )"
+
+  if [ -z "$line" ] || [ "$line" = "null" ]; then
+    line="$(
+      find "$HOME/.codex/sessions" -type f -name '*.jsonl' -print0 2>/dev/null |
+        latest_snapshot_from_files
+    )"
   fi
 
-  if [ -z "$line" ]; then
-    line="$(rg -n '"type":"token_count".*"limit_id":"codex"' -S "$HOME/.codex/sessions" --glob '*.jsonl' | tail -n 1 || true)"
-  fi
-
-  if [ -z "$line" ]; then
+  if [ -z "$line" ] || [ "$line" = "null" ]; then
     return 1
   fi
 
-  printf '%s\n' "$line" | sed -E 's/^[^:]+:[0-9]+://'
+  printf '%s\n' "$line"
 }
 
 format_minutes() {
@@ -94,11 +106,13 @@ one_shot() {
     return 1
   }
 
-  local used win_min reset now start elapsed remain on_pace gap on_pace_h
+  local used win_min reset now start elapsed remain on_pace gap on_pace_h snapshot_ts snapshot_age
   used="$(printf '%s\n' "$snapshot" | jq -r '.payload.rate_limits.secondary.used_percent')"
   win_min="$(printf '%s\n' "$snapshot" | jq -r '.payload.rate_limits.secondary.window_minutes')"
   reset="$(printf '%s\n' "$snapshot" | jq -r '.payload.rate_limits.secondary.resets_at')"
+  snapshot_ts="$(printf '%s\n' "$snapshot" | jq -r '.timestamp')"
   now="$(date +%s)"
+  snapshot_age=$((now - $(date -d "$snapshot_ts" +%s)))
 
   start=$((reset - win_min * 60))
   elapsed=$((now - start))
@@ -122,6 +136,9 @@ one_shot() {
   printf "weekly %s%.2f%% (used %.2f%% vs. on-pace %.2f%%) | reset in %s\n" \
     "$sign" "$magnitude" \
     "$used" "$on_pace" "$(format_minutes $(((remain + 59) / 60)))"
+  if [ "$snapshot_age" -gt 300 ]; then
+    printf "  snapshot: stale by %s; run /status until it refreshes\n" "$(format_minutes $(((snapshot_age + 59) / 60)))"
+  fi
 
   local rates rate drift eta_h eta_min remain_min label
   rates="0.1 0.25 0.5"
