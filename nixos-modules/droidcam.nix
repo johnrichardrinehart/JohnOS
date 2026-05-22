@@ -19,8 +19,8 @@ let
       src = pkgs.fetchFromGitHub {
         owner = "aramg";
         repo = "droidcam";
-        rev = "v1.8.1";
-        sha256 = "3iA7GDTiCx5vHawj8ZBFAK0BIfmxEFuQrVfL7Gi6FhM=";
+        rev = "v2.1.5";
+        sha256 = "sha256-22lRmtXumjR/83Fg1edBisM1GjNZvNUvPs1Yg7Na1xw=";
       };
 
       sourceRoot = "source/v4l2loopback";

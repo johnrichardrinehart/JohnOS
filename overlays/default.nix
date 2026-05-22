@@ -34,8 +34,8 @@ inputs: {
           kdl-rs = final.fetchFromGitHub {
             owner = "johnrichardrinehart";
             repo = "kdl-rs";
-            rev = "15722b3284e391ea340e66ccc7577a0f59d49717";
-            hash = "sha256-te59tvkYiJXtZg6aBCpjM9cM9eWZJ1clRJUJR9OzfgU=";
+            rev = "a08885b597f9b1b9f2e85e13919ee5908cb5f785";
+            hash = "sha256-eCe/cqWa7/RbqvuoaONShPuxsvFzZ5lHOcsSAbZm+iY=";
           };
           kdl-rs-cargo-patch = final.writeText "kdlfmt-kdl-rs.patch" ''
             diff --git a/Cargo.lock b/Cargo.lock
