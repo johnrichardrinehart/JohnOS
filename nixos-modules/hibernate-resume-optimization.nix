@@ -186,9 +186,11 @@ in
 
           **Impact: NONE** (diagnostic only)
 
-          Enables pm_print_times which logs detailed timing for each
-          device's suspend/resume. Useful for identifying slow drivers.
-          Check with: journalctl -k | grep "PM:"
+          Enables PM timing, PM debug messages, verbose boot/initrd logging,
+          console logging across suspend/resume, and explicit pre/post sleep
+          journal markers. Useful for separating image restore time, device
+          resume time, and userspace thaw/reconnect time.
+          Check with: journalctl -b -k -o short-monotonic | grep "PM:"
         '';
       };
     };
@@ -397,13 +399,48 @@ in
 
       # Debug timing
       (lib.mkIf cfg.debugTiming.enable {
-        # Enable PM timing via tmpfiles
-        systemd.tmpfiles.rules = [
-          "w /sys/power/pm_print_times - - - - 1"
+        boot.consoleLogLevel = 7;
+        boot.initrd.verbose = true;
+
+        # Keep the printk buffer large enough for verbose PCI/TB dyndbg output
+        # plus PM timing without wrapping before userspace can read it.
+        boot.kernelParams = [
+          "pm_print_times=1"
+          "pm_debug_messages"
+          "initcall_debug"
+          "printk.time=1"
+          "no_console_suspend"
+          "log_buf_len=32M"
+          "efi_pstore.pstore_disable=0"
         ];
 
-        # Also add kernel param for early boot timing
-        boot.kernelParams = [ "pm_print_times=1" ];
+        # Persist the journal so monotonic gaps are available after the next
+        # full boot too, not only after the hibernated userspace is restored.
+        services.journald.extraConfig = ''
+          Storage=persistent
+        '';
+
+        powerManagement.powerDownCommands = ''
+          read -r uptime _ < /proc/uptime
+          ${pkgs.systemd}/bin/systemd-cat -t hibernate-debug ${pkgs.coreutils}/bin/echo "pre-sleep wall=$(${pkgs.coreutils}/bin/date --iso-8601=ns) monotonic=''${uptime}s"
+        '';
+
+        powerManagement.resumeCommands = ''
+          read -r uptime _ < /proc/uptime
+          ${pkgs.systemd}/bin/systemd-cat -t hibernate-debug ${pkgs.coreutils}/bin/echo "post-resume wall=$(${pkgs.coreutils}/bin/date --iso-8601=ns) monotonic=''${uptime}s"
+        '';
+
+        # Enable PM timing/debug at runtime too, so nixos-rebuild test is enough
+        # for the sysfs knobs even before rebooting into the kernel params.
+        systemd.tmpfiles.rules = [
+          "w /sys/power/pm_print_times - - - - 1"
+          "w /sys/power/pm_debug_messages - - - - 1"
+          "w /sys/module/printk/parameters/console_suspend - - - - N"
+        ];
+
+        # NixOS already enables systemd-pstore. Do not force
+        # printk.always_kmsg_dump here; on EFI pstore that can write
+        # firmware-backed storage on routine shutdown paths.
       })
     ]
   );

@@ -156,7 +156,7 @@ in
     reduceHibernateImageSize.enable = false;
 
     # Diagnostic: Enable to debug slow resume with PM timing
-    debugTiming.enable = false;
+    debugTiming.enable = true;
   };
 
   environment.etc."modprobe.d/v4l2loopback.conf".text = ''
