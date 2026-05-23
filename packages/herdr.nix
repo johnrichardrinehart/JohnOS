@@ -19,7 +19,7 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-N0PRpWMpP2AqndgiN/Cw2/rTVhsrAFOIUZAH1BBvuwk=";
   };
 
-  cargoHash = "sha256-4yu0ScVMgOK8E1LtG6pQCqV4Dq6gfVj80i0Bg9kGoW4=";
+  cargoHash = "sha256-k+MFTivVMO/jOi8OGYm0cHzmFiMLXyC4GlmEYAQD7To=";
 
   zigDeps = callPackage "${src}/vendor/libghostty-vt/build.zig.zon.nix" {
     name = "${pname}-${version}-zig-cache";

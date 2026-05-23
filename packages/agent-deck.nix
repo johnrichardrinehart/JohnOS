@@ -1,10 +1,11 @@
 {
   lib,
-  buildGo124Module,
+  buildGo126Module,
   fetchFromGitHub,
   git,
+  tmux,
 }:
-buildGo124Module rec {
+buildGo126Module rec {
   pname = "agent-deck";
   version = "1.9.29";
 
@@ -15,11 +16,14 @@ buildGo124Module rec {
     hash = "sha256-kcCP35Y+b1oMsilWHaDfsIbVMItLslzW3ptvaX5IaKM=";
   };
 
-  vendorHash = "sha256-/7hzCID4Vu9z6VHN7NiAjyoZPEBPHet4fJdh/VSZaGQ=";
+  vendorHash = "sha256-DYIzBFD0fGMhCPsUiGnP5p3wcBFC4RXvBDlUrNsqzPo=";
 
   subPackages = [ "cmd/agent-deck" ];
 
-  nativeCheckInputs = [ git ];
+  nativeCheckInputs = [
+    git
+    tmux
+  ];
   checkFlags = [
     # This subprocess TUI smoke test depends on signal/log-flush behavior that
     # is not reliable in the Nix build sandbox. Keep the line-level wiring test

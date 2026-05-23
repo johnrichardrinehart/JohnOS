@@ -16,7 +16,7 @@ let
     inherit (cfg) notificationLevels;
     confirmSshActivityCommand = lib.optionalString sshSessionLockCfg.enable (
       lib.getExe (
-        pkgs.callPackage ./confirm-ssh-activity-before-suspend.nix {
+        pkgs.callPackage ../packages/confirm-ssh-activity-before-suspend.nix {
           promptTimeoutSeconds = sshSessionLockCfg.suspendPromptTimeoutSeconds;
         }
       )

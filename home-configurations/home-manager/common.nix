@@ -184,19 +184,19 @@ in
         let
           sshSessionLockCfg = osConfig.dev.johnrinehart.sshSessionLock;
           confirmSshActivityPackage =
-            pkgs.callPackage ../../nixos-modules/confirm-ssh-activity-before-suspend.nix
+            pkgs.callPackage ../../packages/confirm-ssh-activity-before-suspend.nix
               {
                 promptTimeoutSeconds = sshSessionLockCfg.suspendPromptTimeoutSeconds;
               };
-          lockIdleSshPackage = pkgs.callPackage ./lock-idle-ssh-sessions.nix {
+          lockIdleSshPackage = pkgs.callPackage ../../packages/lock-idle-ssh-sessions.nix {
             idleTimeoutSeconds = sshSessionLockCfg.timeoutSeconds;
             inherit (sshSessionLockCfg) terminalMultiplexer;
           };
-          onIdlePackage = pkgs.callPackage ./on-idle.nix {
+          onIdlePackage = pkgs.callPackage ../../packages/on-idle.nix {
             idleTimeoutSeconds = config.idle.short_timeout_duration;
             idleSshActionCommand = lib.optionalString sshSessionLockCfg.enable (lib.getExe lockIdleSshPackage);
           };
-          onLongIdlePackage = pkgs.callPackage ./suspend-if-no-active-ssh.nix {
+          onLongIdlePackage = pkgs.callPackage ../../packages/suspend-if-no-active-ssh.nix {
             confirmSshActivityCommand = lib.optionalString sshSessionLockCfg.enable (
               lib.getExe confirmSshActivityPackage
             );
@@ -210,12 +210,12 @@ in
           on_idle = lib.getExe onIdlePackage;
           on_long_idle = lib.getExe onLongIdlePackage;
           on_long_resume = lib.getExe (
-            pkgs.callPackage ./kill-idle-group.nix {
+            pkgs.callPackage ../../packages/kill-idle-group.nix {
               onIdlePackage = onLongIdlePackage;
             }
           );
           on_short_resume = lib.getExe (
-            pkgs.callPackage ./kill-idle-group.nix {
+            pkgs.callPackage ../../packages/kill-idle-group.nix {
               inherit onIdlePackage;
             }
           );
@@ -238,7 +238,7 @@ in
           enable = true;
           extraConfig =
             let
-              tmuxAuthLock = pkgs.callPackage ./tmux-auth-lock.nix { };
+              tmuxAuthLock = pkgs.callPackage ../../packages/tmux-auth-lock.nix { };
             in
             ''
               set -g lock-command "${lib.getExe tmuxAuthLock}"

@@ -7,50 +7,9 @@
 }:
 let
   cfg = config.dev.johnrinehart.droidcam;
-  droidcamDrv =
-    let
-      inherit (pkgs) stdenv;
-      inherit (config.boot.kernelPackages) kernel;
-    in
-    stdenv.mkDerivation rec {
-      pname = "v4l2loopback-dc";
-      version = "0.0.1";
-
-      src = pkgs.fetchFromGitHub {
-        owner = "aramg";
-        repo = "droidcam";
-        rev = "v2.1.5";
-        sha256 = "sha256-22lRmtXumjR/83Fg1edBisM1GjNZvNUvPs1Yg7Na1xw=";
-      };
-
-      sourceRoot = "source/v4l2loopback";
-
-      # https://github.com/SebTM/nixpkgs/blob/1a92639f290e05d823282ed9a0145d2b82b3c1f6/pkgs/os-specific/linux/sysdig/default.nix#L76-L80
-      postUnpack = lib.optionalString (lib.versionAtLeast kernel.version "6.8") ''
-        substituteInPlace source/v4l2loopback/v4l2loopback-dc.c --replace-fail "strlcpy" "strscpy"
-      '';
-
-      KVER = kernel.modDirVersion;
-      KBUILD_DIR = "${kernel.dev}/lib/modules/${kernel.modDirVersion}/build";
-
-      nativeBuildInputs = kernel.moduleBuildDependencies;
-
-      makeFlags = [
-        "KERNELRELEASE=${kernel.modDirVersion}"
-        "KERNEL_DIR=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
-      ];
-
-      installPhase = ''
-        mkdir -p $out/lib/modules/${KVER}/kernels/media/video
-        cp v4l2loopback-dc.ko $out/lib/modules/${KVER}/kernels/media/video/
-      '';
-
-      meta = with pkgs.stdenv.lib; {
-        description = "DroidCam kernel module v4l2loopback-dc";
-        homepage = "https://github.com/aramg/droidcam";
-      };
-    };
-
+  droidcamDrv = pkgs.callPackage ../packages/droidcam-v4l2loopback.nix {
+    inherit (config.boot.kernelPackages) kernel;
+  };
 in
 {
   options.dev.johnrinehart.droidcam = {

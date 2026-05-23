@@ -25,6 +25,10 @@ in
 
   fonts.fontconfig.enable = lib.mkForce true;
   services.sshd.enable = true;
+  programs.ssh.extraConfig = ''
+    Host *
+      ConnectTimeout 2
+  '';
   virtualisation.containers.enable = true;
 
   users.users.${primaryUser}.extraGroups = [ "input" ];

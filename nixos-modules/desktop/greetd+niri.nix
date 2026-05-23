@@ -18,67 +18,21 @@ let
       map (line: if line == "" then "" else "${prefix}${line}") (lib.splitString "\n" text)
     );
 
-  wormhole-send = pkgs.callPackage ./wormhole-send.nix {
+  wormhole-send = pkgs.callPackage ../../packages/wormhole-send.nix {
     notifyTimeout = cfg.wormholeNotifyTimeout;
   };
 
-  niri-screenshot = pkgs.callPackage ./niri-screenshot.nix {
+  niri-screenshot = pkgs.callPackage ../../packages/niri-screenshot.nix {
     niri = config.programs.niri.package;
     inherit wormhole-send;
   };
 
   inherit (pkgs) niri-cycle-display-mode;
 
-  clipboard-store-notify = pkgs.writeShellScriptBin "clipboard-store-notify" ''
-    set -euo pipefail
-
-    cliphist=${lib.getExe pkgs.cliphist}
-    notify=${lib.getExe' pkgs.libnotify "notify-send"}
-    cat=${lib.getExe' pkgs.coreutils "cat"}
-    mkdir=${lib.getExe' pkgs.coreutils "mkdir"}
-    mktemp=${lib.getExe' pkgs.coreutils "mktemp"}
-    rm=${lib.getExe' pkgs.coreutils "rm"}
-    sha256sum=${lib.getExe' pkgs.coreutils "sha256sum"}
-    cut=${lib.getExe' pkgs.coreutils "cut"}
-
-    state_dir="''${XDG_RUNTIME_DIR:-/tmp}/johnos-clipboard-watch"
-    state_file="$state_dir/last-payload.sha256"
-    tmpfile=$($mktemp "''${XDG_RUNTIME_DIR:-/tmp}/clipboard-watch-XXXXXX")
-    trap '$rm -f "$tmpfile"' EXIT
-
-    $cat > "$tmpfile"
-
-    case "''${CLIPBOARD_STATE:-data}" in
-      data)
-        ;;
-      *)
-        $rm -f "$state_file"
-        exit 0
-        ;;
-    esac
-
-    $cliphist store < "$tmpfile"
-
-    $mkdir -p "$state_dir"
-    hash=$($sha256sum "$tmpfile" | $cut -d ' ' -f 1)
-    previous_hash=""
-    if [ -f "$state_file" ]; then
-      previous_hash=$($cat "$state_file")
-    fi
-
-    [ "$hash" != "$previous_hash" ] || exit 0
-
-    printf '%s\n' "$hash" > "$state_file"
-    $notify -t 1500 "Clipboard" "Updated"
-  '';
-
-  clipboard-watch = pkgs.writeShellScriptBin "clipboard-watch" ''
-    set -euo pipefail
-
-    wl_paste=${lib.getExe' pkgs.wl-clipboard "wl-paste"}
-
-    $wl_paste --watch ${lib.getExe clipboard-store-notify}
-  '';
+  clipboard-store-notify = pkgs.callPackage ../../packages/clipboard-store-notify.nix { };
+  clipboard-watch = pkgs.callPackage ../../packages/clipboard-watch.nix {
+    inherit clipboard-store-notify;
+  };
 
   # Shared PAM configuration for fingerprint + password authentication
   fprintPamConfig = ''
@@ -191,10 +145,8 @@ in
 
     environment.systemPackages =
       let
-        myMako = pkgs.mako.overrideAttrs (old: {
-          patches = old.patches or [ ] ++ [ ./0001-feat-support-etc-mako-config.patch ];
-        });
-        niri-gather-windows = pkgs.callPackage ./niri-gather-windows.nix {
+        myMako = pkgs.callPackage ../../packages/mako-with-etc-config.nix { };
+        niri-gather-windows = pkgs.callPackage ../../packages/niri-gather-windows.nix {
           niri = config.programs.niri.package;
         };
       in
@@ -226,7 +178,7 @@ in
 
     environment.etc."niri/config.kdl".source =
       let
-        fuzzelDmenu = pkgs.callPackage ./fuzzel_dmenu/fuzzel_dmenu.nix { };
+        fuzzelDmenu = pkgs.callPackage ../../packages/fuzzel-dmenu { };
         niriBase = pkgs.replaceVarsWith {
           src = ./niri.kdl;
           replacements = {

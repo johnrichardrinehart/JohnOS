@@ -69,7 +69,7 @@ in
                 url = "https://patch-diff.githubusercontent.com/raw/FrameworkComputer/EmbeddedController/pull/49.patch";
                 hash = "sha256-wJJ244u6oT+ZsGwiD+15UcspR1F/bu4mOOj9Qh5qgoc=";
               })
-              ../../packages/framework-ec-display-toggle-key-hid-persistent.patch
+              ../../packages/framework-ec/framework-ec-display-toggle-key-hid-persistent.patch
             ];
           };
         })

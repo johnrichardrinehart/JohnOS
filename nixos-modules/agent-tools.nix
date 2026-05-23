@@ -11,39 +11,10 @@ let
       name,
       layers,
     }:
-    pkgs.runCommand name
-      {
-        nativeBuildInputs = [
-          pkgs.jq
-          pkgs.remarshal
-        ];
-      }
-      ''
-        i=0
-        json_inputs=()
-
-        for layer in ${lib.escapeShellArgs layers}; do
-          i=$((i + 1))
-          remarshal -if toml -of json "$layer" > "$TMPDIR/layer-$i.json"
-          json_inputs+=("$TMPDIR/layer-$i.json")
-        done
-
-        jq -s '
-          def merge(a; b):
-            reduce (b | keys_unsorted[]) as $k
-              (a; .[$k] = if ((a[$k] | type) == "object" and (b[$k] | type) == "object")
-                           then merge(a[$k]; b[$k])
-                           else b[$k]
-                           end);
-
-          reduce .[] as $item ({}; merge(.; $item))
-          | .features = ((.features // {}) + { hooks: true })
-          | .features |= del(.codex_hooks)
-        ' "''${json_inputs[@]}" > "$TMPDIR/config.merged.json"
-
-        remarshal -if json -of toml "$TMPDIR/config.merged.json" > "$TMPDIR/config.merged.toml"
-        cat ${codexMergedConfigHeader} "$TMPDIR/config.merged.toml" > "$out"
-      '';
+    pkgs.callPackage ../packages/codex-config-merged.nix {
+      inherit name layers;
+      header = codexMergedConfigHeader;
+    };
 
   codexMergedConfigHeader = pkgs.writeText "codex-config-header.toml" ''
     # Managed by JohnOS. User and project Codex config layers may still override
@@ -159,32 +130,7 @@ in
     })
     (lib.mkIf cfg."oh-my-codex".enable (
       let
-        codexOmxLayer =
-          pkgs.runCommand "codex-omx-layer"
-            {
-              outputs = [
-                "config"
-                "hooks"
-              ];
-            }
-            ''
-              export HOME="$TMPDIR/home"
-              export CODEX_HOME="$HOME/.codex"
-
-              mkdir -p "$HOME" "$TMPDIR/work"
-              cd "$TMPDIR/work"
-
-              ${lib.getExe pkgs.oh-my-codex} setup --scope user --force --verbose > "$TMPDIR/setup.log"
-              ${lib.getExe pkgs.oh-my-codex} doctor > "$TMPDIR/doctor.log"
-
-              if ! grep -Fq "[OK] Native hooks: hooks.json includes OMX-managed coverage for all native hook events" "$TMPDIR/doctor.log"; then
-                cat "$TMPDIR/doctor.log" >&2
-                exit 1
-              fi
-
-              cp "$CODEX_HOME/config.toml" "$config"
-              cp "$CODEX_HOME/hooks.json" "$hooks"
-            '';
+        codexOmxLayer = pkgs.callPackage ../packages/codex-omx-layer.nix { };
       in
       {
         environment.systemPackages = [

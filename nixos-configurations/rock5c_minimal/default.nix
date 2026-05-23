@@ -1,17 +1,23 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
 }:
 {
+  imports = [ inputs.rock5c-nixos.nixosModules.default ];
+
+  nixpkgs.overlays = [ inputs.rock5c-nixos.overlays.default ];
   nixpkgs.hostPlatform = "aarch64-linux";
   networking.hostName = "rock5c-minimal";
-  dev.johnrinehart.rock5c.enable = true;
-  dev.johnrinehart.rock5c.useMinimalKernel = true;
   dev.johnrinehart.system.enable = true;
   dev.johnrinehart.nix.enable = true;
   dev.johnrinehart.desktop.wl-hyprland.enable = true;
+  rock5c.enable = true;
+  rock5c.aic8800.enable = true;
+  rock5c.videoBackend = "mpp";
+  rock5c.supportedKernelCheck.enable = false;
 
   boot.consoleLogLevel = 7;
 
@@ -36,7 +42,6 @@
     enable = true;
   };
 
-  hardware.firmware = [ (pkgs.callPackage ./mali_csffw.nix { }) ];
   users.groups.video.members = [ config.services.jellyfin.user ];
 
   services.udev.extraRules = ''
