@@ -27,6 +27,8 @@ in
     system.stateVersion = "24.05"; # Did you read the comment?
 
     programs.zsh.enable = true;
+    dev.johnrinehart.repo-manager.enable = lib.mkDefault true;
+
     # Define a user account. Don't forget to set a password with ‘passwd’.
     ## consider using https://stackoverflow.com/a/54505212 for merging extraGroups
     users = {

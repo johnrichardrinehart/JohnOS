@@ -32,6 +32,7 @@
     ./network.nix
     ./nix.nix
     ./packages.nix
+    ./repo-manager.nix
     ./s3_mount.nix
     ./sound.nix
     ./ssh.nix

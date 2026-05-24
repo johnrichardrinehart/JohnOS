@@ -23,6 +23,9 @@ inputs: {
       repo-manager = final.callPackage ../packages/repo-manager.nix {
         inherit (final.stdenv.hostPlatform) system;
       };
+      repod = final.callPackage ../packages/repod.nix {
+        inherit (final.stdenv.hostPlatform) system;
+      };
     })
 
     (_final: prev: {
