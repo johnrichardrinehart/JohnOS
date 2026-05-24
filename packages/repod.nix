@@ -1,4 +1,4 @@
 { system }:
 
-(builtins.getFlake "git+https://github.com/johnrichardrinehart/repo-manager?rev=d2d613cd43e6f8a175057e6f2d0278ecd656daa6")
+(builtins.getFlake "git+https://github.com/johnrichardrinehart/repo-manager?rev=fb2e2af83507e1a2753ebcf3b633e4992dcacad9")
 .packages.${system}.repod
