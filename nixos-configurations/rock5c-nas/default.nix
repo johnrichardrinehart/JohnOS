@@ -10,7 +10,10 @@
 
   nixpkgs.overlays = [ inputs.rock5c-nixos.overlays.default ];
   nixpkgs.hostPlatform = "aarch64-linux";
-  networking.hostName = "rock5c-minimal";
+  nixpkgs.config.allowUnfreePredicate =
+    pkg: builtins.elem (lib.getName pkg) [ "arm-trusted-firmware-rk3588" ];
+
+  networking.hostName = "rock5c-nas";
   dev.johnrinehart.system.enable = true;
   dev.johnrinehart.nix.enable = true;
   dev.johnrinehart.desktop.wl-hyprland.enable = true;
