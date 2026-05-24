@@ -46,6 +46,7 @@ in
   systemd.services."user@".serviceConfig.Delegate = "cpu cpuset io memory pids";
 
   dev.johnrinehart.system.enable = true;
+  dev.johnrinehart.repo-manager.daemon.enable = true;
 
   dev.johnrinehart.agentTools = {
     enable = true;
