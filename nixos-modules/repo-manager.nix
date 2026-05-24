@@ -20,6 +20,7 @@ in
       inherit (format) type;
       default = {
         cache_root = "/home/${primaryUser}/.cache/repo-manager";
+        config_version = 1;
         clone_start_ttl_minutes = 60;
         detect_related = true;
         root = "/home/${primaryUser}/code";
