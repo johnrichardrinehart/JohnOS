@@ -29,28 +29,7 @@
 
   # https://nixos.wiki/wiki/Linux_kernel#Booting_a_kernel_from_a_custom_source
   boot.kernelPackages = pkgs.lib.mkForce (
-    let
-      latest_stable_pkg =
-        { fetchurl, buildLinux, ... }@args:
-        buildLinux (
-          args
-          // rec {
-            version = "5.16.10";
-            modDirVersion = "5.16.10";
-
-            kernelPatches = [ ];
-
-            src = fetchurl {
-              url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
-              sha256 = "sha256-DE1vAIGABZOFLrFVsB4Jt4tbxp16VT/Fj1rSBw+QI54=";
-            };
-
-          }
-          // (args.argsOverride or { })
-        );
-      latest_stable = pkgs.callPackage latest_stable_pkg { };
-    in
-    lib.recurseIntoAttrs (pkgs.linuxPackagesFor latest_stable)
+    lib.recurseIntoAttrs (pkgs.linuxPackagesFor pkgs.dev.johnrinehart.linux-5_16_10)
   );
 
   # disabled by installation-cd-minimal
