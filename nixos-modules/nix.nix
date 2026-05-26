@@ -31,6 +31,8 @@ in
         "flakes"
       ];
 
+      settings.download-buffer-size = 256 * 1024 * 1024;
+
       settings.trusted-users = cfg.trusted-users;
     };
   };

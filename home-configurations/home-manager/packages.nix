@@ -11,7 +11,7 @@ in
 {
   options.dev.johnrinehart.home-manager.packages = {
     shell.enable = lib.mkEnableOption "Shell tools (fzf)";
-    games.enable = lib.mkEnableOption "Games (gnuchess, stockfish, scid-vs-pc)";
+    games.enable = lib.mkEnableOption "Games (gnuchess, stockfish)";
     messaging.enable = lib.mkEnableOption "Messaging apps (telegram-desktop, signal-desktop)";
   };
 
@@ -26,7 +26,6 @@ in
       home-manager.users.${primaryUser}.home.packages = [
         pkgs.gnuchess
         pkgs.stockfish
-        pkgs.scid-vs-pc
       ];
     })
 

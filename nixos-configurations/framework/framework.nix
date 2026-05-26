@@ -28,6 +28,7 @@ in
   nix = {
     settings = {
       extra-experimental-features = "nix-command flakes ca-derivations";
+      download-buffer-size = 256 * 1024 * 1024;
       keep-outputs = true;
       trusted-users = [ primaryUser ];
     };
@@ -293,12 +294,12 @@ in
   # Decent value for SSD (writes are expensive - chew up lifetime)
   boot.kernel.sysctl."vm.swappiness" = 10;
 
-  systemd.sleep.extraConfig = ''
+  systemd.sleep.settings.Sleep = {
     # https://github.com/systemd/systemd/blob/595d88cdc86afdf40127282d711c5985c85fed9b/src/shared/sleep-config.c#L96-L97
     # SuspendState=disk mem freeze
-    SuspendState=mem freeze
-    MemorySleepMode=deep s2idle
-  '';
+    SuspendState = "mem freeze";
+    MemorySleepMode = "deep s2idle";
+  };
 
   boot.kernelParams = [
     "resume=/dev/nvme0n1p3"
