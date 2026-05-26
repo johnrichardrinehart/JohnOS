@@ -17,6 +17,22 @@
     inputs.home-manager.nixosModules.default
     inputs.sops-nix.nixosModules.default
 
+    (
+      { config, pkgs, ... }:
+      {
+        config =
+          lib.mkIf (config.dev.johnrinehart.s3_mount.enable || config.dev.johnrinehart.gocryptfs.enable)
+            {
+              # The s3fs and gocryptfs modules use filesystem types like
+              # fuse./nix/store/.../bin/s3fs. This patched mount helper lookup is
+              # required for store paths with multiple periods.
+              systemd.package = pkgs.systemd.override {
+                util-linux = pkgs.dev.johnrinehart.util-linux;
+              };
+            };
+      }
+    )
+
     ./agent-tools.nix
     ./auto-suspend.nix
     ./bluetooth.nix
