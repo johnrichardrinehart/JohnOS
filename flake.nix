@@ -111,6 +111,7 @@
         in
         {
           packages = import ./packages { inherit pkgs; };
+          legacyPackages = pkgs;
         };
     };
 }

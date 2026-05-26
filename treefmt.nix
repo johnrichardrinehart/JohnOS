@@ -27,7 +27,10 @@
         "*.jsonc"
       ];
     };
-    kdlfmt.enable = true;
+    kdlfmt = {
+      enable = true;
+      package = pkgs.dev.johnrinehart.kdlfmt;
+    };
     ruff-check.enable = true;
     ruff-format.enable = true;
     shellcheck.enable = true;

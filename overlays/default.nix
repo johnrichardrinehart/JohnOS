@@ -1,54 +1,75 @@
 inputs: {
-  default = inputs.nixpkgs.lib.composeManyExtensions [
-    (final: prev: {
-      agent-deck = final.callPackage ../packages/agent-deck.nix { };
-      codex-weekly-pace = final.callPackage ../packages/codex-weekly-pace { };
-      codex-cli-nix = final.callPackage ../packages/codex-cli-nix.nix { };
-      framework-ec = final.callPackage ../packages/framework-ec { };
-      framework-ec-flash = final.callPackage ../packages/framework-ec-flash.nix {
-        frameworkTool = final.framework-tool;
+  default =
+    final: prev:
+    let
+      inherit (inputs.nixpkgs) lib;
+      packageRoot = ../packages;
+      packageEntries = builtins.readDir packageRoot;
+      packageFiles = lib.filterAttrs (
+        name: type: type == "regular" && lib.hasSuffix ".nix" name && name != "default.nix"
+      ) packageEntries;
+      packageDirs = lib.filterAttrs (
+        name: type: type == "directory" && builtins.pathExists (packageRoot + "/${name}/default.nix")
+      ) packageEntries;
+      packagePaths =
+        lib.mapAttrs' (
+          name: _: lib.nameValuePair (lib.removeSuffix ".nix" name) (packageRoot + "/${name}")
+        ) packageFiles
+        // lib.mapAttrs (name: _: packageRoot + "/${name}") packageDirs;
+      packageArgs = {
+        clipboard-watch.clipboard-store-notify = johnPkgs.clipboard-store-notify;
+        codex-config-merged = {
+          name = "codex-config-merged.toml";
+          layers = [ ];
+          header = final.writeText "codex-config-merged-empty-header.toml" "";
+        };
+        codex-omx-layer.oh-my-codex = johnPkgs.oh-my-codex;
+        confirm-ssh-activity-before-suspend.promptTimeoutSeconds = 15 * 60;
+        droidcam-v4l2loopback.kernel = final.linuxPackages_latest.kernel;
+        framework-ec-flash = {
+          inherit (johnPkgs) framework-ec;
+          frameworkTool = final.framework-tool;
+        };
+        fuzzel-dmenu = {
+          fuzzel = johnPkgs.fuzzel_1_14_1;
+          inherit (johnPkgs) niri;
+        };
+        fuzzel_1_14_1.fuzzel = prev.fuzzel;
+        kdlfmt.kdlfmt = prev.kdlfmt;
+        kill-idle-group.onIdlePackage = johnPkgs.on-idle;
+        lock-idle-ssh-sessions = {
+          idleTimeoutSeconds = 5 * 60;
+          terminalMultiplexer = "tmux";
+          inherit (johnPkgs) tmux;
+        };
+        niri-cycle-display-mode = {
+          fuzzel = johnPkgs.fuzzel_1_14_1;
+          inherit (johnPkgs) niri;
+        };
+        niri-gather-windows.niri = johnPkgs.niri;
+        niri-screenshot = {
+          inherit (johnPkgs) niri;
+          inherit (johnPkgs) wormhole-send;
+        };
+        omx-agent-tools = {
+          inherit (johnPkgs) codex-cli-nix;
+          inherit (johnPkgs) oh-my-codex;
+        };
+        on-idle.idleTimeoutSeconds = 5 * 60;
+        repo-manager.system = final.stdenv.hostPlatform.system;
+        repod.system = final.stdenv.hostPlatform.system;
+        tmux = {
+          inherit (prev) fetchpatch2 tmux;
+        };
+        util-linux.util-linux = prev.util-linux;
       };
-      fuzzel_1_14_1 = import ../packages/fuzzel_1_14_1.nix {
-        inherit (final) fetchurl;
-        inherit (prev) fuzzel;
+      johnPkgs = lib.mapAttrs (
+        name: path: final.callPackage path (packageArgs.${name} or { })
+      ) packagePaths;
+    in
+    {
+      dev = (prev.dev or { }) // {
+        johnrinehart = johnPkgs;
       };
-      fuzzel = final.fuzzel_1_14_1;
-      herdr = final.callPackage ../packages/herdr.nix { };
-      "niri-26.04" = final.callPackage ../packages/niri.nix { };
-      niri-cycle-display-mode = final.callPackage ../packages/niri-cycle-display-mode {
-        niri = final."niri-26.04";
-      };
-      omx-agent-tools = final.callPackage ../packages/omx-agent-tools.nix { };
-      oh-my-codex = final.callPackage ../packages/oh-my-codex.nix { };
-      repo-manager = final.callPackage ../packages/repo-manager.nix {
-        inherit (final.stdenv.hostPlatform) system;
-      };
-      repod = final.callPackage ../packages/repod.nix {
-        inherit (final.stdenv.hostPlatform) system;
-      };
-    })
-
-    (_final: prev: {
-      kdlfmt = prev.callPackage ../packages/kdlfmt.nix {
-        inherit (prev) kdlfmt;
-      };
-    })
-
-    # util-linux patch for handling dots in paths properly
-    (_final: prev: {
-      util-linux = import ../packages/util-linux-patched.nix {
-        inherit (prev) util-linux;
-      };
-    })
-
-    # tmux control-mode NULL control_state crash:
-    # https://www.mail-archive.com/tmux-users@googlegroups.com/msg02193.html
-    # https://www.mail-archive.com/tmux-users@googlegroups.com/msg02194.html
-    (_final: prev: {
-      tmux = import ../packages/tmux-patched.nix {
-        inherit (prev) fetchpatch2;
-        inherit (prev) tmux;
-      };
-    })
-  ];
+    };
 }
