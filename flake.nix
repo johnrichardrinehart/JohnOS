@@ -1,13 +1,13 @@
 {
   inputs = {
-    nixpkgs.url = "github:johnrichardrinehart/nixpkgs?ref=rock-5c-nixos-25.11";
+    nixpkgs.url = "github:johnrichardrinehart/nixpkgs?ref=rock-5c-nixos-26.05";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
 
     flake-templates.url = "github:NixOS/templates/master";
 
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager/release-26.05";
       flake = true;
       inputs.nixpkgs.follows = "nixpkgs";
     };

@@ -2,7 +2,7 @@
   description = "Internal development inputs for JohnOS partitions";
 
   inputs = {
-    nixpkgs.url = "github:johnrichardrinehart/nixpkgs?ref=rock-5c-nixos-25.11";
+    nixpkgs.url = "github:johnrichardrinehart/nixpkgs?ref=rock-5c-nixos-26.05";
 
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
