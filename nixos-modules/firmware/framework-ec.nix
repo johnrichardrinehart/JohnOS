@@ -9,8 +9,30 @@ let
   flashCfg = cfg.flashService;
   hasFeature = feature: builtins.elem feature cfg.features;
   hasF9DisplayToggle = hasFeature "F9-display-toggle";
-  ecImage = "${pkgs.framework-ec}/${pkgs.framework-ec.imagePath or "share/framework-ec/hx20/ec.bin"}";
-  frameworkEcFlash = lib.getExe pkgs.framework-ec-flash;
+  frameworkEc =
+    if hasF9DisplayToggle then
+      pkgs.dev.johnrinehart.framework-ec.override {
+        rev = "553827caae7134d45a0617af9c201e333eab9a26";
+        hash = "sha256-lqWFUxelwYABTf8FSyqL+X8CeGW/2zjeZvxHI1ZUuWM=";
+        supportsDisplayToggleKeyHid = true;
+        patches = [
+          # Make Framework F9's Project action emit a HID display-toggle event
+          # instead of the layout-dependent Win+P keyboard chord that collides
+          # with niri Mod+L on Dvorak.
+          (pkgs.fetchpatch2 {
+            url = "https://patch-diff.githubusercontent.com/raw/FrameworkComputer/EmbeddedController/pull/49.patch";
+            hash = "sha256-Z1xFZ1iYREAA72TjMZLJtLQuN0HikzFyz/MmuLqZgG4=";
+          })
+          ../../packages/framework-ec/framework-ec-display-toggle-key-hid-persistent.patch
+        ];
+      }
+    else
+      pkgs.dev.johnrinehart.framework-ec;
+  frameworkEcFlashPackage = pkgs.dev.johnrinehart.framework-ec-flash.override {
+    framework-ec = frameworkEc;
+  };
+  ecImage = "${frameworkEc}/${frameworkEc.imagePath or "share/framework-ec/hx20/ec.bin"}";
+  frameworkEcFlash = lib.getExe frameworkEcFlashPackage;
   expectedDmiBoardName =
     if flashCfg.expectedDmiBoardName == null then "" else flashCfg.expectedDmiBoardName;
   requireAC = if flashCfg.requireAC then "1" else "0";
@@ -31,7 +53,7 @@ in
 
     flashService = {
       enable = lib.mkEnableOption ''
-        automatically flash pkgs.framework-ec when the live EC contents differ
+        automatically flash the scoped Framework EC package when the live EC contents differ
       '';
 
       requireAC = lib.mkOption {
@@ -54,30 +76,8 @@ in
   };
 
   config = {
-    nixpkgs.overlays = lib.mkIf hasF9DisplayToggle (
-      lib.mkAfter [
-        (final: prev: {
-          framework-ec = prev.framework-ec.override {
-            rev = "553827caae7134d45a0617af9c201e333eab9a26";
-            hash = "sha256-lqWFUxelwYABTf8FSyqL+X8CeGW/2zjeZvxHI1ZUuWM=";
-            supportsDisplayToggleKeyHid = true;
-            patches = [
-              # Make Framework F9's Project action emit a HID display-toggle event
-              # instead of the layout-dependent Win+P keyboard chord that collides
-              # with niri Mod+L on Dvorak.
-              (final.fetchpatch2 {
-                url = "https://patch-diff.githubusercontent.com/raw/FrameworkComputer/EmbeddedController/pull/49.patch";
-                hash = "sha256-wJJ244u6oT+ZsGwiD+15UcspR1F/bu4mOOj9Qh5qgoc=";
-              })
-              ../../packages/framework-ec/framework-ec-display-toggle-key-hid-persistent.patch
-            ];
-          };
-        })
-      ]
-    );
-
     environment.systemPackages = lib.mkIf (cfg.features != [ ] || flashCfg.enable) [
-      pkgs.framework-ec
+      frameworkEc
       pkgs.framework-tool
     ];
 

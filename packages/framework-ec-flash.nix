@@ -209,7 +209,7 @@ writeShellApplication {
     Usage: framework-ec-flash [--yes] [EC_IMAGE]
 
     Flash a Framework embedded-controller image using Framework's firmware utility.
-    If EC_IMAGE is omitted, the image from pkgs.framework-ec is used.
+    If EC_IMAGE is omitted, the image from this package's framework-ec input is used.
 
     This is intended for Framework Laptop 13 11th Gen / hx20 EC images.
     By default it writes only the EC_RW firmware region. Framework documents
