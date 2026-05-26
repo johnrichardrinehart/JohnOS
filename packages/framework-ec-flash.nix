@@ -25,7 +25,6 @@ writeShellApplication {
 
     default_image="${framework-ec}/${framework-ec.imagePath or "share/framework-ec/hx20/ec.bin"}"
     assume_yes=0
-    include_ro=0
     image="$default_image"
     framework_tool="${frameworkTool}/bin/framework_tool"
     ectool="${framework-ec}/bin/framework_ectool"
@@ -90,6 +89,43 @@ writeShellApplication {
         echo "framework-ec-flash: refusing to flash Framework EC image: expected DMI board_name $expected_dmi_board_name, got ''${actual_board_name:-unknown}" >&2
         exit 1
       fi
+    }
+
+    region_sha256() {
+      sha256sum "$1" | cut -d' ' -f1
+    }
+
+    first_difference_offset() {
+      expected="$1"
+      actual="$2"
+      label="$3"
+      cmp_output="$workdir/cmp-current-$label.txt"
+
+      cmp -l "$expected" "$actual" > "$cmp_output" 2>/dev/null || true
+      diff_byte=
+      if IFS=' ' read -r diff_byte _ < "$cmp_output" && [ -n "$diff_byte" ]; then
+        printf '%s\n' "$((diff_byte - 1))"
+      else
+        printf '%s\n' unknown
+      fi
+    }
+
+    report_region_difference() {
+      expected="$1"
+      actual="$2"
+      label="$3"
+
+      if cmp -s "$expected" "$actual"; then
+        status "$label region matches configured firmware"
+        return 0
+      fi
+
+      first_diff="$(first_difference_offset "$expected" "$actual" "$label")"
+      status "$label region differs from configured firmware"
+      status "$label expected sha256 $(region_sha256 "$expected")"
+      status "$label current  sha256 $(region_sha256 "$actual")"
+      status "$label first differing byte offset $first_diff"
+      return 1
     }
 
     wait_for_ec() {
@@ -212,15 +248,13 @@ writeShellApplication {
     If EC_IMAGE is omitted, the image from this package's framework-ec input is used.
 
     This is intended for Framework Laptop 13 11th Gen / hx20 EC images.
-    By default it writes only the EC_RW firmware region. Framework documents
-    hx20 as currently running only from RO, so RW-only flashing is useful for
-    matching stored firmware but will not activate EC behavior changes.
+    Framework documents hx20 as running from RO, so the checker and final
+    readback verification compare only the RO firmware region. EC_RW and
+    padding/gap bytes are intentionally ignored.
     Framework's firmware utility handles the MEC flash-notify sequence that is
     required before reading or writing the EC SPI flash.
 
     Options:
-      --include-ro     Also write EC RO. Requires --force internally and is unsafe.
-                       This is required for hx20 runtime EC behavior changes.
       -y, --yes       Skip the interactive confirmation prompt.
       -h, --help      Show this help.
     EOF
@@ -228,9 +262,6 @@ writeShellApplication {
 
     while [ "$#" -gt 0 ]; do
       case "$1" in
-        --include-ro)
-          include_ro=1
-          ;;
         -y|--yes)
           assume_yes=1
           ;;
@@ -311,31 +342,23 @@ writeShellApplication {
     trap cleanup EXIT
 
     expected_ro="$workdir/expected-RO.bin"
-    expected_rw="$workdir/expected-EC_RW.bin"
     current_flash="$workdir/current-ec.bin"
     current_wp_ro="$workdir/current-WP_RO.bin"
-    current_rw="$workdir/current-EC_RW.bin"
     verified_flash="$workdir/verified-ec.bin"
     verified_ro="$workdir/verified-RO.bin"
-    verified_rw="$workdir/verified-EC_RW.bin"
 
     dd if="$image" of="$expected_ro" bs=1 count=$((0x3c000)) status=none
-    dd if="$image" of="$expected_rw" bs=1 skip=$((0x40000)) count=$((0x39000)) status=none
 
     status "dumping current EC flash"
     "''${framework_tool_cmd[@]}" --dump-ec-flash "$current_flash"
-    dd if="$current_flash" of="$current_rw" bs=1 skip=$((0x40000)) count=$((0x39000)) status=none
-    if [ "$include_ro" -eq 1 ]; then
-      dd if="$current_flash" of="$current_wp_ro" bs=1 count=$((0x3c000)) status=none
-    fi
+    dd if="$current_flash" of="$current_wp_ro" bs=1 count=$((0x3c000)) status=none
 
-    if cmp -s "$expected_rw" "$current_rw" \
-      && { [ "$include_ro" -ne 1 ] || cmp -s "$expected_ro" "$current_wp_ro"; }; then
-      status "EC image is already flashed"
+    if report_region_difference "$expected_ro" "$current_wp_ro" RO; then
+      status "EC RO firmware is already flashed; ignoring EC_RW and padding/gap bytes"
       exit 0
     fi
 
-    status "EC image differs from configured firmware"
+    status "EC RO firmware differs from configured firmware"
 
     status "checking AC power"
     check_ac_power
@@ -346,31 +369,18 @@ writeShellApplication {
     status "checking EC write protection"
     check_flash_write_protection
 
-    if [ "$include_ro" -eq 1 ]; then
-      status "flashing EC RO+RW; wrapper will run final readback verification afterward"
-      "''${framework_tool_cmd[@]}" --force --flash-ec "$image"
-    else
-      status "flashing EC_RW; wrapper will run final readback verification afterward"
-      "''${framework_tool_cmd[@]}" --flash-rw-ec "$image"
-    fi
+    status "flashing EC RO; wrapper will verify RO by final readback afterward"
+    "''${framework_tool_cmd[@]}" --force --flash-ro-ec "$image"
 
     status "firmware utility finished; verifying EC flash by readback"
     "''${framework_tool_cmd[@]}" --dump-ec-flash "$verified_flash"
     dd if="$verified_flash" of="$verified_ro" bs=1 count=$((0x3c000)) status=none
-    dd if="$verified_flash" of="$verified_rw" bs=1 skip=$((0x40000)) count=$((0x39000)) status=none
-    if [ "$include_ro" -eq 1 ]; then
-      if ! cmp -s "$expected_ro" "$verified_ro"; then
-        report_mismatch "$expected_ro" "$verified_ro" RO
-        exit 1
-      fi
-    fi
-
-    if ! cmp -s "$expected_rw" "$verified_rw"; then
-      report_mismatch "$expected_rw" "$verified_rw" EC_RW
+    if ! cmp -s "$expected_ro" "$verified_ro"; then
+      report_mismatch "$expected_ro" "$verified_ro" RO
       exit 1
     fi
 
-    status "EC firmware flash complete"
+    status "EC RO firmware flash complete"
   '';
 
   meta = {

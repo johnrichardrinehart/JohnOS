@@ -100,7 +100,7 @@ in
         export FRAMEWORK_EC_FLASH_EXPECTED_DMI_BOARD_NAME=${lib.escapeShellArg expectedDmiBoardName}
         export FRAMEWORK_EC_FLASH_REQUIRE_AC=${lib.escapeShellArg requireAC}
         export FRAMEWORK_EC_FLASH_POWER_REFUSAL_EXIT_CODE=0
-        ${frameworkEcFlash} --yes --include-ro ${lib.escapeShellArg ecImage}
+        ${frameworkEcFlash} --yes ${lib.escapeShellArg ecImage}
       '';
     };
   };
