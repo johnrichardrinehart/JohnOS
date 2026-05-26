@@ -14,7 +14,7 @@ in
   options.dev.johnrinehart.repo-manager = {
     enable = lib.mkEnableOption "repo-manager configuration";
 
-    package = lib.mkPackageOption pkgs "repo-manager" { };
+    package = lib.mkPackageOption pkgs.dev.johnrinehart "repo-manager" { };
 
     settings = lib.mkOption {
       inherit (format) type;
@@ -36,7 +36,7 @@ in
 
     daemon = {
       enable = lib.mkEnableOption "the repo-manager user daemon";
-      package = lib.mkPackageOption pkgs "repod" { };
+      package = lib.mkPackageOption pkgs.dev.johnrinehart "repod" { };
     };
   };
 

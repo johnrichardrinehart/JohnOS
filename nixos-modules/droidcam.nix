@@ -7,7 +7,7 @@
 }:
 let
   cfg = config.dev.johnrinehart.droidcam;
-  droidcamDrv = pkgs.callPackage ../packages/droidcam-v4l2loopback.nix {
+  droidcamDrv = pkgs.dev.johnrinehart.droidcam-v4l2loopback.override {
     inherit (config.boot.kernelPackages) kernel;
   };
 in

@@ -27,7 +27,7 @@ let
     theme = "dark"
 
     [tools.my-codex]
-    command = "${lib.getExe pkgs.codex-cli-nix}"
+    command = "${lib.getExe pkgs.dev.johnrinehart.codex-cli-nix}"
     compatible_with = "codex"
 
     # OMX currently runs Codex inside the existing tmux pane and may also mutate the
@@ -36,11 +36,11 @@ let
     # `resume <session-id>` shape into the OMX argv order that preserves the
     # intended flags on resumed sessions.
     [tools.omx-high]
-    command = "${lib.getExe' pkgs.omx-agent-tools "omx-high"}"
+    command = "${lib.getExe' pkgs.dev.johnrinehart.omx-agent-tools "omx-high"}"
     compatible_with = "codex"
 
     [tools.omx-high-sandboxed-ralph]
-    command = "${lib.getExe' pkgs.omx-agent-tools "omx-high-sandboxed-ralph"}"
+    command = "${lib.getExe' pkgs.dev.johnrinehart.omx-agent-tools "omx-high-sandboxed-ralph"}"
     compatible_with = "codex"
 
     [worktree]
@@ -183,20 +183,19 @@ in
       ".config/hypr/hypridle.conf".source =
         let
           sshSessionLockCfg = osConfig.dev.johnrinehart.sshSessionLock;
-          confirmSshActivityPackage =
-            pkgs.callPackage ../../packages/confirm-ssh-activity-before-suspend.nix
-              {
-                promptTimeoutSeconds = sshSessionLockCfg.suspendPromptTimeoutSeconds;
-              };
-          lockIdleSshPackage = pkgs.callPackage ../../packages/lock-idle-ssh-sessions.nix {
+          confirmSshActivityPackage = pkgs.dev.johnrinehart.confirm-ssh-activity-before-suspend.override {
+            promptTimeoutSeconds = sshSessionLockCfg.suspendPromptTimeoutSeconds;
+          };
+          lockIdleSshPackage = pkgs.dev.johnrinehart.lock-idle-ssh-sessions.override {
             idleTimeoutSeconds = sshSessionLockCfg.timeoutSeconds;
             inherit (sshSessionLockCfg) terminalMultiplexer;
+            tmux = pkgs.dev.johnrinehart.tmux;
           };
-          onIdlePackage = pkgs.callPackage ../../packages/on-idle.nix {
+          onIdlePackage = pkgs.dev.johnrinehart.on-idle.override {
             idleTimeoutSeconds = config.idle.short_timeout_duration;
             idleSshActionCommand = lib.optionalString sshSessionLockCfg.enable (lib.getExe lockIdleSshPackage);
           };
-          onLongIdlePackage = pkgs.callPackage ../../packages/suspend-if-no-active-ssh.nix {
+          onLongIdlePackage = pkgs.dev.johnrinehart.suspend-if-no-active-ssh.override {
             confirmSshActivityCommand = lib.optionalString sshSessionLockCfg.enable (
               lib.getExe confirmSshActivityPackage
             );
@@ -210,12 +209,12 @@ in
           on_idle = lib.getExe onIdlePackage;
           on_long_idle = lib.getExe onLongIdlePackage;
           on_long_resume = lib.getExe (
-            pkgs.callPackage ../../packages/kill-idle-group.nix {
+            pkgs.dev.johnrinehart.kill-idle-group.override {
               onIdlePackage = onLongIdlePackage;
             }
           );
           on_short_resume = lib.getExe (
-            pkgs.callPackage ../../packages/kill-idle-group.nix {
+            pkgs.dev.johnrinehart.kill-idle-group.override {
               inherit onIdlePackage;
             }
           );
@@ -238,7 +237,7 @@ in
           enable = true;
           extraConfig =
             let
-              tmuxAuthLock = pkgs.callPackage ../../packages/tmux-auth-lock.nix { };
+              tmuxAuthLock = pkgs.dev.johnrinehart.tmux-auth-lock;
             in
             ''
               set -g lock-command "${lib.getExe tmuxAuthLock}"
@@ -488,7 +487,7 @@ in
           lmkv = fetchLatestKernelVersion "mainline";
           clv = "uname -a | cut -f3 -d' ' | cut -f 1 -d'-' ";
           k = "kubectl";
-          codex = lib.getExe pkgs.codex-cli-nix;
+          codex = lib.getExe pkgs.dev.johnrinehart.codex-cli-nix;
           chess = "scid";
           sudo-nixos-rebuild-flake = "sudo nixos-rebuild switch --flake $HOME/code/repos/mine/nix"; # https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
         };
@@ -529,7 +528,7 @@ in
                   tmux_session_stamp="$(${lib.getExe' pkgs.coreutils "date"} +%Y%m%dT%H%M%S)"
                   tmux_socket="$tmux_socket_dir/tmux-$tmux_uid/$tmux_socket_name"
                   tmux_session="$tmux_session_prefix-$tmux_session_stamp-$$"
-                  exec ${lib.getExe pkgs.tmux} -S "$tmux_socket" new-session -s "$tmux_session"
+                  exec ${lib.getExe pkgs.dev.johnrinehart.tmux} -S "$tmux_socket" new-session -s "$tmux_session"
                 fi
               '';
         in

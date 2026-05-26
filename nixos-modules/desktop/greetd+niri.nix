@@ -18,19 +18,19 @@ let
       map (line: if line == "" then "" else "${prefix}${line}") (lib.splitString "\n" text)
     );
 
-  wormhole-send = pkgs.callPackage ../../packages/wormhole-send.nix {
+  wormhole-send = pkgs.dev.johnrinehart.wormhole-send.override {
     notifyTimeout = cfg.wormholeNotifyTimeout;
   };
 
-  niri-screenshot = pkgs.callPackage ../../packages/niri-screenshot.nix {
+  niri-screenshot = pkgs.dev.johnrinehart.niri-screenshot.override {
     niri = config.programs.niri.package;
     inherit wormhole-send;
   };
 
-  inherit (pkgs) niri-cycle-display-mode;
+  inherit (pkgs.dev.johnrinehart) niri-cycle-display-mode;
 
-  clipboard-store-notify = pkgs.callPackage ../../packages/clipboard-store-notify.nix { };
-  clipboard-watch = pkgs.callPackage ../../packages/clipboard-watch.nix {
+  clipboard-store-notify = pkgs.dev.johnrinehart.clipboard-store-notify;
+  clipboard-watch = pkgs.dev.johnrinehart.clipboard-watch.override {
     inherit clipboard-store-notify;
   };
 
@@ -115,7 +115,7 @@ in
 
     programs.niri.enable = true;
 
-    programs.niri.package = pkgs."niri-26.04";
+    programs.niri.package = pkgs.dev.johnrinehart.niri;
 
     users.users.${primaryUser}.extraGroups = [ "seat" ];
 
@@ -145,8 +145,8 @@ in
 
     environment.systemPackages =
       let
-        myMako = pkgs.callPackage ../../packages/mako-with-etc-config.nix { };
-        niri-gather-windows = pkgs.callPackage ../../packages/niri-gather-windows.nix {
+        myMako = pkgs.dev.johnrinehart.mako-with-etc-config;
+        niri-gather-windows = pkgs.dev.johnrinehart.niri-gather-windows.override {
           niri = config.programs.niri.package;
         };
       in
@@ -160,7 +160,7 @@ in
         pkgs.alacritty
         pkgs.brightnessctl
         pkgs.cliphist
-        pkgs.fuzzel
+        pkgs.dev.johnrinehart.fuzzel_1_14_1
         pkgs.grim
         pkgs.hyprpaper
         pkgs.satty
@@ -178,7 +178,10 @@ in
 
     environment.etc."niri/config.kdl".source =
       let
-        fuzzelDmenu = pkgs.callPackage ../../packages/fuzzel-dmenu { };
+        fuzzelDmenu = pkgs.dev.johnrinehart.fuzzel-dmenu.override {
+          fuzzel = pkgs.dev.johnrinehart.fuzzel_1_14_1;
+          niri = config.programs.niri.package;
+        };
         niriBase = pkgs.replaceVarsWith {
           src = ./niri.kdl;
           replacements = {

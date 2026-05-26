@@ -56,7 +56,7 @@
   programs.zsh.enable = true;
 
   environment.systemPackages = [
-    pkgs.tmux
+    pkgs.dev.johnrinehart.tmux
     pkgs.vim
     pkgs.git
     pkgs.nixpkgs-fmt

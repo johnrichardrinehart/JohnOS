@@ -59,7 +59,7 @@
   environment.systemPackages = [
     pkgs.vim
     pkgs.git
-    pkgs.tmux
+    pkgs.dev.johnrinehart.tmux
     pkgs.thin-provisioning-tools # for cache_check
   ];
 

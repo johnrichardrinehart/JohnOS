@@ -22,7 +22,7 @@ in
     (lib.mkIf cfg.shell.enable {
       environment.systemPackages = [
         pkgs.zoxide
-        pkgs.tmux
+        pkgs.dev.johnrinehart.tmux
         pkgs.xdg-utils
         pkgs.fd
         pkgs.ripgrep
@@ -32,7 +32,7 @@ in
         pkgs.htop
         pkgs.tree
         pkgs.git
-        pkgs.repo-manager
+        pkgs.dev.johnrinehart.repo-manager
       ];
     })
 

@@ -83,7 +83,7 @@ in
 
     # Convenience script to enable/disable debug at runtime
     environment.systemPackages = [
-      (pkgs.callPackage ../packages/tb-debug.nix { })
+      pkgs.dev.johnrinehart.tb-debug
     ];
   };
 }

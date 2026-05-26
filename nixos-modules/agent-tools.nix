@@ -11,7 +11,7 @@ let
       name,
       layers,
     }:
-    pkgs.callPackage ../packages/codex-config-merged.nix {
+    pkgs.dev.johnrinehart.codex-config-merged.override {
       inherit name layers;
       header = codexMergedConfigHeader;
     };
@@ -116,9 +116,9 @@ in
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
       environment.systemPackages = [
-        pkgs.agent-deck
-        pkgs.codex-cli-nix
-        pkgs.herdr
+        pkgs.dev.johnrinehart.agent-deck
+        pkgs.dev.johnrinehart.codex-cli-nix
+        pkgs.dev.johnrinehart.herdr
       ];
 
       # Always publish a system Codex config layer for agentTools-enabled hosts,
@@ -126,16 +126,16 @@ in
       environment.etc."codex/config.toml".source = codexMergedConfig;
     })
     (lib.mkIf (cfg.enable && lib.elem "codex-weekly-pace" cfg.codexCli.statusLinePlugins) {
-      environment.systemPackages = [ pkgs.codex-weekly-pace ];
+      environment.systemPackages = [ pkgs.dev.johnrinehart.codex-weekly-pace ];
     })
     (lib.mkIf cfg."oh-my-codex".enable (
       let
-        codexOmxLayer = pkgs.callPackage ../packages/codex-omx-layer.nix { };
+        codexOmxLayer = pkgs.dev.johnrinehart.codex-omx-layer;
       in
       {
         environment.systemPackages = [
-          pkgs.oh-my-codex
-          pkgs.omx-agent-tools
+          pkgs.dev.johnrinehart.oh-my-codex
+          pkgs.dev.johnrinehart.omx-agent-tools
         ];
 
         dev.johnrinehart.agentTools.codexCli.configLayers = lib.mkAfter [ codexOmxLayer.config ];

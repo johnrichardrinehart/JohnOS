@@ -46,6 +46,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    environment.systemPackages = lib.optional (cfg.terminalMultiplexer == "tmux") pkgs.tmux;
+    environment.systemPackages = lib.optional (
+      cfg.terminalMultiplexer == "tmux"
+    ) pkgs.dev.johnrinehart.tmux;
   };
 }
