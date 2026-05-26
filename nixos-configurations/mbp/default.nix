@@ -68,11 +68,6 @@
     networkmanager = {
       enable = true;
     };
-
-    wireless = {
-      enable = false;
-      userControlled.enable = true;
-    };
   };
 
   environment.systemPackages = [ pkgs.hicolor-icon-theme ];

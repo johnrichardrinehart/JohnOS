@@ -43,6 +43,10 @@
         server_url = "https://headscale.johnrinehart.dev.";
         dns = {
           base_domain = "headscale.johnrinehart.dev";
+          nameservers.global = [
+            "1.1.1.1"
+            "8.8.8.8"
+          ];
         };
       };
       port = 80;
