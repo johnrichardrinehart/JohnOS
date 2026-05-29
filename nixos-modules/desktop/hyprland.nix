@@ -9,9 +9,6 @@ in
 {
   options.dev.johnrinehart.desktop.wl-hyprland = {
     enable = lib.mkEnableOption "the Wayland with Hyprland configuration.";
-  }
-  // {
-    default = false;
   };
 
   config = lib.mkIf cfg.enable {

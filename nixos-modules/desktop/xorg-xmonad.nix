@@ -10,9 +10,6 @@ in
 {
   options.dev.johnrinehart.desktop.xorg-xmonad = {
     enable = lib.mkEnableOption "the Xorg with Xmonad configuration.";
-  }
-  // {
-    default = false;
   };
 
   imports = [
