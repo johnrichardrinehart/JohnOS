@@ -7,9 +7,9 @@ in
     enable = lib.mkEnableOption "enable typical virtualisation stuff";
 
     binfmtEmulatedSystems = lib.mkOption {
-      name = "which systems to emulate with binfmt and userspace qemu";
+      description = "Systems to emulate with binfmt and userspace qemu.";
       default = [ ];
-      type = lib.types.list;
+      type = lib.types.listOf lib.types.str;
     };
   };
 
