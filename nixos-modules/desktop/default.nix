@@ -19,7 +19,7 @@ in
         "greetd+niri"
       ];
       default = "xorg-xmonad";
-      description = lib.mkEnableOption "reasonable desktop configuration variants.";
+      description = "The desktop configuration variant to enable.";
     };
 
     obsidian = lib.mkEnableOption "packaging Obsidian into the system.";
