@@ -13,8 +13,8 @@ let
   kdl-rs = fetchFromGitHub {
     owner = "johnrichardrinehart";
     repo = "kdl-rs";
-    rev = "a08885b597f9b1b9f2e85e13919ee5908cb5f785";
-    hash = "sha256-eCe/cqWa7/RbqvuoaONShPuxsvFzZ5lHOcsSAbZm+iY=";
+    rev = "9cfc088d94b814c93d25e307d662f0c0de4b4398";
+    hash = "sha256-npo0pOJgFbSxlbrkYwKsRzMhmZnasMpZ3mQfIk18umA=";
   };
   kdl-rs-cargo-patch = writeText "kdlfmt-kdl-rs.patch" ''
     diff --git a/Cargo.lock b/Cargo.lock

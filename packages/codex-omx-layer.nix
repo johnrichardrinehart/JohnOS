@@ -7,6 +7,7 @@
 runCommand "codex-omx-layer"
   {
     outputs = [
+      "out"
       "config"
       "hooks"
     ];
@@ -28,4 +29,5 @@ runCommand "codex-omx-layer"
 
     cp "$CODEX_HOME/config.toml" "$config"
     cp "$CODEX_HOME/hooks.json" "$hooks"
+    printf '%s\n' "config: $config" "hooks: $hooks" > "$out"
   ''
