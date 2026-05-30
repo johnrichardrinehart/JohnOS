@@ -27,7 +27,11 @@ let
     inherit wormhole-send;
   };
 
-  inherit (pkgs.dev.johnrinehart) niri-cycle-display-mode;
+  inherit (pkgs.dev.johnrinehart)
+    brightness-notify
+    niri-cycle-display-mode
+    volume-notify
+    ;
 
   clipboard-store-notify = pkgs.dev.johnrinehart.clipboard-store-notify;
   clipboard-watch = pkgs.dev.johnrinehart.clipboard-watch.override {
@@ -151,6 +155,8 @@ in
         niri-gather-windows
         niri-cycle-display-mode
         niri-screenshot
+        brightness-notify
+        volume-notify
         wormhole-send
         pkgs.magic-wormhole-rs
         pkgs.adwaita-icon-theme # cursor theme
@@ -187,8 +193,10 @@ in
             lock_command = "${lib.getExe' pkgs.systemd "loginctl"} lock-session";
             suspend = "${lib.getExe' pkgs.systemd "systemctl"} suspend-then-hibernate";
             wl-kbptr = lib.getExe pkgs.wl-kbptr;
+            brightness_notify = lib.getExe brightness-notify;
             niri_cycle_display_mode = lib.getExe niri-cycle-display-mode;
             niri_screenshot = lib.getExe niri-screenshot;
+            volume_notify = lib.getExe volume-notify;
             wormhole_send = lib.getExe wormhole-send;
             xcursor_theme = xcursorTheme;
             extra_niri_config = cfg.niri.extraConfig;
@@ -215,7 +223,14 @@ in
           checkPhase = null;
         });
     environment.etc."xdg/waybar".source = ./waybar;
-    environment.etc."mako/config".source = ./mako.conf;
+    environment.etc."mako/config".source =
+      (pkgs.replaceVars ./mako.conf {
+        adwaita_icons = "${pkgs.adwaita-icon-theme}/share/icons/Adwaita";
+        gnome_icons = "${pkgs.gnome-icon-theme}/share/icons/gnome";
+      }).overrideAttrs
+        (_: {
+          checkPhase = null;
+        });
 
     # Custom PAM config: fingerprint as first factor (rejects bad
     # fingerprints), then mandatory password - applied to authentication
