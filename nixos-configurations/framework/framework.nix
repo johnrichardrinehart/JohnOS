@@ -104,13 +104,11 @@ in
   # replicates the default behaviour.
   networking.hostName = "framie";
   networking.useDHCP = lib.mkDefault false;
-  networking.nameservers = [
-    "1.1.1.1"
-    "8.8.8.8"
-    "6.6.6.6"
-  ];
-  networking.resolvconf.enable = true;
   networking.interfaces.wlp170s0.useDHCP = lib.mkDefault true;
+  dev.johnrinehart.network = {
+    enable = true;
+    manager = "iwd";
+  };
 
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
@@ -277,9 +275,6 @@ in
   };
 
   networking.timeServers = options.networking.timeServers.default ++ [ "time.facebook.com" ];
-
-  networking.networkmanager.enable = true;
-  systemd.services.NetworkManager-wait-online.enable = false;
 
   services.upower = {
     enable = true;

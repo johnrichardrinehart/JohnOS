@@ -42,7 +42,7 @@ in
       medium_timeout_duration = 60 * 6;
       long_timeout_duration = 60 * 10;
     };
-    networking.networkmanager.enable = true;
+    dev.johnrinehart.network.manager = lib.mkDefault "networkmanager";
     dev.johnrinehart.desktop.xorg-xmonad.enable = cfg.variant == "xorg-xmonad";
     dev.johnrinehart.desktop.wl-hyprland.enable = cfg.variant == "wl-hyprland";
     dev.johnrinehart.desktop.greetd_niri.enable = cfg.variant == "greetd+niri";
