@@ -31,6 +31,7 @@ in
         default = true;
         description = "Keep path-based wireless interface names when iwd is selected.";
       };
+      tools.enable = lib.mkEnableOption "wireless diagnostic and manager frontend tools";
     };
   };
 
@@ -48,12 +49,22 @@ in
       networking.wireless.enable = false;
     })
 
+    (lib.mkIf (cfg.enable || cfg.manager != null) {
+      dev.johnrinehart.network.tools.enable = lib.mkDefault true;
+
+      environment.systemPackages = lib.mkIf cfg.tools.enable [
+        pkgs.iw
+      ];
+    })
+
     (lib.mkIf (cfg.manager == "networkmanager") {
       networking.networkmanager.enable = true;
       networking.networkmanager.unmanaged = [ "tailscale0" ];
 
       environment.systemPackages = [
         pkgs.dev.johnrinehart.legacy-network-configs.toNetworkManager
+      ]
+      ++ lib.optionals cfg.tools.enable [
         pkgs.wifitui
       ];
 
@@ -77,6 +88,8 @@ in
 
       environment.systemPackages = [
         pkgs.dev.johnrinehart.legacy-network-configs.toIwd
+      ]
+      ++ lib.optionals cfg.tools.enable [
         pkgs.impala
       ];
 
