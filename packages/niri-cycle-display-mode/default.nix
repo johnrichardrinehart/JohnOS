@@ -2,7 +2,9 @@
   lib,
   coreutils,
   fuzzel,
+  gnome-icon-theme,
   jq,
+  libnotify,
   makeWrapper,
   niri,
   symlinkJoin,
@@ -11,15 +13,19 @@
 }:
 let
   pname = "niri-cycle-display-mode";
-  script =
-    (writeScriptBin pname (builtins.readFile ./niri-cycle-display-mode.sh)).overrideAttrs
-      (old: {
-        buildCommand = "${old.buildCommand}\npatchShebangs $out";
-      });
+  scriptSource =
+    builtins.replaceStrings
+      [ "@display_icon@" ]
+      [ "${gnome-icon-theme}/share/icons/gnome/48x48/devices/video-display.png" ]
+      (builtins.readFile ./niri-cycle-display-mode.sh);
+  script = (writeScriptBin pname scriptSource).overrideAttrs (old: {
+    buildCommand = "${old.buildCommand}\npatchShebangs $out";
+  });
   runtimeInputs = [
     coreutils
     fuzzel
     jq
+    libnotify
     niri
     wl-mirror
   ];

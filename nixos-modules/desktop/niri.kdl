@@ -362,7 +362,7 @@ binds {
         spawn "@volume_notify@" "mute"
     }
     XF86AudioMicMute allow-when-locked=true {
-        spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
+        spawn "@volume_notify@" "mic"
     }
     // Example brightness key mappings for brightnessctl.
     // You can use regular spawn with multiple arguments too (to avoid going through "sh"),
@@ -372,6 +372,12 @@ binds {
     }
     XF86MonBrightnessDown allow-when-locked=true {
         spawn "@brightness_notify@" "down"
+    }
+    XF86KbdBrightnessUp allow-when-locked=true {
+        spawn "@keyboard_brightness_notify@" "up"
+    }
+    XF86KbdBrightnessDown allow-when-locked=true {
+        spawn "@keyboard_brightness_notify@" "down"
     }
     XF86Display allow-when-locked=true allow-inhibiting=false {
         spawn "@niri_cycle_display_mode@"
@@ -602,8 +608,8 @@ binds {
     // These binds are also affected by touchpad's natural-scroll, so these
     // example binds are "inverted", since we have natural-scroll enabled for
     // touchpads by default.
-    // Mod+TouchpadScrollDown { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.02+"; }
-    // Mod+TouchpadScrollUp   { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.02-"; }
+    // Mod+TouchpadScrollDown { spawn "@volume_notify@" "up"; }
+    // Mod+TouchpadScrollUp   { spawn "@volume_notify@" "down"; }
     // You can refer to workspaces by index. However, keep in mind that
     // niri is a dynamic workspace system, so these commands are kind of
     // "best effort". Trying to refer to a workspace index bigger than
@@ -787,7 +793,7 @@ binds {
     // The allow-inhibiting=false property can be applied to other binds as well,
     // which ensures niri always processes them, even when an inhibitor is active.
     Mod+Escape allow-inhibiting=false {
-        toggle-keyboard-shortcuts-inhibit
+        spawn "@input_toggle_notify@" "shortcuts-inhibit"
     }
     // The quit action will show a confirmation dialog to avoid accidental exits.
     Mod+Shift+E {
@@ -799,7 +805,7 @@ binds {
     // Powers off the monitors. To turn them back on, do any input like
     // moving the mouse or pressing any other key.
     Mod+Shift+P {
-        power-off-monitors
+        spawn "@monitor_power_notify@"
     }
     Mod+Alt+C {
         spawn-sh "@wl-kbptr@"

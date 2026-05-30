@@ -29,6 +29,9 @@ let
 
   inherit (pkgs.dev.johnrinehart)
     brightness-notify
+    input-toggle-notify
+    keyboard-brightness-notify
+    monitor-power-notify
     niri-cycle-display-mode
     volume-notify
     ;
@@ -156,6 +159,9 @@ in
         niri-cycle-display-mode
         niri-screenshot
         brightness-notify
+        input-toggle-notify
+        keyboard-brightness-notify
+        monitor-power-notify
         volume-notify
         wormhole-send
         pkgs.magic-wormhole-rs
@@ -190,7 +196,10 @@ in
           replacements = {
             fuzzel_dmenu = lib.getExe fuzzelDmenu;
             clipboard_watch = lib.getExe clipboard-watch;
+            input_toggle_notify = lib.getExe input-toggle-notify;
+            keyboard_brightness_notify = lib.getExe keyboard-brightness-notify;
             lock_command = "${lib.getExe' pkgs.systemd "loginctl"} lock-session";
+            monitor_power_notify = lib.getExe monitor-power-notify;
             suspend = "${lib.getExe' pkgs.systemd "systemctl"} suspend-then-hibernate";
             wl-kbptr = lib.getExe pkgs.wl-kbptr;
             brightness_notify = lib.getExe brightness-notify;
@@ -203,11 +212,6 @@ in
             extra_niri_keybindings = lib.optionalString (
               cfg.niri.extraKeybindings != ""
             ) "\n${indentKdlLines "    " cfg.niri.extraKeybindings}";
-
-            # PipeWire's wpctl resolves these at runtime. Passing null tells
-            # replaceVarsWith that these @...@ tokens are intentional leftovers.
-            DEFAULT_AUDIO_SINK = null;
-            DEFAULT_AUDIO_SOURCE = null;
           };
         };
       in

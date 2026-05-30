@@ -9,6 +9,20 @@ mirror_source_file="$state_dir/wl-mirror.source"
 f9_picker_pid_file="$state_dir/f9-picker.pid"
 single_migrate_state_file="$state_dir/single-migrate-state.json"
 mirror_target_position_base=100000
+display_icon="@display_icon@"
+
+notify_display() {
+  local title="$1"
+  local body="${2:-}"
+
+  notify-send \
+    --app-name="JohnOS Display" \
+    --icon="$display_icon" \
+    --expire-time=1600 \
+    --hint=string:x-canonical-private-synchronous:display \
+    "$title" \
+    "$body" || true
+}
 
 active_outputs_map_json() {
   printf '%s\n' "${active_outputs[@]}" |
@@ -220,6 +234,7 @@ apply_extend() {
   sleep 0.2
   restore_migrated_workspaces
   clear_migration_state
+  notify_display "Displays extended" "${#outputs[@]} outputs active"
 }
 
 apply_mirror() {
@@ -249,6 +264,7 @@ apply_mirror() {
   done
 
   niri msg action focus-monitor "$source_output" || true
+  notify_display "Displays mirrored" "Source: $source_output"
 }
 
 apply_single_outputs() {
@@ -271,6 +287,7 @@ apply_single_isolated() {
   target="$1"
   clear_migration_state
   apply_single_outputs "$target"
+  notify_display "Display isolated" "$target"
 }
 
 apply_single_migrate() {
@@ -342,6 +359,7 @@ apply_single_migrate() {
   fi
 
   apply_single_outputs "$target"
+  notify_display "Display migrated" "$target"
 }
 
 output_is_active() {

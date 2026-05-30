@@ -18,7 +18,7 @@ writeShellApplication {
     set -euo pipefail
 
     read_volume() {
-      status="$(wpctl get-volume @DEFAULT_AUDIO_SINK@)"
+      status="$(wpctl get-volume "$1")"
       volume="''${status#Volume: }"
       volume="''${volume%% *}"
 
@@ -49,25 +49,42 @@ writeShellApplication {
       fi
     }
 
+    notify() {
+      app_name="$1"
+      sync_key="$2"
+
+      notify-send \
+        --app-name="$app_name" \
+        --icon="$icon" \
+        --expire-time=1400 \
+        --hint=string:x-canonical-private-synchronous:"$sync_key" \
+        --hint="int:value:$hint_percent" \
+        "$title" \
+        "$body" \
+        || true
+    }
+
     action="''${1:-}"
     case "$action" in
       up)
         wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 0.1+
-        read_volume
+        read_volume @DEFAULT_AUDIO_SINK@
         title="Volume up"
         body="$percent% - turning it up"
         icon_for_percent
+        notify "JohnOS Audio" "volume"
         ;;
       down)
         wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-
-        read_volume
+        read_volume @DEFAULT_AUDIO_SINK@
         title="Volume down"
         body="$percent% - easing back"
         icon_for_percent
+        notify "JohnOS Audio" "volume"
         ;;
       mute)
         wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
-        read_volume
+        read_volume @DEFAULT_AUDIO_SINK@
         if [[ "$status" == *"[MUTED]"* ]]; then
           title="Muted"
           body="Sound tucked away"
@@ -78,22 +95,28 @@ writeShellApplication {
           body="$percent% - sound is back"
           icon_for_percent
         fi
+        notify "JohnOS Audio" "volume"
+        ;;
+      mic)
+        wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+        read_volume @DEFAULT_AUDIO_SOURCE@
+        if [[ "$status" == *"[MUTED]"* ]]; then
+          title="Mic muted"
+          body="Your microphone is off"
+          icon="${gnome-icon-theme}/share/icons/gnome/48x48/status/microphone-sensitivity-muted.png"
+          hint_percent=0
+        else
+          title="Mic live"
+          body="$percent% - ready to talk"
+          icon="${gnome-icon-theme}/share/icons/gnome/48x48/status/microphone-sensitivity-high.png"
+        fi
+        notify "JohnOS Mic" "mic"
         ;;
       *)
-        printf 'usage: volume-notify up|down|mute\n' >&2
+        printf 'usage: volume-notify up|down|mute|mic\n' >&2
         exit 2
         ;;
     esac
-
-    notify-send \
-      --app-name="JohnOS Audio" \
-      --icon="$icon" \
-      --expire-time=1400 \
-      --hint=string:x-canonical-private-synchronous:volume \
-      --hint="int:value:$hint_percent" \
-      "$title" \
-      "$body" \
-      || true
   '';
 
   meta = with lib; {
