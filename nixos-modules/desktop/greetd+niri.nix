@@ -100,6 +100,18 @@ in
           '';
         };
       };
+      waybar = {
+        connectivityInterfacePattern = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          example = "wlp*";
+          description = ''
+            Interface pattern passed to Waybar's network module for the
+            connectivity section. Leave null to let Waybar choose the active
+            interface automatically.
+          '';
+        };
+      };
     };
   };
 
@@ -219,7 +231,28 @@ in
         (_: {
           checkPhase = null;
         });
-    environment.etc."xdg/waybar".source = ./waybar;
+    environment.etc."xdg/waybar".source =
+      let
+        defaultInterfaceLine = ''// "interface": "wlp2*", // (Optional) To force the use of this interface'';
+        configuredInterfaceLine =
+          if cfg.waybar.connectivityInterfacePattern == null then
+            defaultInterfaceLine
+          else
+            ''"interface": ${builtins.toJSON cfg.waybar.connectivityInterfacePattern},'';
+        waybarConfig = pkgs.substitute {
+          src = ./waybar/config.jsonc;
+          substitutions = [
+            "--replace-fail"
+            defaultInterfaceLine
+            configuredInterfaceLine
+          ];
+        };
+      in
+      pkgs.runCommand "johnos-waybar-config" { } ''
+        mkdir -p "$out"
+        cp -R ${./waybar}/. "$out/"
+        install -m 0644 ${waybarConfig} "$out/config.jsonc"
+      '';
     environment.etc."mako/config".source =
       (pkgs.replaceVars ./mako.conf {
         adwaita_icons = "${pkgs.adwaita-icon-theme}/share/icons/Adwaita";
