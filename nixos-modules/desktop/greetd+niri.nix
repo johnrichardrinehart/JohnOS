@@ -18,9 +18,7 @@ let
       map (line: if line == "" then "" else "${prefix}${line}") (lib.splitString "\n" text)
     );
 
-  wormhole-send = pkgs.dev.johnrinehart.wormhole-send.override {
-    notifyTimeout = cfg.wormholeNotifyTimeout;
-  };
+  wormhole-send = pkgs.dev.johnrinehart.wormhole-send;
 
   niri-screenshot = pkgs.dev.johnrinehart.niri-screenshot.override {
     niri = config.programs.niri.package;
@@ -72,11 +70,6 @@ in
       enable = lib.mkEnableOption "greetd + niri";
       hypridle.enable = lib.mkEnableOption "hypridle integration" // {
         default = true;
-      };
-      wormholeNotifyTimeout = lib.mkOption {
-        type = lib.types.int;
-        default = 15000;
-        description = "Timeout in ms for wormhole code notifications (0 = persistent)";
       };
       niri = {
         extraConfig = lib.mkOption {

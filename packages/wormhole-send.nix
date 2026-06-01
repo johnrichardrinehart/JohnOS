@@ -1,13 +1,13 @@
 {
   pkgs,
   lib,
-  notifyTimeout ? 15000,
 }:
 pkgs.writeShellScriptBin "wormhole-send" ''
   set -euo pipefail
 
   wormhole=${lib.getExe pkgs.magic-wormhole-rs}
   notify=${lib.getExe' pkgs.libnotify "notify-send"}
+  makoctl=${lib.getExe' pkgs.mako "makoctl"}
   wl_copy=${lib.getExe' pkgs.wl-clipboard "wl-copy"}
   stdbuf=${lib.getExe' pkgs.coreutils "stdbuf"}
   sed=${lib.getExe pkgs.gnused}
@@ -22,7 +22,32 @@ pkgs.writeShellScriptBin "wormhole-send" ''
     exit 1
   fi
 
-  $notify -t 3000 "Wormhole" "Starting transfer..."
+  notify_id=""
+
+  pending_notification_is_active() {
+    [ -n "$notify_id" ] || return 1
+    $makoctl list -j 2>/dev/null | $grep -q "\"id\":[[:space:]]*$notify_id\\b"
+  }
+
+  show_pending_notification() {
+    body="$1"
+
+    if pending_notification_is_active; then
+      $notify -a "Wormhole" -t 0 -r "$notify_id" "Wormhole" "$body" >/dev/null || true
+    elif [ -z "$notify_id" ]; then
+      notify_id=$($notify -a "Wormhole" -t 0 -p "Wormhole" "$body" 2>/dev/null || true)
+    fi
+  }
+
+  finish_notification() {
+    body="$1"
+
+    if pending_notification_is_active; then
+      $notify -a "Wormhole" -t 5000 -r "$notify_id" "Wormhole" "$body" >/dev/null || true
+    fi
+  }
+
+  show_pending_notification "Starting transfer..."
 
   # Run wormhole-rs in background, strip ANSI escapes, capture output
   outfile=$($mktemp /tmp/wormhole-out-XXXXXX.txt)
@@ -38,23 +63,26 @@ pkgs.writeShellScriptBin "wormhole-send" ''
   done
 
   if [ -n "$code" ]; then
-    $notify -t ${toString notifyTimeout} "Wormhole" "Code: $code"
+    show_pending_notification "Code: $code"
     printf '%s' "$code" | $wl_copy
   else
-    $notify -t 5000 "Wormhole" "Failed to get wormhole code"
+    finish_notification "Failed to get wormhole code"
     kill $wh_pid 2>/dev/null || true
     rm -f "$outfile"
     exit 1
   fi
 
   # Wait for transfer to complete
-  wait $wh_pid
-  status=$?
+  if wait $wh_pid; then
+    status=0
+  else
+    status=$?
+  fi
   rm -f "$outfile"
 
   if [ $status -eq 0 ]; then
-    $notify -t 5000 "Wormhole" "Transfer complete!"
+    finish_notification "Transfer complete!"
   else
-    $notify -t 5000 "Wormhole" "Transfer failed or was cancelled"
+    finish_notification "Transfer failed or was cancelled"
   fi
 ''
