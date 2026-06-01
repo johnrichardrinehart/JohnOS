@@ -46,7 +46,7 @@ in
         "6.6.6.6"
       ];
       networking.resolvconf.enable = true;
-      networking.wireless.enable = false;
+      networking.wireless.enable = lib.mkDefault false;
     })
 
     (lib.mkIf (cfg.enable || cfg.manager != null) {
@@ -74,10 +74,13 @@ in
     })
 
     (lib.mkIf (cfg.manager == "iwd") {
+      networking.dhcpcd.enable = lib.mkForce false;
       networking.networkmanager.enable = lib.mkForce false;
       networking.wireless.iwd = {
         enable = true;
         settings = {
+          General.EnableNetworkConfiguration = true;
+          Network.NameResolvingService = "resolvconf";
           Settings.AutoConnect = true;
           DriverQuirks.DefaultInterface = "?*";
         };

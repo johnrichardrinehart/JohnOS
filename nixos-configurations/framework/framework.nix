@@ -99,12 +99,10 @@ in
     ];
   };
 
-  # The global useDHCP flag is deprecated, therefore explicitly set to false here.
-  # Per-interface useDHCP will be mandatory in the future, so this generated config
-  # replicates the default behaviour.
+  # iwd manages Wi-Fi DHCP/IP configuration for this host.
   networking.hostName = "framie";
   networking.useDHCP = lib.mkDefault false;
-  networking.interfaces.wlp170s0.useDHCP = lib.mkDefault true;
+  networking.interfaces.wlp170s0.useDHCP = lib.mkDefault false;
   dev.johnrinehart.network = {
     enable = true;
     manager = "iwd";
