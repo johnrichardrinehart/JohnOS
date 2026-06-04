@@ -9,14 +9,14 @@
 }:
 let
   pname = "oh-my-codex";
-  version = "unstable-2026-05-28";
-  rev = "bcabbf54288e72547d32128fd65b4ec36da26038";
+  version = "0.12.3";
+  rev = "v${version}";
 
   src = fetchFromGitHub {
     owner = "johnrichardrinehart";
     repo = "oh-my-codex";
     inherit rev;
-    hash = "sha256-hMGEpdMdIkrDyoDOgDnk+zHKpHVcvyfrxnRgVgMrmAI=";
+    hash = "sha256-QkS/XMaMdUTCBwQiCTGI5LTamdrK4HABpYj+535PrDI=";
   };
 
   nodePlatform =
@@ -66,7 +66,7 @@ in
 buildNpmPackage {
   inherit pname version src;
 
-  npmDepsHash = "sha256-envgU/u0Mkjc5qrBTZCwcTKCLGPC5eHP2b4hDEpvo1Q=";
+  npmDepsHash = "sha256-VoifYbL//LTOfCow3/TesUTjE011fSeyakyqHULS4NY=";
 
   nativeBuildInputs = [ makeWrapper ];
 

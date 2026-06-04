@@ -13,8 +13,8 @@ let
   kdl-rs = fetchFromGitHub {
     owner = "johnrichardrinehart";
     repo = "kdl-rs";
-    rev = "9cfc088d94b814c93d25e307d662f0c0de4b4398";
-    hash = "sha256-npo0pOJgFbSxlbrkYwKsRzMhmZnasMpZ3mQfIk18umA=";
+    rev = "b08bcc966ad1c1c004ba2b6d1f0ceb373271e8ea";
+    hash = "sha256-EBuidVvvZmHhqWESmfdk8ZZN3UCGmI1lwZ3i9O9qTCU=";
   };
   kdl-rs-cargo-patch = writeText "kdlfmt-kdl-rs.patch" ''
     diff --git a/Cargo.lock b/Cargo.lock
@@ -63,7 +63,7 @@ rustPlatform.buildRustPackage {
   inherit (kdlfmt) version src;
 
   cargoPatches = [ kdl-rs-cargo-patch ];
-  cargoHash = "sha256-z7roirQoFhjBiCHJMCND0bh+3MR+pZMu1rjjAfmGVC4=";
+  cargoHash = "sha256-vidVK7wrj1D8n20dZ6uQGkpepuk3yMnylbwGXubkzMU=";
 
   nativeBuildInputs = [ installShellFiles ];
 

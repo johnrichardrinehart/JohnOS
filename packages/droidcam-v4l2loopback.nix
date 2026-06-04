@@ -7,12 +7,12 @@
 
 stdenv.mkDerivation rec {
   pname = "v4l2loopback-dc";
-  version = "0.0.1";
+  version = "2.1.5";
 
   src = fetchFromGitHub {
     owner = "aramg";
     repo = "droidcam";
-    rev = "v2.1.5";
+    rev = "v${version}";
     sha256 = "sha256-22lRmtXumjR/83Fg1edBisM1GjNZvNUvPs1Yg7Na1xw=";
   };
 
