@@ -247,7 +247,7 @@ layout {
 // See the binds section below for more spawn examples.
 // This line starts waybar, a commonly used bar for Wayland compositors.
 spawn-at-startup "waybar"
-spawn-at-startup "hyprpaper"
+spawn-at-startup "@swww_wallpaper@"
 spawn-at-startup "wlsunset" "-l" "41.9695" "-L" "-71.1821" "-t" "3000" "-g" ".9"
 spawn-at-startup "@clipboard_watch@"
 spawn-at-startup "wl-clip-persist" "--clipboard" "regular"
