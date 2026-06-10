@@ -117,6 +117,7 @@ in
     (lib.mkIf cfg.enable {
       environment.systemPackages = [
         pkgs.dev.johnrinehart.agent-deck
+        pkgs.dev.johnrinehart.claude-code-nix
         pkgs.dev.johnrinehart.codex-cli-nix
         pkgs.dev.johnrinehart.herdr
       ];

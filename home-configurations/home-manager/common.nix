@@ -30,6 +30,10 @@ let
     command = "${lib.getExe pkgs.dev.johnrinehart.codex-cli-nix}"
     compatible_with = "codex"
 
+    [tools.my-claude]
+    command = "${lib.getExe pkgs.dev.johnrinehart.claude-code-nix}"
+    compatible_with = "claude"
+
     # OMX currently runs Codex inside the existing tmux pane and may also mutate the
     # outer tmux window (for example by creating a HUD split and enforcing tmux
     # ownership checks). These wrappers normalize agent-deck's appended
@@ -488,6 +492,7 @@ in
           lmkv = fetchLatestKernelVersion "mainline";
           clv = "uname -a | cut -f3 -d' ' | cut -f 1 -d'-' ";
           k = "kubectl";
+          claude = lib.getExe pkgs.dev.johnrinehart.claude-code-nix;
           codex = lib.getExe pkgs.dev.johnrinehart.codex-cli-nix;
           chess = "scid";
           sudo-nixos-rebuild-flake = "sudo nixos-rebuild switch --flake $HOME/code/repos/mine/nix"; # https://askubuntu.com/questions/22037/aliases-not-available-when-using-sudo
