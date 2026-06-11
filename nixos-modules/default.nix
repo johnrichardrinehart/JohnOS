@@ -1,6 +1,6 @@
 { inputs, lib, ... }:
 {
-  config._module.args.inputs = inputs;
+  config._module.args.inputs = lib.mkDefault inputs;
 
   options.dev.johnrinehart.users = {
     primary = lib.mkOption {

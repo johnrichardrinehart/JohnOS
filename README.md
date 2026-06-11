@@ -1,3 +1,10 @@
+# **JohnOS Has Moved**
+
+**This repository is archived. Active reusable modules now live in
+[`nixosModules`](https://github.com/johnrichardrinehart/nixosModules), and active
+host system configurations now live in
+[`nixosConfigurations`](https://github.com/johnrichardrinehart/nixosConfigurations).**
+
 # What?
 
 This is a repo that contains a set of Nix expressions used to build a custom
