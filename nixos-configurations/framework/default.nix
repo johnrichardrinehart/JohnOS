@@ -61,6 +61,7 @@ in
     enable = true;
     variant = "greetd+niri";
   };
+  dev.johnrinehart.voice-dictation.enable = true;
   dev.johnrinehart.sshSessionLock = {
     enable = true;
     timeoutSeconds = 60 * 15;

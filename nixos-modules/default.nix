@@ -58,6 +58,7 @@
     ./tmux.nix
     ./tmux-socket.nix
     ./virtualisation.nix
+    ./voice-dictation.nix
 
     ./desktop/default.nix
     ./desktop/hyprland.nix

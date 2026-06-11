@@ -47,10 +47,19 @@ inputs: {
         fuzzel_1_14_1.fuzzel = prev.fuzzel;
         kdlfmt.kdlfmt = kdlfmt_0_1_7;
         kill-idle-group.onIdlePackage = johnPkgs.on-idle;
+        libmoonshine.onnxruntime = johnPkgs.onnxruntime-openvino;
         lock-idle-ssh-sessions = {
           idleTimeoutSeconds = 5 * 60;
           terminalMultiplexer = "tmux";
           inherit (johnPkgs) tmux;
+        };
+        moonshine-models-onnx = {
+          inherit (final) python3;
+          modelDir = johnPkgs.moonshine-models-source;
+        };
+        moonshine-voice = {
+          inherit (johnPkgs) libmoonshine;
+          onnxruntime = johnPkgs.onnxruntime-openvino;
         };
         niri-cycle-display-mode = {
           fuzzel = johnPkgs.fuzzel_1_14_1;
@@ -68,6 +77,10 @@ inputs: {
         on-idle.idleTimeoutSeconds = 5 * 60;
         repo-manager.system = final.stdenv.hostPlatform.system;
         repod.system = final.stdenv.hostPlatform.system;
+        whisper-voice-type = {
+          moonshineVoice = johnPkgs.moonshine-voice;
+          model = johnPkgs.moonshine-models-onnx;
+        };
         tmux = {
           inherit (prev) fetchpatch2 tmux;
         };
